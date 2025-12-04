@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JTG RISK CALCULATOR</title>
-    <!-- Tailwind CSS -->
+    
+    <!-- 1. Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -22,22 +23,20 @@
                             card: '#111633',     
                             input: '#1a214d',    
                         }
-                    },
-                    screens: {
-                        'xs': '475px',
-                        '3xl': '1600px',
                     }
                 }
             }
         }
     </script>
-    <!-- React and ReactDOM -->
+
+    <!-- 2. Load React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel for JSX -->
+    
+    <!-- 3. Load Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Google Font: News Cycle -->
+    <!-- 4. Load Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=News+Cycle:wght@400;700&display=swap" rel="stylesheet">
@@ -72,7 +71,7 @@
         }
     </style>
 </head>
-<body class="bg-jtg-dark text-slate-100 min-h-[100dvh] selection:bg-jtg-green selection:text-white flex flex-col md:flex-row overflow-hidden">
+<body class="bg-jtg-dark text-slate-100 min-h-screen selection:bg-jtg-green selection:text-white flex flex-col md:flex-row overflow-hidden">
     <div id="root" class="w-full h-full flex flex-col md:flex-row"></div>
 
     <script type="text/babel">
@@ -98,6 +97,7 @@
         };
 
         const JtgRiskCalc = () => {
+            // --- STATE ---
             const [balance, setBalance] = useState(100000); 
             const [riskMode, setRiskMode] = useState('percent'); 
             const [riskValue, setRiskValue] = useState(1.0); 
@@ -115,7 +115,7 @@
             const [rrResult, setRrResult] = useState(null); 
             const [projectedProfit, setProjectedProfit] = useState(null); 
 
-            // Asset Data
+            // --- ASSET DATA ---
             const assets = {
                 indices: {
                     label: 'Indices',
@@ -183,6 +183,7 @@
                 }
             };
 
+            // --- LOGIC ---
             const handleCalculate = () => {
                 if (!entryPrice || !stopLoss || !balance) return;
 
@@ -219,6 +220,7 @@
                     lotSize = riskInDollars / (pips * approxPipValuePerLot);
                 }
 
+                // RR Logic
                 if (tp) {
                     const rewardDiff = Math.abs(tp - entry);
                     if (riskDiff !== 0) {
@@ -244,22 +246,23 @@
 
             useEffect(() => {
                 if(entryPrice && stopLoss && balance) {
-                    const timeout = setTimeout(handleCalculate, 300);
+                    const timeout = setTimeout(handleCalculate, 300); // Debounce
                     return () => clearTimeout(timeout);
                 }
             }, [balance, riskMode, riskValue, entryPrice, stopLoss, takeProfit, pair]);
 
 
+            // --- UI RENDER ---
             return (
-                <div className="flex flex-col md:flex-row w-full h-[100dvh] overflow-hidden">
+                <div className="flex w-full h-screen overflow-hidden">
                     
                     {/* --- SIDEBAR --- */}
-                    <div className="hidden md:flex w-24 bg-jtg-dark border-r border-jtg-blue/30 flex-col items-center py-8 z-20 shadow-2xl flex-shrink-0">
+                    <div className="hidden md:flex w-24 bg-jtg-dark border-r border-jtg-blue/30 flex-col items-center py-8 z-20 shadow-2xl">
                         
-                        <div className="w-16 h-16 mb-10 flex items-center justify-center transition-transform hover:scale-110">
+                        <div className="w-20 h-20 mb-10 flex items-center justify-center transition-transform hover:scale-110">
                             {!imgError ? (
                                 <img 
-                                    src="https://storage.googleapis.com/v0.b/generative-language-preview.googleapis.com/o/uploaded%2FIMG_20250624_114347.png-2290b792-24d1-4a20-ab9a-fab823ddc579?alt=media"
+                                    src="IMG_20250624_114347.png" 
                                     alt="JTG" 
                                     className="w-full h-full object-contain" 
                                     onError={() => setImgError(true)} 
@@ -283,18 +286,18 @@
                     </div>
 
                     {/* --- MAIN CONTENT --- */}
-                    <div className="flex-1 flex flex-col h-full relative bg-jtg-dark overflow-hidden">
+                    <div className="flex-1 flex flex-col h-full relative overflow-y-auto overflow-x-hidden bg-jtg-dark">
                         
                         {/* Background Elements */}
                         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-jtg-blue/20 rounded-full blur-[120px] pointer-events-none"></div>
                         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-jtg-green/10 rounded-full blur-[100px] pointer-events-none"></div>
 
                         {/* Top Nav (Mobile) */}
-                        <div className="md:hidden p-4 flex justify-between items-center bg-jtg-dark/95 backdrop-blur z-20 border-b border-jtg-blue/30 sticky top-0 flex-shrink-0">
+                        <div className="md:hidden p-4 flex justify-between items-center bg-jtg-dark/95 backdrop-blur z-20 border-b border-jtg-blue/30 sticky top-0">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10">
+                                <div className="w-12 h-12">
                                     <img 
-                                        src="https://storage.googleapis.com/v0.b/generative-language-preview.googleapis.com/o/uploaded%2FIMG_20250624_114347.png-2290b792-24d1-4a20-ab9a-fab823ddc579?alt=media" 
+                                        src="IMG_20250624_114347.png" 
                                         className="w-full h-full object-contain" 
                                         onError={(e) => e.target.style.display='none'}
                                     />
@@ -303,210 +306,207 @@
                             </div>
                         </div>
 
-                        {/* Scrollable Area */}
-                        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-10 w-full">
-                            <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start pb-20">
+                        <div className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                            
+                            {/* --- LEFT COLUMN: CONTROLS --- */}
+                            <div className="lg:col-span-7 space-y-8">
                                 
-                                {/* --- LEFT COLUMN: CONTROLS --- */}
-                                <div className="lg:col-span-7 space-y-6 lg:space-y-8">
-                                    
-                                    <div className="mb-2 hidden md:block">
-                                        <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2 tracking-wide uppercase">JTG RISK CALCULATOR</h1>
-                                        <p className="text-slate-400 text-sm font-medium tracking-wide">Professional Risk Management • Precision • Growth</p>
-                                    </div>
-
-                                    {/* Asset Class Tabs */}
-                                    <div className="flex gap-2 p-1.5 bg-jtg-input rounded-xl w-full overflow-x-auto shadow-inner border border-jtg-blue/30 no-scrollbar">
-                                        {Object.keys(assets).map((key) => (
-                                            <button
-                                                key={key}
-                                                onClick={() => setAssetClass(key)}
-                                                className={`flex-1 py-3 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap min-w-[80px] ${
-                                                    assetClass === key
-                                                    ? 'bg-gradient-to-r from-jtg-blue to-blue-700 text-white shadow-lg border border-blue-500/50'
-                                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                                }`}
-                                            >
-                                                {assets[key].label}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* Main Inputs Card */}
-                                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 lg:p-8 shadow-2xl relative overflow-hidden">
-                                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-jtg-green to-jtg-blue"></div>
-                                        
-                                        {/* Instrument Select */}
-                                        <div className="mb-6 lg:mb-8">
-                                            <label className="text-xs font-bold text-slate-400 uppercase mb-3 block tracking-wider">Select Instrument</label>
-                                            <div className="relative group">
-                                                <select
-                                                    value={pair}
-                                                    onChange={(e) => setPair(e.target.value)}
-                                                    className="w-full bg-jtg-input border border-jtg-blue/40 text-white text-lg font-medium rounded-xl p-4 pr-10 focus:ring-2 focus:ring-jtg-green/50 focus:border-jtg-green outline-none transition-all appearance-none cursor-pointer hover:border-jtg-blue/60"
-                                                >
-                                                    {assets[assetClass].pairs.map((p) => (
-                                                        <option key={p.name} value={p.name}>{p.name}</option>
-                                                    ))}
-                                                </select>
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
-                                                    <Icons.ChevronDown />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Account & Risk Grid */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
-                                            <div>
-                                                <label className="text-xs font-bold text-slate-400 uppercase mb-3 block tracking-wider">Balance</label>
-                                                <div className="relative">
-                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-serif italic text-lg">$</span>
-                                                    <input
-                                                        type="number"
-                                                        value={balance}
-                                                        onChange={(e) => setBalance(e.target.value)}
-                                                        className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 pl-10 text-white font-mono text-lg font-medium focus:ring-2 focus:ring-jtg-green/50 outline-none transition-all"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-slate-400 uppercase mb-3 block tracking-wider">Risk</label>
-                                                <div className="flex bg-jtg-input border border-jtg-blue/40 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-jtg-green/50 transition-all">
-                                                    <input
-                                                        type="number"
-                                                        value={riskValue}
-                                                        onChange={(e) => setRiskValue(e.target.value)}
-                                                        className="w-full bg-transparent p-4 text-white font-mono text-lg font-medium outline-none z-10"
-                                                    />
-                                                    <button
-                                                        onClick={() => setRiskMode(riskMode === 'percent' ? 'usd' : 'percent')}
-                                                        className="bg-jtg-blue/20 border-l border-jtg-blue/40 px-6 text-sm font-bold text-jtg-green hover:bg-jtg-blue/40 transition cursor-pointer hover:text-white"
-                                                    >
-                                                        {riskMode === 'percent' ? '%' : '$'}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Trade Params Grid */}
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-xs font-bold text-jtg-green uppercase tracking-wider">Entry Price</label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="0.00"
-                                                    value={entryPrice}
-                                                    onChange={(e) => setEntryPrice(e.target.value)}
-                                                    className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-jtg-green/50 outline-none placeholder-slate-600 transition-all"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-xs font-bold text-red-500 uppercase tracking-wider">Stop Loss</label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="0.00"
-                                                    value={stopLoss}
-                                                    onChange={(e) => setStopLoss(e.target.value)}
-                                                    className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-red-500/50 outline-none placeholder-slate-600 transition-all"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Take Profit</label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="Optional"
-                                                    value={takeProfit}
-                                                    onChange={(e) => setTakeProfit(e.target.value)}
-                                                    className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-slate-500 outline-none placeholder-slate-600 transition-all"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <button 
-                                            onClick={handleCalculate}
-                                            className="w-full mt-8 lg:mt-10 bg-gradient-to-r from-jtg-green to-emerald-600 hover:from-emerald-600 hover:to-jtg-green text-white font-bold uppercase tracking-widest py-4 lg:py-5 rounded-xl shadow-lg shadow-green-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm"
-                                        >
-                                            Calculate Position
-                                        </button>
-
-                                    </div>
+                                <div className="mb-2 hidden md:block">
+                                    <h1 className="text-4xl font-bold text-white mb-2 tracking-wide uppercase">JTG RISK CALCULATOR</h1>
+                                    <p className="text-slate-400 text-sm font-medium tracking-wide">Professional Risk Management • Precision • Growth</p>
                                 </div>
 
-                                {/* --- RIGHT COLUMN: RESULTS --- */}
-                                <div className="lg:col-span-5 flex flex-col gap-6 lg:gap-8">
+                                {/* Asset Class Tabs */}
+                                <div className="flex gap-2 p-1.5 bg-jtg-input rounded-xl w-full overflow-x-auto shadow-inner border border-jtg-blue/30">
+                                    {Object.keys(assets).map((key) => (
+                                        <button
+                                            key={key}
+                                            onClick={() => setAssetClass(key)}
+                                            className={`flex-1 py-3 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
+                                                assetClass === key
+                                                ? 'bg-gradient-to-r from-jtg-blue to-blue-700 text-white shadow-lg border border-blue-500/50'
+                                                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                            }`}
+                                        >
+                                            {assets[key].label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Main Inputs Card */}
+                                <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-jtg-green to-jtg-blue"></div>
                                     
-                                    {/* LOT SIZE CARD (HERO) */}
-                                    <div className="bg-gradient-to-b from-jtg-card to-jtg-dark border border-jtg-blue/30 rounded-2xl p-8 lg:p-10 text-center relative overflow-hidden shadow-2xl min-h-[300px] md:min-h-[350px] flex flex-col justify-center items-center">
-                                        
-                                        {/* Ambient Glow */}
-                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-1 bg-jtg-green shadow-[0_0_50px_rgba(27,166,87,0.6)]"></div>
+                                    {/* Instrument Select */}
+                                    <div className="mb-8">
+                                        <label className="text-xs font-bold text-slate-400 uppercase mb-3 block tracking-wider">Select Instrument</label>
+                                        <div className="relative group">
+                                            <select
+                                                value={pair}
+                                                onChange={(e) => setPair(e.target.value)}
+                                                className="w-full bg-jtg-input border border-jtg-blue/40 text-white text-lg font-medium rounded-xl p-4 pr-10 focus:ring-2 focus:ring-jtg-green/50 focus:border-jtg-green outline-none transition-all appearance-none cursor-pointer hover:border-jtg-blue/60"
+                                            >
+                                                {assets[assetClass].pairs.map((p) => (
+                                                    <option key={p.name} value={p.name}>{p.name}</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+                                                <Icons.ChevronDown />
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                        {calculatedLot ? (
-                                            <div className="animate-pop w-full">
-                                                <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-4">Recommended Position</p>
-                                                <div className="text-7xl sm:text-8xl md:text-9xl font-black text-white tracking-tighter drop-shadow-2xl mb-4 leading-none">
-                                                    {calculatedLot}
+                                    {/* Account & Risk Grid */}
+                                    <div className="grid grid-cols-2 gap-6 mb-8">
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase mb-3 block tracking-wider">Balance</label>
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-serif italic text-lg">$</span>
+                                                <input
+                                                    type="number"
+                                                    value={balance}
+                                                    onChange={(e) => setBalance(e.target.value)}
+                                                    className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 pl-10 text-white font-mono text-lg font-medium focus:ring-2 focus:ring-jtg-green/50 outline-none transition-all"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase mb-3 block tracking-wider">Risk</label>
+                                            <div className="flex bg-jtg-input border border-jtg-blue/40 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-jtg-green/50 transition-all">
+                                                <input
+                                                    type="number"
+                                                    value={riskValue}
+                                                    onChange={(e) => setRiskValue(e.target.value)}
+                                                    className="w-full bg-transparent p-4 text-white font-mono text-lg font-medium outline-none z-10"
+                                                />
+                                                <button
+                                                    onClick={() => setRiskMode(riskMode === 'percent' ? 'usd' : 'percent')}
+                                                    className="bg-jtg-blue/20 border-l border-jtg-blue/40 px-6 text-sm font-bold text-jtg-green hover:bg-jtg-blue/40 transition cursor-pointer hover:text-white"
+                                                >
+                                                    {riskMode === 'percent' ? '%' : '$'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Trade Params Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-jtg-green uppercase tracking-wider">Entry Price</label>
+                                            <input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={entryPrice}
+                                                onChange={(e) => setEntryPrice(e.target.value)}
+                                                className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-jtg-green/50 outline-none placeholder-slate-600 transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-red-500 uppercase tracking-wider">Stop Loss</label>
+                                            <input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={stopLoss}
+                                                onChange={(e) => setStopLoss(e.target.value)}
+                                                className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-red-500/50 outline-none placeholder-slate-600 transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Take Profit</label>
+                                            <input
+                                                type="number"
+                                                placeholder="Optional"
+                                                value={takeProfit}
+                                                onChange={(e) => setTakeProfit(e.target.value)}
+                                                className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-slate-500 outline-none placeholder-slate-600 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={handleCalculate}
+                                        className="w-full mt-10 bg-gradient-to-r from-jtg-green to-emerald-600 hover:from-emerald-600 hover:to-jtg-green text-white font-bold uppercase tracking-widest py-5 rounded-xl shadow-lg shadow-green-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm"
+                                    >
+                                        Calculate Position
+                                    </button>
+
+                                </div>
+                            </div>
+
+                            {/* --- RIGHT COLUMN: RESULTS --- */}
+                            <div className="lg:col-span-5 flex flex-col gap-8">
+                                
+                                {/* LOT SIZE CARD (HERO) */}
+                                <div className="bg-gradient-to-b from-jtg-card to-jtg-dark border border-jtg-blue/30 rounded-2xl p-10 text-center relative overflow-hidden shadow-2xl min-h-[350px] flex flex-col justify-center items-center">
+                                    
+                                    {/* Ambient Glow */}
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-1 bg-jtg-green shadow-[0_0_50px_rgba(27,166,87,0.6)]"></div>
+
+                                    {calculatedLot ? (
+                                        <div className="animate-pop w-full">
+                                            <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-4">Recommended Position</p>
+                                            <div className="text-8xl md:text-9xl font-black text-white tracking-tighter drop-shadow-2xl mb-4 leading-none">
+                                                {calculatedLot}
+                                            </div>
+                                            <div className="inline-block bg-jtg-green/10 text-jtg-green border border-jtg-green/20 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-10">
+                                                Standard Lots
+                                            </div>
+
+                                            <div className="w-full h-px bg-jtg-blue/30 mb-8"></div>
+
+                                            <div className="flex justify-between items-center w-full px-2 mb-6">
+                                                <div className="text-left">
+                                                    <p className="text-slate-500 text-[10px] font-bold uppercase mb-1 tracking-wider">Risk Amount</p>
+                                                    <p className="text-2xl font-bold text-red-500 font-mono">${riskAmountResult}</p>
                                                 </div>
-                                                <div className="inline-block bg-jtg-green/10 text-jtg-green border border-jtg-green/20 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-10">
-                                                    Standard Lots
-                                                </div>
-
-                                                <div className="w-full h-px bg-jtg-blue/30 mb-8"></div>
-
-                                                <div className="flex flex-col gap-2 w-full px-2 mb-6">
-                                                    <div className="flex justify-between items-center">
-                                                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Risk Amount</p>
-                                                        <p className="text-xl font-bold text-red-500 font-mono">${riskAmountResult}</p>
-                                                    </div>
-                                                    {projectedProfit && (
-                                                        <div className="flex justify-between items-center">
-                                                            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Projected Gain</p>
-                                                            <p className="text-xl font-bold text-jtg-green font-mono">+${projectedProfit}</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {rrResult && (
-                                                    <div className="w-full bg-slate-800/40 rounded-xl p-4 border border-slate-700/50 flex justify-between items-center animate-pop">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-2 h-2 rounded-full bg-jtg-green"></div>
-                                                            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Risk : Reward</span>
-                                                        </div>
-                                                        <span className="text-white font-mono text-xl font-bold tracking-tight">1 : {rrResult}</span>
+                                                {projectedProfit && (
+                                                    <div className="text-right">
+                                                        <p className="text-slate-500 text-[10px] font-bold uppercase mb-1 tracking-wider">Projected Gain</p>
+                                                        <p className="text-2xl font-bold text-jtg-green font-mono">+${projectedProfit}</p>
                                                     </div>
                                                 )}
                                             </div>
-                                        ) : (
-                                            <div className="opacity-20 flex flex-col items-center">
-                                                <div className="w-20 h-20 md:w-24 md:h-24 border-4 border-slate-700 rounded-full flex items-center justify-center mb-6">
-                                                    <span className="text-3xl md:text-4xl text-slate-600">--</span>
+
+                                            {rrResult && (
+                                                <div className="w-full bg-slate-800/40 rounded-xl p-4 border border-slate-700/50 flex justify-between items-center animate-pop">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full bg-jtg-green"></div>
+                                                        <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Risk : Reward</span>
+                                                    </div>
+                                                    <span className="text-white font-mono text-xl font-bold tracking-tight">1 : {rrResult}</span>
                                                 </div>
-                                                <p className="text-sm font-medium tracking-wide text-center">Awaiting Trade Details</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* PROMO CARD */}
-                                    <div className="bg-gradient-to-r from-jtg-blue/20 to-jtg-card border border-jtg-blue/30 rounded-2xl p-6 lg:p-8 relative overflow-hidden group hover:border-jtg-green/30 transition-colors duration-500">
-                                        <div className="absolute top-0 right-0 w-40 h-40 bg-jtg-green/5 rounded-full blur-3xl -mr-10 -mt-10 transition-opacity group-hover:opacity-100 opacity-50"></div>
-                                        
-                                        <div className="relative z-10">
-                                            <h3 className="text-lg md:text-xl font-bold text-white mb-2 tracking-wide">Scale Your Capital</h3>
-                                            <p className="text-slate-400 text-sm leading-relaxed mb-6 font-light">
-                                                Join the JTG community. Get data-driven insights to pass your Prop Firm challenges consistently.
-                                            </p>
-                                            <button 
-                                                onClick={() => window.location.href = 'https://johnadtradersgroup.vercel.app/'}
-                                                className="text-sm font-bold text-jtg-green hover:text-white flex items-center gap-2 transition-colors uppercase tracking-wider"
-                                            >
-                                                Visit JTG Website <Icons.ArrowRight />
-                                            </button>
+                                            )}
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div className="opacity-20 flex flex-col items-center">
+                                            <div className="w-24 h-24 border-4 border-slate-700 rounded-full flex items-center justify-center mb-6">
+                                                <span className="text-4xl text-slate-600">--</span>
+                                            </div>
+                                            <p className="text-sm font-medium tracking-wide">Awaiting Trade Details</p>
+                                        </div>
+                                    )}
+                                </div>
 
+                                {/* PROMO CARD */}
+                                <div className="bg-gradient-to-r from-jtg-blue/20 to-jtg-card border border-jtg-blue/30 rounded-2xl p-8 relative overflow-hidden group hover:border-jtg-green/30 transition-colors duration-500">
+                                    <div className="absolute top-0 right-0 w-40 h-40 bg-jtg-green/5 rounded-full blur-3xl -mr-10 -mt-10 transition-opacity group-hover:opacity-100 opacity-50"></div>
+                                    
+                                    <div className="relative z-10">
+                                        <h3 className="text-xl font-bold text-white mb-2 tracking-wide">Scale Your Capital</h3>
+                                        <p className="text-slate-400 text-sm leading-relaxed mb-6 font-light">
+                                            Join the JTG community. Get data-driven insights to pass your Prop Firm challenges consistently.
+                                        </p>
+                                        <button 
+                                            onClick={() => window.location.href = 'https://johnadtradersgroup.vercel.app/'}
+                                            className="text-sm font-bold text-jtg-green hover:text-white flex items-center gap-2 transition-colors uppercase tracking-wider"
+                                        >
+                                            Visit JTG Website <Icons.ArrowRight />
+                                        </button>
+                                    </div>
                                 </div>
 
                             </div>
+
                         </div>
                     </div>
                 </div>
