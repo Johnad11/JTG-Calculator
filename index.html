@@ -38,18 +38,23 @@
     <link href="https://fonts.googleapis.com/css2?family=News+Cycle:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        /* APP LAYOUT FIXES */
+        /* CRITICAL APP LAYOUT - FIXED SCROLLING */
         html, body, #root {
             height: 100%;
             width: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Prevent full page scroll, enable inner scroll */
+            overflow: hidden; /* Lock the outer frame */
         }
 
         body { font-family: 'News Cycle', sans-serif; }
         
-        /* Custom Scrollbar for Inner Content */
+        /* Custom Scrollbar for Inner Content Area Only */
+        .custom-scroll {
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+        }
         .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: #0a0e29; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #162C99; border-radius: 10px; }
@@ -112,7 +117,7 @@
         };
 
         const JtgPromo = () => (
-            <div className="bg-gradient-to-r from-jtg-blue/40 to-jtg-card border border-jtg-blue/30 rounded-2xl p-6 lg:p-8 mt-8 relative overflow-hidden group hover:border-jtg-green/30 transition-colors duration-500 w-full">
+            <div className="bg-gradient-to-r from-jtg-blue/40 to-jtg-card border border-jtg-blue/30 rounded-2xl p-6 lg:p-8 mt-8 mb-8 relative overflow-hidden group hover:border-jtg-green/30 transition-colors duration-500 w-full shrink-0">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-jtg-green/5 rounded-full blur-3xl -mr-10 -mt-10 transition-opacity group-hover:opacity-100 opacity-50"></div>
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="text-center md:text-left">
@@ -176,62 +181,62 @@
             }, [balance, riskMode, riskValue, entryPrice, stopLoss, takeProfit, pair]);
 
             return (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pop">
-                    <div className="lg:col-span-7 space-y-8">
-                        <div className="flex gap-2 p-1.5 bg-jtg-input rounded-xl overflow-x-auto shadow-inner border border-jtg-blue/30 no-scrollbar">
-                            {Object.keys(ASSETS).map(key => (
-                                <button key={key} onClick={() => setAssetClass(key)} 
-                                    className={`flex-1 py-3 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${assetClass === key ? 'bg-gradient-to-r from-jtg-blue to-blue-700 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
-                                    {ASSETS[key].label}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-jtg-green to-jtg-blue"></div>
-                            <div className="mb-8">
-                                <label className="text-xs font-bold text-slate-400 uppercase mb-3 block tracking-wider">Instrument</label>
-                                <div className="relative">
-                                    <select value={pair} onChange={(e) => setPair(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 text-white text-lg font-medium rounded-xl p-4 pr-10 focus:ring-2 focus:ring-jtg-green/50 outline-none appearance-none">
-                                        {ASSETS[assetClass].pairs.map(p => <option key={p} value={p}>{p}</option>)}
-                                    </select>
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"><Icons.ChevronDown /></div>
-                                </div>
+                <div className="flex flex-col h-full overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pop mb-auto">
+                        <div className="lg:col-span-7 space-y-8">
+                            <div className="flex gap-2 p-1.5 bg-jtg-input rounded-xl overflow-x-auto shadow-inner border border-jtg-blue/30 no-scrollbar">
+                                {Object.keys(ASSETS).map(key => (
+                                    <button key={key} onClick={() => setAssetClass(key)} 
+                                        className={`flex-1 py-3 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${assetClass === key ? 'bg-gradient-to-r from-jtg-blue to-blue-700 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
+                                        {ASSETS[key].label}
+                                    </button>
+                                ))}
                             </div>
-                            <div className="grid grid-cols-2 gap-6 mb-8">
-                                <div><label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Balance</label><input type="number" value={balance} onChange={(e) => setBalance(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono text-lg font-medium focus:ring-2 focus:ring-jtg-green/50 outline-none" /></div>
-                                <div><label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Risk</label><div className="flex bg-jtg-input border border-jtg-blue/40 rounded-xl overflow-hidden"><input type="number" value={riskValue} onChange={(e) => setRiskValue(e.target.value)} className="w-full bg-transparent p-4 text-white font-mono text-lg font-medium outline-none z-10" /><button onClick={() => setRiskMode(riskMode === 'percent' ? 'usd' : 'percent')} className="bg-jtg-blue/20 border-l border-jtg-blue/40 px-6 text-sm font-bold text-jtg-green hover:bg-jtg-blue/40 transition">{riskMode === 'percent' ? '%' : '$'}</button></div></div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div><label className="text-xs font-bold text-jtg-green uppercase">Entry</label><input type="number" placeholder="0.00" value={entryPrice} onChange={(e) => setEntryPrice(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-jtg-green/50 outline-none" /></div>
-                                <div><label className="text-xs font-bold text-red-500 uppercase">Stop Loss</label><input type="number" placeholder="0.00" value={stopLoss} onChange={(e) => setStopLoss(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-red-500/50 outline-none" /></div>
-                                <div><label className="text-xs font-bold text-slate-400 uppercase">TP (Opt)</label><input type="number" placeholder="Optional" value={takeProfit} onChange={(e) => setTakeProfit(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-slate-500 outline-none" /></div>
-                            </div>
-                            <button onClick={calculate} className="w-full mt-10 bg-gradient-to-r from-jtg-green to-emerald-600 hover:from-emerald-600 hover:to-jtg-green text-white font-bold uppercase tracking-widest py-5 rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm">Calculate Position</button>
-                        </div>
-                    </div>
-                    <div className="lg:col-span-5 flex flex-col gap-8">
-                        <div className="bg-gradient-to-b from-jtg-card to-jtg-dark border border-jtg-blue/30 rounded-2xl p-10 text-center relative overflow-hidden shadow-2xl min-h-[350px] flex flex-col justify-center items-center">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-1 bg-jtg-green shadow-[0_0_50px_rgba(27,166,87,0.6)]"></div>
-                            {result ? (
-                                <div className="animate-pop w-full">
-                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-4">Recommended Position</p>
-                                    <div className="text-8xl font-black text-white tracking-tighter drop-shadow-2xl mb-4 leading-none">{result.lot}</div>
-                                    <div className="inline-block bg-jtg-green/10 text-jtg-green border border-jtg-green/20 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-10">Standard Lots</div>
-                                    <div className="w-full h-px bg-jtg-blue/30 mb-8"></div>
-                                    <div className="flex justify-between items-center w-full px-2 mb-6">
-                                        <div className="text-left"><p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Risk</p><p className="text-xl font-bold text-red-500 font-mono">${result.risk}</p></div>
-                                        {result.profit && <div className="text-right"><p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Gain</p><p className="text-xl font-bold text-jtg-green font-mono">+${result.profit}</p></div>}
+                            <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-jtg-green to-jtg-blue"></div>
+                                <div className="mb-8">
+                                    <label className="text-xs font-bold text-slate-400 uppercase mb-3 block tracking-wider">Instrument</label>
+                                    <div className="relative">
+                                        <select value={pair} onChange={(e) => setPair(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 text-white text-lg font-medium rounded-xl p-4 pr-10 focus:ring-2 focus:ring-jtg-green/50 outline-none appearance-none">
+                                            {ASSETS[assetClass].pairs.map(p => <option key={p} value={p}>{p}</option>)}
+                                        </select>
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"><Icons.ChevronDown /></div>
                                     </div>
-                                    {result.rr && <div className="w-full bg-slate-800/40 rounded-xl p-4 border border-slate-700/50 flex justify-between items-center"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-jtg-green"></div><span className="text-slate-400 text-xs font-bold uppercase">R:R</span></div><span className="text-white font-mono text-xl font-bold">1 : {result.rr}</span></div>}
                                 </div>
-                            ) : (
-                                <div className="opacity-20 flex flex-col items-center"><div className="w-24 h-24 border-4 border-slate-700 rounded-full flex items-center justify-center mb-6"><span className="text-4xl text-slate-600">--</span></div><p className="text-sm font-medium tracking-wide">Awaiting Details</p></div>
-                            )}
+                                <div className="grid grid-cols-2 gap-6 mb-8">
+                                    <div><label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Balance</label><input type="number" value={balance} onChange={(e) => setBalance(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono text-lg font-medium focus:ring-2 focus:ring-jtg-green/50 outline-none" /></div>
+                                    <div><label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Risk</label><div className="flex bg-jtg-input border border-jtg-blue/40 rounded-xl overflow-hidden"><input type="number" value={riskValue} onChange={(e) => setRiskValue(e.target.value)} className="w-full bg-transparent p-4 text-white font-mono text-lg font-medium outline-none z-10" /><button onClick={() => setRiskMode(riskMode === 'percent' ? 'usd' : 'percent')} className="bg-jtg-blue/20 border-l border-jtg-blue/40 px-6 text-sm font-bold text-jtg-green hover:bg-jtg-blue/40 transition">{riskMode === 'percent' ? '%' : '$'}</button></div></div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div><label className="text-xs font-bold text-jtg-green uppercase">Entry</label><input type="number" placeholder="0.00" value={entryPrice} onChange={(e) => setEntryPrice(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-jtg-green/50 outline-none" /></div>
+                                    <div><label className="text-xs font-bold text-red-500 uppercase">Stop Loss</label><input type="number" placeholder="0.00" value={stopLoss} onChange={(e) => setStopLoss(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-red-500/50 outline-none" /></div>
+                                    <div><label className="text-xs font-bold text-slate-400 uppercase">TP (Opt)</label><input type="number" placeholder="Optional" value={takeProfit} onChange={(e) => setTakeProfit(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-slate-500 outline-none" /></div>
+                                </div>
+                                <button onClick={calculate} className="w-full mt-10 bg-gradient-to-r from-jtg-green to-emerald-600 hover:from-emerald-600 hover:to-jtg-green text-white font-bold uppercase tracking-widest py-5 rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm">Calculate Position</button>
+                            </div>
+                        </div>
+                        <div className="lg:col-span-5 flex flex-col gap-8">
+                            <div className="bg-gradient-to-b from-jtg-card to-jtg-dark border border-jtg-blue/30 rounded-2xl p-10 text-center relative overflow-hidden shadow-2xl min-h-[350px] flex flex-col justify-center items-center">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-1 bg-jtg-green shadow-[0_0_50px_rgba(27,166,87,0.6)]"></div>
+                                {result ? (
+                                    <div className="animate-pop w-full">
+                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-4">Recommended Position</p>
+                                        <div className="text-8xl font-black text-white tracking-tighter drop-shadow-2xl mb-4 leading-none">{result.lot}</div>
+                                        <div className="inline-block bg-jtg-green/10 text-jtg-green border border-jtg-green/20 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-10">Standard Lots</div>
+                                        <div className="w-full h-px bg-jtg-blue/30 mb-8"></div>
+                                        <div className="flex justify-between items-center w-full px-2 mb-6">
+                                            <div className="text-left"><p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Risk</p><p className="text-xl font-bold text-red-500 font-mono">${result.risk}</p></div>
+                                            {result.profit && <div className="text-right"><p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Gain</p><p className="text-xl font-bold text-jtg-green font-mono">+${result.profit}</p></div>}
+                                        </div>
+                                        {result.rr && <div className="w-full bg-slate-800/40 rounded-xl p-4 border border-slate-700/50 flex justify-between items-center"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-jtg-green"></div><span className="text-slate-400 text-xs font-bold uppercase">R:R</span></div><span className="text-white font-mono text-xl font-bold">1 : {result.rr}</span></div>}
+                                    </div>
+                                ) : (
+                                    <div className="opacity-20 flex flex-col items-center"><div className="w-24 h-24 border-4 border-slate-700 rounded-full flex items-center justify-center mb-6"><span className="text-4xl text-slate-600">--</span></div><p className="text-sm font-medium tracking-wide">Awaiting Details</p></div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div className="lg:col-span-12">
-                        <JtgPromo />
-                    </div>
+                    <JtgPromo />
                 </div>
             );
         };
@@ -244,8 +249,8 @@
                 setFormData({ ...formData, entry: '', sl: '', tp: '', lot: '', exit: '', closeDate: '' });
             };
             return (
-                <div className="flex flex-col items-center justify-center min-h-full w-full animate-pop pb-10">
-                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-8 shadow-xl w-full max-w-2xl mb-8">
+                <div className="flex flex-col items-center min-h-full w-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
+                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-8 shadow-xl w-full max-w-2xl mb-8 shrink-0">
                         <div className="flex items-center gap-3 mb-6 border-b border-jtg-blue/20 pb-4"><div className="w-10 h-10 rounded-full bg-jtg-blue/20 flex items-center justify-center text-jtg-green"><Icons.Journal /></div><h2 className="text-2xl font-bold text-white tracking-wide">Log New Trade</h2></div>
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div className="grid grid-cols-2 gap-4"><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Open Date</label><input type="datetime-local" value={formData.openDate} onChange={e => setFormData({...formData, openDate: e.target.value})} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-3 text-white text-xs outline-none" required /></div><div><label className="text-[10px] font-bold text-jtg-green uppercase mb-1 block">Close Date (Required)</label><input type="datetime-local" value={formData.closeDate} onChange={e => setFormData({...formData, closeDate: e.target.value})} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-3 text-white text-xs outline-none" required /></div></div>
@@ -263,8 +268,8 @@
 
         const TradeList = ({ trades, deleteTrade }) => {
             return (
-                <div className="flex flex-col h-full animate-pop">
-                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex-1 flex flex-col overflow-hidden mb-8">
+                <div className="flex flex-col h-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
+                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex-1 flex flex-col mb-8 overflow-hidden min-h-[500px]">
                         <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-white tracking-wide flex items-center gap-3"><span className="text-jtg-green"><Icons.List /></span> Trade History</h2><div className="bg-jtg-blue/20 px-4 py-2 rounded-full border border-jtg-blue/40"><span className="text-white font-bold font-mono">{trades.length}</span> <span className="text-slate-400 text-xs uppercase">Records</span></div></div>
                         <div className="flex-1 overflow-auto custom-scroll">
                             <table className="w-full text-left border-collapse min-w-[1000px]">
@@ -319,23 +324,25 @@
             );
 
             return (
-                <div className="animate-pop pb-10">
-                    <h2 className="text-3xl font-bold text-white mb-8 tracking-wide">Performance Data</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <StatCard title="Net PnL" value={`$${stats.netPnL}`} color={parseFloat(stats.netPnL) >= 0 ? 'emerald' : 'red'} />
-                        <StatCard title="Win Rate" value={`${stats.winRate}%`} color="white" />
-                        <StatCard title="Profit Factor" value={stats.profitFactor} color="white" />
-                        <StatCard title="Top Pair" value={stats.bestPair} color="emerald" icon={<span className="text-jtg-green"><Icons.Trophy /></span>} />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                        <StatCard title="Total Trades" value={stats.total} color="white" />
-                        <StatCard title="Winning Trades" value={stats.wins} color="emerald" icon={<span className="text-jtg-green"><Icons.ThumbsUp /></span>} />
-                        <StatCard title="Losing Trades" value={stats.loss} color="red" icon={<span className="text-red-500"><Icons.ThumbsDown /></span>} />
-                    </div>
-                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-8 shadow-xl flex flex-col items-center justify-center min-h-[300px] mb-8">
-                        <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4"><span className="text-jtg-green"><Icons.Chart /></span></div>
-                        <h3 className="text-lg font-bold text-white">Equity Curve Visualizer</h3>
-                        <p className="text-slate-400 text-sm max-w-md text-center mt-2">Log more trades to generate your consistency graph.</p>
+                <div className="animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10 h-full flex flex-col">
+                    <div className="mb-auto">
+                        <h2 className="text-3xl font-bold text-white mb-8 tracking-wide">Performance Data</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            <StatCard title="Net PnL" value={`$${stats.netPnL}`} color={parseFloat(stats.netPnL) >= 0 ? 'emerald' : 'red'} />
+                            <StatCard title="Win Rate" value={`${stats.winRate}%`} color="white" />
+                            <StatCard title="Profit Factor" value={stats.profitFactor} color="white" />
+                            <StatCard title="Top Pair" value={stats.bestPair} color="emerald" icon={<span className="text-jtg-green"><Icons.Trophy /></span>} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                            <StatCard title="Total Trades" value={stats.total} color="white" />
+                            <StatCard title="Winning Trades" value={stats.wins} color="emerald" icon={<span className="text-jtg-green"><Icons.ThumbsUp /></span>} />
+                            <StatCard title="Losing Trades" value={stats.loss} color="red" icon={<span className="text-red-500"><Icons.ThumbsDown /></span>} />
+                        </div>
+                        <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-8 shadow-xl flex flex-col items-center justify-center min-h-[300px] mb-8">
+                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4"><span className="text-jtg-green"><Icons.Chart /></span></div>
+                            <h3 className="text-lg font-bold text-white">Equity Curve Visualizer</h3>
+                            <p className="text-slate-400 text-sm max-w-md text-center mt-2">Log more trades to generate your consistency graph.</p>
+                        </div>
                     </div>
                     <JtgPromo />
                 </div>
@@ -363,8 +370,8 @@
             const nextMonth = () => setDate(new Date(year, month + 1, 1));
 
             return (
-                <div className="flex flex-col h-full animate-pop">
-                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex-1 flex flex-col mb-8 overflow-hidden">
+                <div className="flex flex-col h-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
+                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex-1 flex flex-col mb-8 overflow-hidden min-h-[600px]">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-bold text-white tracking-wide flex items-center gap-3"><span className="text-jtg-green"><Icons.Calendar /></span> Performance Calendar</h2>
                             <div className="flex items-center gap-4 bg-jtg-input rounded-lg p-1 border border-jtg-blue/30">
@@ -408,40 +415,38 @@
 
             useEffect(() => { localStorage.setItem('jtg_journal', JSON.stringify(trades)); }, [trades]);
 
-            const determineOutcome = (type, entry, exit, sl, tp) => {
-                if (!exit) return 'OPEN';
-                const e = parseFloat(entry), x = parseFloat(exit), s = parseFloat(sl), t = parseFloat(tp);
-                if (type === 'BUY') {
-                    if (s && x <= s) return 'HIT SL';
-                    if (t && x >= t) return 'HIT TP';
-                    if (Math.abs(x - e) < (e * 0.0002)) return 'BREAKEVEN';
-                    if (x > e) return 'MANUAL WIN';
-                    return 'MANUAL LOSS';
-                } else {
-                    if (s && x >= s) return 'HIT SL';
-                    if (t && x <= t) return 'HIT TP';
-                    if (Math.abs(x - e) < (e * 0.0002)) return 'BREAKEVEN';
-                    if (x < e) return 'MANUAL WIN';
-                    return 'MANUAL LOSS';
-                }
-            };
-
-            const calculatePnL = (trade) => {
-                if (!trade.exit || !trade.entry || !trade.lot) return '0.00';
-                let contract = 1;
-                if (trade.pair.length === 6 && !trade.pair.includes('USD')) contract = 100000;
-                else if (trade.pair.includes('USD') && trade.pair.length === 6 && !trade.pair.includes('BTC') && !trade.pair.includes('ETH')) contract = 100000;
-                else if (trade.pair.includes('XAU')) contract = 100;
-                const diff = trade.type === 'BUY' ? (trade.exit - trade.entry) : (trade.entry - trade.exit);
-                if (trade.pair.includes('JPY')) return ((diff * 100 * 6.8) * trade.lot).toFixed(2);
-                return (diff * trade.lot * contract).toFixed(2);
-            };
-
             const addTrade = (formData) => {
-                const outcome = determineOutcome(formData.type, formData.entry, formData.exit, formData.sl, formData.tp);
-                const tradeData = { ...formData, id: Date.now(), outcome };
-                tradeData.pnl = calculatePnL(tradeData);
-                setTrades([ tradeData, ...trades ]);
+                const e = parseFloat(formData.entry), x = parseFloat(formData.exit), s = parseFloat(formData.sl), t = parseFloat(formData.tp);
+                let outcome = 'OPEN';
+                if(x) {
+                    if (formData.type === 'BUY') {
+                        if (s && x <= s) outcome = 'HIT SL';
+                        else if (t && x >= t) outcome = 'HIT TP';
+                        else if (Math.abs(x - e) < (e * 0.0002)) outcome = 'BREAKEVEN';
+                        else if (x > e) outcome = 'MANUAL WIN';
+                        else outcome = 'MANUAL LOSS';
+                    } else {
+                        if (s && x >= s) outcome = 'HIT SL';
+                        else if (t && x <= t) outcome = 'HIT TP';
+                        else if (Math.abs(x - e) < (e * 0.0002)) outcome = 'BREAKEVEN';
+                        else if (x < e) outcome = 'MANUAL WIN';
+                        else outcome = 'MANUAL LOSS';
+                    }
+                }
+                
+                let contract = 1;
+                if (formData.pair.length === 6 && !formData.pair.includes('USD')) contract = 100000;
+                else if (formData.pair.includes('USD') && formData.pair.length === 6 && !formData.pair.includes('BTC') && !formData.pair.includes('ETH')) contract = 100000;
+                else if (formData.pair.includes('XAU')) contract = 100;
+                
+                let pnl = '0.00';
+                if(x) {
+                    const diff = formData.type === 'BUY' ? (x - e) : (e - x);
+                    if (formData.pair.includes('JPY')) pnl = ((diff * 100 * 6.8) * formData.lot).toFixed(2);
+                    else pnl = (diff * formData.lot * contract).toFixed(2);
+                }
+
+                setTrades([{ ...formData, id: Date.now(), outcome, pnl }, ...trades]);
             };
 
             const deleteTrade = (id) => setTrades(trades.filter(t => t.id !== id));
@@ -454,14 +459,12 @@
             );
 
             return (
-                <div className="flex w-full h-full">
+                <div className="flex w-full h-full bg-jtg-dark">
                     {/* SIDEBAR */}
-                    <div className="hidden md:flex w-24 bg-jtg-dark border-r border-jtg-blue/30 flex-col items-center py-8 z-20 shadow-2xl shrink-0 h-full overflow-y-auto custom-scroll">
-                        <div className="w-full flex flex-col items-center mb-auto">
+                    <div className="hidden md:flex w-24 bg-jtg-dark border-r border-jtg-blue/30 flex-col items-center py-8 z-20 shadow-2xl shrink-0 h-full overflow-hidden justify-between">
+                        <div className="w-full flex flex-col items-center">
                             <div className="w-16 h-16 mb-10 flex items-center justify-center transition-transform hover:scale-110 mx-auto shrink-0">
-                                {!imgError ? (
-                                    <img src="https://storage.googleapis.com/v0.b/generative-language-preview.googleapis.com/o/uploaded%2FIMG_20250624_114347.png-2290b792-24d1-4a20-ab9a-fab823ddc579?alt=media" className="w-full h-full object-contain" onError={() => setImgError(true)} />
-                                ) : <Icons.LogoFallback />}
+                                <img src="IMG_20250624_114347.png" className="w-full h-full object-contain" onError={(e) => e.target.style.display='none'} />
                             </div>
                             <div className="flex flex-col gap-2 w-full">
                                 <NavBtn id="calc" icon={<Icons.Calculator />} label="CALC" />
@@ -471,40 +474,45 @@
                                 <NavBtn id="perf" icon={<Icons.Chart />} label="DATA" />
                             </div>
                         </div>
-                        <div className="w-full pb-4 mt-8 shrink-0">
-                            <button onClick={() => window.location.href = 'https://johnadtradersgroup.vercel.app/#services'} className="flex flex-col items-center gap-1 text-slate-500 w-full py-4 hover:text-white transition">
+                        <div className="w-full pb-4">
+                            <button onClick={() => window.location.href = 'https://johnadtradersgroup.vercel.app/#services'} className="flex flex-col items-center gap-1 text-slate-500 w-full py-4 hover:text-white transition border-t border-jtg-blue/20 pt-6">
                                 <Icons.Home /><span className="text-[10px] font-bold tracking-wider">HOME</span>
                             </button>
                         </div>
                     </div>
 
                     {/* MOBILE HEADER */}
-                    <div className="md:hidden fixed top-0 w-full bg-jtg-dark/95 backdrop-blur z-30 border-b border-jtg-blue/30 p-4 flex justify-between items-center">
+                    <div className="md:hidden fixed top-0 w-full bg-jtg-dark/95 backdrop-blur z-30 border-b border-jtg-blue/30 p-4 flex justify-between items-center h-16">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10"><img src="https://storage.googleapis.com/v0.b/generative-language-preview.googleapis.com/o/uploaded%2FIMG_20250624_114347.png-2290b792-24d1-4a20-ab9a-fab823ddc579?alt=media" className="w-full h-full object-contain" onError={(e) => e.target.style.display='none'}/></div>
+                            <div className="w-10 h-10"><img src="IMG_20250624_114347.png" className="w-full h-full object-contain" onError={(e) => e.target.style.display='none'}/></div>
                             <span className="text-lg font-bold text-white tracking-wide">JTG <span className="text-jtg-green">JOURNAL</span></span>
                         </div>
                     </div>
 
                     {/* MOBILE BOTTOM NAV */}
-                    <div className="md:hidden fixed bottom-0 w-full bg-jtg-dark border-t border-jtg-blue/30 z-30 flex justify-around pb-safe">
-                        <button onClick={() => setPage('calc')} className={`p-3 flex flex-col items-center ${page === 'calc' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Calculator /><span className="text-[9px] font-bold mt-1">Calc</span></button>
-                        <button onClick={() => setPage('journal')} className={`p-3 flex flex-col items-center ${page === 'journal' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Journal /><span className="text-[9px] font-bold mt-1">Entry</span></button>
-                        <button onClick={() => setPage('trades')} className={`p-3 flex flex-col items-center ${page === 'trades' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.List /><span className="text-[9px] font-bold mt-1">Trades</span></button>
-                        <button onClick={() => setPage('calendar')} className={`p-3 flex flex-col items-center ${page === 'calendar' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Calendar /><span className="text-[9px] font-bold mt-1">Cal</span></button>
-                        <button onClick={() => setPage('perf')} className={`p-3 flex flex-col items-center ${page === 'perf' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Chart /><span className="text-[9px] font-bold mt-1">Data</span></button>
+                    <div className="md:hidden fixed bottom-0 w-full bg-jtg-dark border-t border-jtg-blue/30 z-30 flex justify-around pb-safe h-20 items-center">
+                        <button onClick={() => setPage('calc')} className={`p-2 flex flex-col items-center ${page === 'calc' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Calculator /><span className="text-[9px] font-bold mt-1">Calc</span></button>
+                        <button onClick={() => setPage('journal')} className={`p-2 flex flex-col items-center ${page === 'journal' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Journal /><span className="text-[9px] font-bold mt-1">Entry</span></button>
+                        <button onClick={() => setPage('trades')} className={`p-2 flex flex-col items-center ${page === 'trades' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.List /><span className="text-[9px] font-bold mt-1">Trades</span></button>
+                        <button onClick={() => setPage('calendar')} className={`p-2 flex flex-col items-center ${page === 'calendar' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Calendar /><span className="text-[9px] font-bold mt-1">Cal</span></button>
+                        <button onClick={() => setPage('perf')} className={`p-2 flex flex-col items-center ${page === 'perf' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Chart /><span className="text-[9px] font-bold mt-1">Data</span></button>
                     </div>
 
                     {/* MAIN CONTENT AREA */}
-                    <main className="flex-1 relative overflow-y-auto overflow-x-hidden custom-scroll p-4 md:p-10 pt-20 md:pt-10 pb-24 md:pb-10 h-full">
-                        <div className="fixed top-0 right-0 w-[600px] h-[600px] bg-jtg-blue/10 rounded-full blur-[120px] pointer-events-none"></div>
-                        <div className="fixed bottom-0 left-0 w-[500px] h-[500px] bg-jtg-green/5 rounded-full blur-[100px] pointer-events-none"></div>
-                        <div className="relative z-10 max-w-7xl mx-auto h-full">
-                            {page === 'calc' && <Calculator />}
-                            {page === 'journal' && <Journal addTrade={addTrade} />}
-                            {page === 'trades' && <TradeList trades={trades} deleteTrade={deleteTrade} />}
-                            {page === 'calendar' && <CalendarView trades={trades} />}
-                            {page === 'perf' && <Performance trades={trades} />}
+                    <main className="flex-1 relative h-full w-full overflow-hidden">
+                        <div className="absolute inset-0 bg-jtg-dark w-full h-full overflow-hidden">
+                            {/* Background Elements */}
+                            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-jtg-blue/10 rounded-full blur-[120px] pointer-events-none"></div>
+                            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-jtg-green/5 rounded-full blur-[100px] pointer-events-none"></div>
+                            
+                            {/* Scrollable Container */}
+                            <div className="w-full h-full overflow-y-auto custom-scroll pt-20 pb-24 md:pt-0 md:pb-0">
+                                {page === 'calc' && <Calculator />}
+                                {page === 'journal' && <Journal addTrade={addTrade} />}
+                                {page === 'trades' && <TradeList trades={trades} deleteTrade={deleteTrade} />}
+                                {page === 'calendar' && <CalendarView trades={trades} />}
+                                {page === 'perf' && <Performance trades={trades} />}
+                            </div>
                         </div>
                     </main>
                 </div>
