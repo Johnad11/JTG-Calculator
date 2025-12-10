@@ -158,12 +158,17 @@
                 const sl = parseFloat(stopLoss);
                 const tp = takeProfit ? parseFloat(takeProfit) : null;
                 const dist = Math.abs(entry - sl);
+                
+                // FIXED GOLD PnL LOGIC
                 let contractSize = 1;
-                if(assetClass === 'forex') contractSize = 100000;
-                else if(assetClass === 'metals') contractSize = pair.includes('XAG') ? 5000 : 100;
+                if(pair.includes('XAU')) contractSize = 100;
+                else if(pair.includes('XAG')) contractSize = 5000;
+                else if(assetClass === 'forex') contractSize = 100000;
+                
                 let lot = 0;
                 if(pair.includes('JPY') && assetClass === 'forex') lot = riskDollars / (dist * 100 * 6.8);
                 else lot = riskDollars / (dist * contractSize);
+                
                 let profit = null; let rr = null;
                 if(tp) {
                     const reward = Math.abs(tp - entry);
@@ -372,7 +377,7 @@
             return (
                 <div className="flex flex-col h-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
                     <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex-1 flex flex-col mb-8 overflow-hidden min-h-[600px]">
-                        <div className="flex justify-between items-center mb-6">
+                        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                             <h2 className="text-2xl font-bold text-white tracking-wide flex items-center gap-3"><span className="text-jtg-green"><Icons.Calendar /></span> Performance Calendar</h2>
                             <div className="flex items-center gap-4 bg-jtg-input rounded-lg p-1 border border-jtg-blue/30">
                                 <button onClick={prevMonth} className="p-2 hover:text-white text-slate-400"><Icons.ChevronLeft /></button>
@@ -435,9 +440,11 @@
                 }
                 
                 let contract = 1;
-                if (formData.pair.length === 6 && !formData.pair.includes('USD')) contract = 100000;
+                // FIX FOR GOLD PNL BUG
+                if(formData.pair.includes('XAU')) contract = 100;
+                else if(formData.pair.includes('XAG')) contract = 5000;
+                else if (formData.pair.length === 6 && !formData.pair.includes('USD')) contract = 100000;
                 else if (formData.pair.includes('USD') && formData.pair.length === 6 && !formData.pair.includes('BTC') && !formData.pair.includes('ETH')) contract = 100000;
-                else if (formData.pair.includes('XAU')) contract = 100;
                 
                 let pnl = '0.00';
                 if(x) {
@@ -461,10 +468,10 @@
             return (
                 <div className="flex w-full h-full bg-jtg-dark">
                     {/* SIDEBAR */}
-                    <div className="hidden md:flex w-24 bg-jtg-dark border-r border-jtg-blue/30 flex-col items-center py-8 z-20 shadow-2xl shrink-0 h-full overflow-hidden justify-between">
+                    <div className="hidden md:flex w-24 bg-jtg-dark border-r border-jtg-blue/30 flex-col items-center py-8 z-20 shadow-2xl shrink-0 h-full overflow-y-auto custom-scroll justify-between">
                         <div className="w-full flex flex-col items-center">
                             <div className="w-16 h-16 mb-10 flex items-center justify-center transition-transform hover:scale-110 mx-auto shrink-0">
-                                <img src="IMG_20250624_114347.png" className="w-full h-full object-contain" onError={(e) => e.target.style.display='none'} />
+                                <img src="https://storage.googleapis.com/v0.b/generative-language-preview.googleapis.com/o/uploaded%2FIMG_20250624_114347.png-2290b792-24d1-4a20-ab9a-fab823ddc579?alt=media" className="w-full h-full object-contain" onError={(e) => e.target.style.display='none'} />
                             </div>
                             <div className="flex flex-col gap-2 w-full">
                                 <NavBtn id="calc" icon={<Icons.Calculator />} label="CALC" />
@@ -474,7 +481,7 @@
                                 <NavBtn id="perf" icon={<Icons.Chart />} label="DATA" />
                             </div>
                         </div>
-                        <div className="w-full pb-4">
+                        <div className="w-full pb-4 mt-8 shrink-0">
                             <button onClick={() => window.location.href = 'https://johnadtradersgroup.vercel.app/#services'} className="flex flex-col items-center gap-1 text-slate-500 w-full py-4 hover:text-white transition border-t border-jtg-blue/20 pt-6">
                                 <Icons.Home /><span className="text-[10px] font-bold tracking-wider">HOME</span>
                             </button>
@@ -484,7 +491,7 @@
                     {/* MOBILE HEADER */}
                     <div className="md:hidden fixed top-0 w-full bg-jtg-dark/95 backdrop-blur z-30 border-b border-jtg-blue/30 p-4 flex justify-between items-center h-16">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10"><img src="IMG_20250624_114347.png" className="w-full h-full object-contain" onError={(e) => e.target.style.display='none'}/></div>
+                            <div className="w-10 h-10"><img src="https://storage.googleapis.com/v0.b/generative-language-preview.googleapis.com/o/uploaded%2FIMG_20250624_114347.png-2290b792-24d1-4a20-ab9a-fab823ddc579?alt=media" className="w-full h-full object-contain" onError={(e) => e.target.style.display='none'}/></div>
                             <span className="text-lg font-bold text-white tracking-wide">JTG <span className="text-jtg-green">JOURNAL</span></span>
                         </div>
                     </div>
