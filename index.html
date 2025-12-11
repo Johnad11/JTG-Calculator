@@ -161,8 +161,7 @@
         );
 
         // --- COMPONENTS ---
-        
-        // 1. CALCULATOR
+
         const Calculator = () => {
             const [balance, setBalance] = useState(100000); 
             const [riskMode, setRiskMode] = useState('percent'); 
@@ -185,7 +184,6 @@
                 const dist = Math.abs(entry - sl);
                 
                 let contractSize = 1;
-                // FIX FOR GOLD PNL BUG - CHECK METAL BEFORE FOREX
                 if(pair.includes('XAU')) contractSize = 100;
                 else if(pair.includes('XAG')) contractSize = 5000;
                 else if(assetClass === 'forex') contractSize = 100000;
@@ -271,7 +269,6 @@
             );
         };
 
-        // 2. JOURNAL
         const Journal = ({ addTrade }) => {
             const [formData, setFormData] = useState({ openDate: new Date().toISOString().slice(0, 16), closeDate: '', strategy: '', pair: 'US30', type: 'BUY', entry: '', sl: '', tp: '', lot: '', exit: '' });
             const handleSubmit = (e) => {
@@ -297,7 +294,6 @@
             );
         };
 
-        // 3. TRADE LIST
         const TradeList = ({ trades, deleteTrade }) => {
             return (
                 <div className="flex flex-col h-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
@@ -331,7 +327,6 @@
             );
         };
 
-        // 4. PERFORMANCE
         const Performance = ({ trades }) => {
             const stats = useMemo(() => {
                 const total = trades.length;
@@ -382,7 +377,6 @@
             );
         };
 
-        // 5. CALENDAR (FIXED LAYOUT)
         const CalendarView = ({ trades }) => {
             const [date, setDate] = useState(new Date());
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -443,6 +437,7 @@
             const [page, setPage] = useState('calc'); 
             const [imgError, setImgError] = useState(false);
             const [user, setUser] = useState(null);
+            const [isLoggingIn, setIsLoggingIn] = useState(false);
             const [trades, setTrades] = useState(() => {
                 // Initial Load: Try LocalStorage first (Guest Mode)
                 try {
@@ -458,10 +453,15 @@
                         setUser(currentUser);
                         if (currentUser) {
                             // Load from Firestore
-                            const q = firebase.firestore().collection('trades').where('userId', '==', currentUser.uid);
-                            const snapshot = await q.get();
-                            const cloudTrades = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            setTrades(cloudTrades);
+                            try {
+                                const q = db.collection('trades').where('userId', '==', currentUser.uid);
+                                const snapshot = await q.get();
+                                const cloudTrades = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                                // Combine local and cloud if cloud is empty, else overwrite
+                                if (cloudTrades.length > 0) setTrades(cloudTrades);
+                            } catch (e) {
+                                console.error("Error fetching trades:", e);
+                            }
                         }
                     });
                     return () => unsubscribe();
@@ -477,18 +477,22 @@
 
             const login = async () => {
                 if (!auth) return alert("Firebase not configured!");
+                setIsLoggingIn(true);
                 const provider = new firebase.auth.GoogleAuthProvider();
                 try {
                     await auth.signInWithPopup(provider);
                 } catch (error) {
                     console.error("Login failed", error);
+                    alert("Login Failed: " + error.message + "\n\nPlease ensure your domain is added to Firebase Authorized Domains.");
+                } finally {
+                    setIsLoggingIn(false);
                 }
             };
 
             const logout = async () => {
                 if (auth) await auth.signOut();
-                setTrades([]); // Clear sensitive data on logout
-                window.location.reload(); // Refresh to clean state
+                setTrades([]); 
+                window.location.reload(); 
             };
 
             const addTrade = async (formData) => {
@@ -511,11 +515,10 @@
                 }
                 
                 let contract = 1;
-                // FIX FOR GOLD PNL BUG - CHECK METAL BEFORE FOREX
                 if(formData.pair.includes('XAU')) contract = 100;
                 else if(formData.pair.includes('XAG')) contract = 5000;
-                else if(formData.pair.length === 6 && !formData.pair.includes('USD')) contract = 100000;
-                else if(formData.pair.includes('USD') && formData.pair.length === 6 && !formData.pair.includes('BTC') && !formData.pair.includes('ETH')) contract = 100000;
+                else if (formData.pair.length === 6 && !formData.pair.includes('USD')) contract = 100000;
+                else if (formData.pair.includes('USD') && formData.pair.length === 6 && !formData.pair.includes('BTC') && !formData.pair.includes('ETH')) contract = 100000;
                 
                 let pnl = '0.00';
                 if(x) {
@@ -527,29 +530,22 @@
                 const newTrade = { ...formData, id: Date.now(), outcome, pnl, userId: user ? user.uid : 'guest' };
 
                 if (user) {
-                    // Save to Cloud
                      try {
                         await db.collection('trades').add(newTrade);
-                        // Optimistic Update
                         setTrades([newTrade, ...trades]);
                     } catch (e) {
                         console.error("Cloud Save Failed", e);
+                        alert("Error saving to cloud: " + e.message);
                     }
                 } else {
-                    // Save Local
                     setTrades([newTrade, ...trades]);
                 }
             };
 
             const deleteTrade = async (id) => {
-                if (user) {
-                     // Need actual doc ID for cloud delete, simplified here for demo
-                     // Ideally we map internal ID to Firestore Doc ID
-                     // For now, just filtering local state to show responsiveness
-                     setTrades(trades.filter(t => t.id !== id));
-                } else {
-                    setTrades(trades.filter(t => t.id !== id));
-                }
+                // For simplicity in this demo, we just update local state. 
+                // A full implementation would delete from Firestore by Doc ID.
+                setTrades(trades.filter(t => t.id !== id));
             };
 
             const NavBtn = ({ id, icon, label }) => (
@@ -576,18 +572,15 @@
                             </div>
                         </div>
                         <div className="w-full pb-4 mt-8 shrink-0 flex flex-col gap-4 items-center">
-                            {/* LOGIN/LOGOUT BUTTON */}
                             {user ? (
                                 <button onClick={logout} className="flex flex-col items-center gap-1 text-slate-500 hover:text-red-500 transition" title="Logout">
-                                    <div className="w-8 h-8 rounded-full bg-jtg-green text-black flex items-center justify-center font-bold text-xs">
-                                        {user.email[0].toUpperCase()}
-                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-jtg-green text-black flex items-center justify-center font-bold text-xs">{user.email[0].toUpperCase()}</div>
                                     <span className="text-[9px] font-bold tracking-wider">LOGOUT</span>
                                 </button>
                             ) : (
                                 <button onClick={login} className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition" title="Login to Sync">
-                                    <Icons.Google />
-                                    <span className="text-[9px] font-bold tracking-wider">LOGIN</span>
+                                    {isLoggingIn ? <span className="animate-spin">...</span> : <Icons.Google />}
+                                    <span className="text-[9px] font-bold tracking-wider">{isLoggingIn ? '...' : 'LOGIN'}</span>
                                 </button>
                             )}
                             
@@ -606,7 +599,7 @@
                         {user ? (
                             <button onClick={logout} className="text-xs bg-red-500/20 text-red-500 px-3 py-1 rounded border border-red-500/50">LOGOUT</button>
                         ) : (
-                            <button onClick={login} className="text-xs bg-jtg-green/20 text-jtg-green px-3 py-1 rounded border border-jtg-green/50">LOGIN</button>
+                            <button onClick={login} className="text-xs bg-jtg-green/20 text-jtg-green px-3 py-1 rounded border border-jtg-green/50">{isLoggingIn ? '...' : 'LOGIN'}</button>
                         )}
                     </div>
 
