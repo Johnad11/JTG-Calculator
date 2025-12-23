@@ -1,0 +1,21 @@
+{
+  "name": "JTG FX Journal",
+  "short_name": "JTG Journal",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0a0e29",
+  "theme_color": "#0a0e29",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "IMG_20250624_114347.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "IMG_20250624_114347.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
