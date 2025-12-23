@@ -2,8 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>JTG FX JOURNAL</title>
+    
+    <!-- --- PWA & MOBILE APP CONFIGURATION --- -->
+    <!-- Android / General -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0e29">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- iOS / iPhone Specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="JTG Journal">
+    <link rel="apple-touch-icon" href="IMG_20250624_114347.png">
+    <!-- -------------------------------------------- -->
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -53,6 +67,10 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
+            background-color: #0a0e29;
+            /* Safe area for iPhone Notch */
+            padding-top: env(safe-area-inset-top); 
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         body { font-family: 'News Cycle', sans-serif; }
@@ -87,6 +105,7 @@
         const { useState, useEffect, useMemo, useRef } = React;
 
         // --- CONSTANTS ---
+        // Using local file path. Ensure this file is in the same folder as index.html
         const LOGO_URL = "IMG_20250624_114347.png";
 
         // --- FIREBASE CONFIGURATION ---
@@ -99,11 +118,16 @@
             appId: "1:1051515355764:web:0c6c6f7417cb22b44e4721"
         };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+        let auth, db;
+        try {
+            if (firebase.apps.length === 0) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            auth = firebase.auth();
+            db = firebase.firestore();
+        } catch (e) {
+            console.warn("Firebase Init Error:", e);
         }
-        const auth = firebase.auth();
-        const db = firebase.firestore();
 
         // --- ICONS ---
         const Icons = {
