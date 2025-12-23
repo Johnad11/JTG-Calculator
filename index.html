@@ -47,22 +47,20 @@
     <link href="https://fonts.googleapis.com/css2?family=News+Cycle:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        /* CRITICAL APP LAYOUT - FIXED SCROLLING */
         html, body, #root {
             height: 100%;
             width: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Lock the outer frame */
+            overflow: hidden;
         }
 
         body { font-family: 'News Cycle', sans-serif; }
         
-        /* Custom Scrollbar for Inner Content Area Only */
         .custom-scroll {
             overflow-y: auto;
             overflow-x: hidden;
-            -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+            -webkit-overflow-scrolling: touch; 
         }
         .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: #0a0e29; }
@@ -89,10 +87,9 @@
         const { useState, useEffect, useMemo, useRef } = React;
 
         // --- CONSTANTS ---
-        // CHANGED: Using relative path. Make sure 'IMG_20250624_114347.png' is in the root folder!
         const LOGO_URL = "IMG_20250624_114347.png";
 
-        // --- FIREBASE CONFIGURATION (JTG JOURNAL) ---
+        // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyDDNYlSKPd1Eef8FWCgphONTgWnw9-csrI",
             authDomain: "jtg-journal.firebaseapp.com",
@@ -102,17 +99,11 @@
             appId: "1:1051515355764:web:0c6c6f7417cb22b44e4721"
         };
 
-        // Initialize Firebase safely
-        let auth, db;
-        try {
-            if (firebase.apps.length === 0) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            auth = firebase.auth();
-            db = firebase.firestore();
-        } catch (e) {
-            console.warn("Firebase Init Error:", e);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
         // --- ICONS ---
         const Icons = {
@@ -197,6 +188,7 @@
                 const dist = Math.abs(entry - sl);
                 
                 let contractSize = 1;
+                // FIXED GOLD PnL LOGIC
                 if(pair.includes('XAU')) contractSize = 100;
                 else if(pair.includes('XAG')) contractSize = 5000;
                 else if(assetClass === 'forex') contractSize = 100000;
@@ -337,6 +329,7 @@
 
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; position: relative; z-index: 10;">
                         <div style="display: flex; align-items: center; gap: 15px;">
+                            <!-- SVG LOGO for Share Card (No CORS Issues) -->
                             <img src="${LOGO_URL}" style="width: 50px; height: 50px; object-fit: contain;" crossorigin="anonymous" />
                             <span style="font-size: 20px; font-weight: 800; letter-spacing: 1px;">JTG FX JOURNAL</span>
                         </div>
@@ -357,7 +350,7 @@
                         </div>
                         <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
                             <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px;">Strategy</p>
-                            <p style="margin: 0; font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${trade.strategy || 'Standard'}</p>
+                            <p style="margin: 0; font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; padding-bottom: 5px;">${trade.strategy || 'Standard'}</p>
                         </div>
                     </div>
 
