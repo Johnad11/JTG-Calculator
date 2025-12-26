@@ -65,6 +65,8 @@
         @keyframes popIn { 0% { opacity: 0; transform: scale(0.99); } 100% { opacity: 1; transform: scale(1); } }
         .animate-pop { animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 14, 41, 0.9); z-index: 50; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: #111633; border: 1px solid #162C99; border-radius: 16px; width: 90%; max-width: 500px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); animation: popIn 0.3s ease-out; }
     </style>
 </head>
 <body class="bg-jtg-dark text-slate-100 selection:bg-jtg-green selection:text-white">
@@ -497,9 +499,9 @@
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-3 gap-4">
-                                    <div><p className="text-[10px] text-slate-500 uppercase font-bold">Starting</p><p className="text-lg font-mono text-slate-300">${parseFloat(globalBalance).toLocaleString()}</p></div>
-                                    <div><p className="text-[10px] text-slate-500 uppercase font-bold">Current</p><p className="text-2xl font-mono text-white font-bold">${parseFloat(stats.currentBalance).toLocaleString()}</p></div>
-                                    <div><p className="text-[10px] text-slate-500 uppercase font-bold">Growth</p><p className={`text-lg font-mono font-bold ${stats.growthPct >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>{stats.growthPct > 0 ? '+' : ''}{stats.growthPct}%</p></div>
+                                    <div><p className="text-[10px] text-slate-500 uppercase font-bold">Starting</p><p className="text-sm md:text-lg font-mono text-slate-300">${parseFloat(globalBalance).toLocaleString()}</p></div>
+                                    <div><p className="text-[10px] text-slate-500 uppercase font-bold">Current</p><p className="text-lg md:text-2xl font-mono text-white font-bold">${parseFloat(stats.currentBalance).toLocaleString()}</p></div>
+                                    <div><p className="text-[10px] text-slate-500 uppercase font-bold">Growth</p><p className={`text-sm md:text-lg font-mono font-bold ${stats.growthPct >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>{stats.growthPct > 0 ? '+' : ''}{stats.growthPct}%</p></div>
                                 </div>
                             )}
                         </div>
