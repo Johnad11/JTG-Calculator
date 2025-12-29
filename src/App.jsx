@@ -44,8 +44,8 @@ const App = () => {
                         // 1. Load Trades
                         const q = db.collection('trades').where('userId', '==', currentUser.uid);
                         const snapshot = await q.get();
-                        const cloudTrades = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        if (cloudTrades.length > 0) setTrades(cloudTrades);
+                        const cloudTrades = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                        setTrades(cloudTrades);
 
                         // 2. Load Balance
                         const doc = await db.collection('user_settings').doc(currentUser.uid).get();
