@@ -115,7 +115,13 @@ const App = () => {
         const newTrade = { ...formData, id: Date.now(), outcome, pnl, userId: user ? user.uid : 'guest' };
 
         if (user) {
-            try { await db.collection('trades').add(newTrade); setTrades([newTrade, ...trades]); } catch (e) { alert("Error saving to cloud: " + e.message); }
+            try {
+                const docRef = await db.collection('trades').add(newTrade);
+                const tradeWithId = { ...newTrade, id: docRef.id };
+                setTrades([tradeWithId, ...trades]);
+            } catch (e) {
+                alert("Error saving to cloud: " + e.message);
+            }
         } else {
             setTrades([newTrade, ...trades]);
         }
@@ -123,8 +129,12 @@ const App = () => {
 
     const deleteTrade = async (id) => {
         if (user) {
-            // In a real app, delete from Firestore here using doc ID
-            setTrades(trades.filter(t => t.id !== id));
+            try {
+                await db.collection('trades').doc(id.toString()).delete();
+                setTrades(trades.filter(t => t.id !== id));
+            } catch (e) {
+                alert("Error deleting from cloud: " + e.message);
+            }
         } else {
             setTrades(trades.filter(t => t.id !== id));
         }
