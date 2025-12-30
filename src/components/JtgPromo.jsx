@@ -12,7 +12,7 @@ const JtgPromo = () => (
                 </p>
             </div>
             <button
-                onClick={() => window.location.href = 'https://johnadtradersgroup.vercel.app/'}
+                onClick={() => window.open('https://johnadtradersgroup.vercel.app/', '_blank')}
                 className="text-sm font-bold text-jtg-green bg-jtg-green/10 px-6 py-3 rounded-full hover:bg-jtg-green hover:text-white flex items-center gap-2 transition-all uppercase tracking-wider whitespace-nowrap shadow-lg border border-jtg-green/20"
             >
                 Visit JTG Website <Icons.ArrowRight />

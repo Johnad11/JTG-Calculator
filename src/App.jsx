@@ -6,12 +6,18 @@ import Journal from './components/Journal';
 import TradeList from './components/TradeList';
 import CalendarView from './components/CalendarView';
 import Performance from './components/Performance';
+import AccountManager from './components/AccountManager';
 import { LOGO_URL } from './constants';
 
 const App = () => {
     const [page, setPage] = useState('calc');
     const [user, setUser] = useState(null);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+    // ACCOUNTS STATE
+    const [accounts, setAccounts] = useState([]);
+    const [activeAccountId, setActiveAccountId] = useState(null);
+    const [showAccountManager, setShowAccountManager] = useState(false);
 
     // GLOBAL ACCOUNT BALANCE SETTING
     const [globalBalance, setGlobalBalance] = useState(() => localStorage.getItem('jtg_global_balance') || '');
@@ -25,46 +31,175 @@ const App = () => {
     });
 
     // Update Balance Handler
-    const updateGlobalBalance = (newBal) => {
+    const updateGlobalBalance = async (newBal) => {
         setGlobalBalance(newBal);
         localStorage.setItem('jtg_global_balance', newBal);
-        // Also update in cloud if logged in
-        if (user) {
+
+        if (user && activeAccountId) {
+            // Update the specific account
+            try {
+                await db.collection('accounts').doc(activeAccountId).update({ balance: newBal });
+                setAccounts(accounts.map(a => a.id === activeAccountId ? { ...a, balance: newBal } : a));
+            } catch (e) { console.error("Error updating balance:", e); }
+        } else if (user) {
+            // Fallback for migration edge cases
             db.collection('user_settings').doc(user.uid).set({ balance: newBal }, { merge: true });
         }
     };
 
-    // AUTH STATE LISTENER
+    // AUTH & DATA LOADING
     useEffect(() => {
         if (auth) {
             const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
                 setUser(currentUser);
                 if (currentUser) {
                     try {
-                        // 1. Load Trades
-                        const q = db.collection('trades').where('userId', '==', currentUser.uid);
-                        const snapshot = await q.get();
-                        const cloudTrades = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                        setTrades(cloudTrades);
+                        // 1. Load Accounts
+                        const accountsRef = db.collection('accounts').where('userId', '==', currentUser.uid);
+                        const accSnap = await accountsRef.get();
+                        let userAccounts = accSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
 
-                        // 2. Load Balance
-                        const doc = await db.collection('user_settings').doc(currentUser.uid).get();
-                        if (doc.exists && doc.data().balance) {
-                            setGlobalBalance(doc.data().balance);
+                        // MIGRATION: If no accounts but user exists, create default from legacy
+                        if (userAccounts.length === 0) {
+                            const settingsDoc = await db.collection('user_settings').doc(currentUser.uid).get();
+                            const legacyBalance = settingsDoc.exists ? settingsDoc.data().balance : '';
+
+                            const defaultAcc = {
+                                userId: currentUser.uid,
+                                name: 'Personal Account 1',
+                                type: 'Personal',
+                                balance: legacyBalance || '0',
+                                createdAt: new Date().toISOString()
+                            };
+
+                            const newAccRef = await db.collection('accounts').add(defaultAcc);
+                            userAccounts = [{ ...defaultAcc, id: newAccRef.id }];
+
+                            // Migrate existing trades
+                            const tradesRef = db.collection('trades').where('userId', '==', currentUser.uid);
+                            const tradesSnap = await tradesRef.get();
+                            const batch = db.batch();
+                            let hasUpdates = false;
+                            tradesSnap.docs.forEach(doc => {
+                                if (!doc.data().accountId) {
+                                    batch.update(doc.ref, { accountId: newAccRef.id });
+                                    hasUpdates = true;
+                                }
+                            });
+                            if (hasUpdates) await batch.commit();
                         }
-                    } catch (e) { console.error("Error fetching user data:", e); }
+
+                        setAccounts(userAccounts);
+
+                        // Select Active Account
+                        const savedId = localStorage.getItem('jtg_last_account');
+                        const active = userAccounts.find(a => a.id === savedId) || userAccounts[0];
+                        setActiveAccountId(active ? active.id : null);
+                        if (active) setGlobalBalance(active.balance);
+
+                    } catch (e) {
+                        console.error("Error loading user data:", e);
+                        // Fallback (e.g. offline)
+                    }
+                } else {
+                    setAccounts([]);
+                    setActiveAccountId(null);
+                    setTrades([]);
                 }
             });
             return () => unsubscribe();
         }
     }, []);
 
-    // SAVE EFFECT
+    // LOAD TRADES WHEN ACTIVE ACCOUNT CHANGES
+    useEffect(() => {
+        if (user && activeAccountId) {
+            const loadTrades = async () => {
+                try {
+                    const q = db.collection('trades')
+                        .where('userId', '==', user.uid)
+                        .where('accountId', '==', activeAccountId); // Filter by Account
+
+                    const snapshot = await q.get();
+                    const cloudTrades = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                    // Sort locally
+                    setTrades(cloudTrades.sort((a, b) => b.id - a.id));
+
+                    // Update active account balance in UI if needed
+                    const acc = accounts.find(a => a.id === activeAccountId);
+                    if (acc) setGlobalBalance(acc.balance);
+
+                    localStorage.setItem('jtg_last_account', activeAccountId);
+                } catch (e) { console.error("Error loading trades:", e); }
+            };
+            loadTrades();
+        } else if (!user) {
+            // Local storage fallback for guests (simplified: single account behavior)
+            const saved = localStorage.getItem('jtg_journal');
+            if (saved) setTrades(JSON.parse(saved));
+        }
+    }, [user, activeAccountId]);
+
+    // SAVE LOCAL (GUEST)
     useEffect(() => {
         if (!user) {
             localStorage.setItem('jtg_journal', JSON.stringify(trades));
         }
     }, [trades, user]);
+
+    const addAccount = async (accountData) => {
+        if (!user) return false;
+        try {
+            const newAcc = { ...accountData, userId: user.uid, createdAt: new Date().toISOString() };
+            const ref = await db.collection('accounts').add(newAcc);
+            const savedAcc = { ...newAcc, id: ref.id };
+            setAccounts([...accounts, savedAcc]);
+            setActiveAccountId(ref.id);
+            return true;
+        } catch (e) {
+            alert("Error creating account: " + e.message);
+            return false;
+        }
+    };
+
+    const deleteAccount = async (id) => {
+        if (!user) return;
+        if (accounts.length <= 1) {
+            alert("You must have at least one account.");
+            return;
+        }
+
+        if (!window.confirm("Are you sure you want to delete this account? All associated trades will be permanently deleted.")) return;
+
+        try {
+            // 1. Delete associated trades
+            const tradesRef = db.collection('trades').where('accountId', '==', id);
+            const tradesSnap = await tradesRef.get();
+            const batch = db.batch();
+            tradesSnap.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+
+            // 2. Delete account
+            await db.collection('accounts').doc(id).delete();
+
+            // 3. Update local state
+            const remainingAccounts = accounts.filter(a => a.id !== id);
+            setAccounts(remainingAccounts);
+
+            if (activeAccountId === id) {
+                const nextAcc = remainingAccounts[0];
+                setActiveAccountId(nextAcc.id);
+                setGlobalBalance(nextAcc.balance);
+            }
+        } catch (e) {
+            alert("Error deleting account: " + e.message);
+        }
+    };
+
+    const switchAccount = (id) => {
+        setActiveAccountId(id);
+        setShowAccountManager(false);
+    };
 
     const login = async () => {
         if (!auth) return alert("Firebase not configured!");
@@ -112,7 +247,7 @@ const App = () => {
             else pnl = (diff * formData.lot * contract).toFixed(2);
         }
 
-        const newTrade = { ...formData, id: Date.now(), outcome, pnl, userId: user ? user.uid : 'guest' };
+        const newTrade = { ...formData, id: Date.now(), outcome, pnl, userId: user ? user.uid : 'guest', accountId: activeAccountId };
 
         if (user) {
             try {
@@ -155,6 +290,22 @@ const App = () => {
                     <div className="w-16 h-16 mb-10 flex items-center justify-center transition-transform hover:scale-110 mx-auto shrink-0">
                         <img src={LOGO_URL} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
                     </div>
+
+                    {/* ACCOUNT SWITCHER */}
+                    {user && (
+                        <div className="mb-6 w-full px-4">
+                            <button
+                                onClick={() => setShowAccountManager(true)}
+                                className="w-full bg-jtg-green/10 border border-jtg-green/30 rounded-lg p-2 flex flex-col items-center gap-1 hover:bg-jtg-green/20 transition group"
+                            >
+                                <div className="text-jtg-green"><Icons.User /></div>
+                                <span className="text-[10px] font-bold text-white max-w-full truncate">
+                                    {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
+                                </span>
+                            </button>
+                        </div>
+                    )}
+
                     <div className="flex flex-col gap-2 w-full">
                         <NavBtn id="calc" icon={<Icons.Calculator />} label="CALC" />
                         <NavBtn id="journal" icon={<Icons.Journal />} label="ENTRY" />
@@ -177,7 +328,7 @@ const App = () => {
                         </button>
                     )}
 
-                    <button onClick={() => window.location.href = 'https://johnadtradersgroup.vercel.app/#services'} className="flex flex-col items-center gap-1 text-slate-500 w-full py-4 hover:text-white transition border-t border-jtg-blue/20 pt-6">
+                    <button onClick={() => window.open('https://johnadtradersgroup.vercel.app/#services', '_blank')} className="flex flex-col items-center gap-1 text-slate-500 w-full py-4 hover:text-white transition border-t border-jtg-blue/20 pt-6">
                         <Icons.Home /><span className="text-[10px] font-bold tracking-wider">HOME</span>
                     </button>
                 </div>
@@ -185,15 +336,31 @@ const App = () => {
 
             {/* MOBILE HEADER */}
             <div className="md:hidden fixed top-0 w-full bg-jtg-dark/95 backdrop-blur z-30 border-b border-jtg-blue/30 p-4 flex justify-between items-center h-16">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10"><img src={LOGO_URL} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} /></div>
-                    <span className="text-lg font-bold text-white tracking-wide">JTG <span className="text-jtg-green">JOURNAL</span></span>
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8"><img src={LOGO_URL} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} /></div>
+                    <span className="text-sm font-bold text-white tracking-wide hidden sm:block">JTG <span className="text-jtg-green">JOURNAL</span></span>
                 </div>
-                {user ? (
-                    <button onClick={logout} className="text-xs bg-red-500/20 text-red-500 px-3 py-1 rounded border border-red-500/50">LOGOUT</button>
-                ) : (
-                    <button onClick={login} className="text-xs bg-jtg-green/20 text-jtg-green px-3 py-1 rounded border border-jtg-green/50">{isLoggingIn ? '...' : 'LOGIN'}</button>
-                )}
+
+                {/* Mobile Account Switcher & Auth */}
+                <div className="flex items-center gap-2">
+                    {user && (
+                        <button
+                            onClick={() => setShowAccountManager(true)}
+                            className="bg-jtg-green/10 border border-jtg-green/30 rounded-lg p-1.5 flex items-center gap-2 hover:bg-jtg-green/20 transition"
+                        >
+                            <span className="text-jtg-green scale-75"><Icons.User /></span>
+                            <span className="text-[10px] font-bold text-white max-w-[80px] truncate">
+                                {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
+                            </span>
+                        </button>
+                    )}
+
+                    {user ? (
+                        <button onClick={logout} className="text-[10px] bg-red-500/20 text-red-500 px-2 py-1.5 rounded border border-red-500/50">LOGOUT</button>
+                    ) : (
+                        <button onClick={login} className="text-[10px] bg-jtg-green/20 text-jtg-green px-3 py-1.5 rounded border border-jtg-green/50">{isLoggingIn ? '...' : 'LOGIN'}</button>
+                    )}
+                </div>
             </div>
 
             {/* MOBILE BOTTOM NAV */}
@@ -222,6 +389,18 @@ const App = () => {
                     </div>
                 </div>
             </main>
+
+            {/* MODALS */}
+            {showAccountManager && (
+                <AccountManager
+                    accounts={accounts}
+                    activeAccountId={activeAccountId}
+                    switchAccount={switchAccount}
+                    addAccount={addAccount}
+                    deleteAccount={deleteAccount}
+                    close={() => setShowAccountManager(false)}
+                />
+            )}
         </div>
     );
 };
