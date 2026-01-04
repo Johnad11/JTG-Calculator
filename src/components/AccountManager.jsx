@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Icons } from './Icons';
 
-const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close }) => {
+const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close, isPremium = false }) => {
     const canDelete = accounts.length > 1;
     const [isAdding, setIsAdding] = useState(false);
     const [newAccountName, setNewAccountName] = useState('');
@@ -13,24 +13,43 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
     const personalAccounts = accounts.filter(a => a.type === 'Personal');
     const propAccounts = accounts.filter(a => a.type === 'Prop Firm');
 
+    const [showPremiumModal, setShowPremiumModal] = useState(false);
+
     const handleAdd = async (e) => {
         e.preventDefault();
-        if (!newAccountName || !newAccountBalance) return;
+        if (!newAccountName || !newAccountBalance) {
+            console.warn("Missing required fields");
+            return;
+        }
 
-        const success = await addAccount({
-            name: newAccountName,
-            type: newAccountType,
-            balance: newAccountBalance,
-            rules: newAccountRules
-        });
+        setIsAdding(true);
+        console.log("Attempting to add account:", { newAccountName, newAccountType, newAccountBalance, newAccountRules });
 
-        if (success) {
-            setIsAdding(false);
-            setNewAccountName('');
-            setNewAccountBalance('');
-            setNewAccountType('Personal');
-            setNewAccountRules([]);
-            setRuleInput('');
+        try {
+            const success = await addAccount({
+                name: newAccountName,
+                type: newAccountType,
+                balance: newAccountBalance,
+                rules: newAccountRules
+            });
+
+            console.log("Add account result:", success);
+
+            if (success) {
+                setIsAdding(false);
+                setNewAccountName('');
+                setNewAccountBalance('');
+                setNewAccountType('Personal');
+                setNewAccountRules([]);
+                setRuleInput('');
+            } else {
+                alert("Failed to create account. Please try again or check console for details.");
+            }
+        } catch (err) {
+            console.error("Error in handleAdd:", err);
+            alert("An error occurred: " + err.message);
+        } finally {
+            setIsAdding(false); // Ensure loading state is cleared
         }
     };
 
@@ -45,12 +64,15 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         setNewAccountRules(newAccountRules.filter((_, i) => i !== index));
     };
 
-    const canAddPersonal = personalAccounts.length < 3;
-    const canAddProp = propAccounts.length < 5;
+    const MAX_PERSONAL = isPremium ? 3 : 1;
+    const MAX_PROP = isPremium ? 5 : 1;
+
+    const canAddPersonal = personalAccounts.length < MAX_PERSONAL;
+    const canAddProp = propAccounts.length < MAX_PROP;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="bg-jtg-dark border border-jtg-green/30 w-full max-w-md rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="bg-jtg-dark border border-jtg-green/30 w-full max-w-md rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] relative">
 
                 {/* Header */}
                 <div className="bg-jtg-green/10 p-4 border-b border-jtg-green/20 flex justify-between items-center">
@@ -68,7 +90,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                     {/* PERSONAL ACCOUNTS */}
                     <div className="mb-6">
                         <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 flex justify-between">
-                            Personal Accounts <span>{personalAccounts.length}/3</span>
+                            Personal Accounts <span>{personalAccounts.length}/{MAX_PERSONAL}</span>
                         </h3>
                         <div className="flex flex-col gap-2">
                             {personalAccounts.map(acc => (
@@ -98,7 +120,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                     {/* PROP ACCOUNTS */}
                     <div className="mb-6">
                         <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 flex justify-between">
-                            Prop Firm Accounts <span>{propAccounts.length}/5</span>
+                            Prop Firm Accounts <span>{propAccounts.length}/{MAX_PROP}</span>
                         </h3>
                         <div className="flex flex-col gap-2">
                             {propAccounts.map(acc => (
@@ -219,8 +241,19 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                             )}
 
                             {(newAccountType === 'Personal' && !canAddPersonal) || (newAccountType === 'Prop Firm' && !canAddProp) ? (
-                                <div className="text-red-400 text-xs text-center font-bold">
-                                    Limit Reached for {newAccountType} Accounts
+                                <div className="text-center p-3">
+                                    <div className="text-red-400 text-xs font-bold mb-2">
+                                        {isPremium ? 'Maximum Account Limit Reached' : `Free Plan Limit Reached (${newAccountType === 'Personal' ? MAX_PERSONAL : MAX_PROP}/${newAccountType === 'Personal' ? MAX_PERSONAL : MAX_PROP})`}
+                                    </div>
+                                    {!isPremium && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPremiumModal(true)}
+                                            className="text-xs bg-gradient-to-r from-jtg-green to-emerald-500 text-black font-bold py-2 px-4 rounded hover:brightness-110 transition shadow-lg w-full flex items-center justify-center gap-2"
+                                        >
+                                            <Icons.Star className="w-3 h-3" /> UPGRADE TO PREMIUM
+                                        </button>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="flex gap-2">
@@ -233,15 +266,39 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                     </button>
                                     <button
                                         type="submit"
-                                        className="flex-1 py-2 bg-jtg-green text-black rounded hover:bg-green-400 transition text-sm font-bold"
+                                        disabled={isAdding} // Disable while invalid or adding
+                                        className={`flex-1 py-2 bg-jtg-green text-black rounded hover:bg-green-400 transition text-sm font-bold ${isAdding ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
-                                        CREATE
+                                        {isAdding ? 'CREATING...' : 'CREATE'}
                                     </button>
                                 </div>
                             )}
                         </form>
                     )}
                 </div>
+
+                {/* PREMIUM COMING SOON MODAL */}
+                {showPremiumModal && (
+                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-6 text-center">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 bg-jtg-green/20 rounded-full flex items-center justify-center text-jtg-green">
+                                <Icons.Star className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-white mb-1">Coming Soon</h3>
+                                <p className="text-slate-400 text-sm max-w-[200px]">
+                                    Premium features are currently under development. Stay tuned!
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowPremiumModal(false)}
+                                className="mt-2 px-6 py-2 bg-slate-700 text-white rounded-full text-sm font-bold hover:bg-slate-600 transition"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

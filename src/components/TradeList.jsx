@@ -115,10 +115,63 @@ const TradeList = ({ trades, deleteTrade }) => {
         link.click();
     };
 
+    const handleExportCSV = () => {
+        if (trades.length === 0) {
+            alert("No trades to export.");
+            return;
+        }
+
+        const headers = ["Opened", "Closed", "Strategy", "Pair", "Type", "Lot", "Entry", "Exit", "Outcome", "PnL"];
+        const rows = trades.map(t => [
+            t.openDate ? t.openDate.split('T')[0] : '',
+            t.closeDate ? t.closeDate.split('T')[0] : '-',
+            t.strategy || 'Standard',
+            t.pair,
+            t.type,
+            t.lot,
+            t.entry,
+            t.exit || '-',
+            t.outcome,
+            t.pnl
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(r => r.map(val => `"${val}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `JTG_Trade_Export_${new Date().getTime()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="flex flex-col h-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
             <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex-1 flex flex-col mb-8 overflow-hidden min-h-[500px]">
-                <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-white tracking-wide flex items-center gap-3"><span className="text-jtg-green"><Icons.List /></span> Trade History</h2><div className="bg-jtg-blue/20 px-4 py-2 rounded-full border border-jtg-blue/40"><span className="text-white font-bold font-mono">{trades.length}</span> <span className="text-slate-400 text-xs uppercase">Records</span></div></div>
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-6">
+                        <h2 className="text-2xl font-bold text-white tracking-wide flex items-center gap-3">
+                            <span className="text-jtg-green"><Icons.List /></span> Trade History
+                        </h2>
+                        <button
+                            onClick={handleExportCSV}
+                            className="bg-jtg-green/10 hover:bg-jtg-green/20 text-jtg-green border border-jtg-green/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 group"
+                            title="Export to CSV"
+                        >
+                            <Icons.Download />
+                            <span className="hidden sm:inline">EXPORT CSV</span>
+                        </button>
+                    </div>
+                    <div className="bg-jtg-blue/20 px-4 py-2 rounded-full border border-jtg-blue/40">
+                        <span className="text-white font-bold font-mono">{trades.length}</span> <span className="text-slate-400 text-xs uppercase">Records</span>
+                    </div>
+                </div>
                 <div className="flex-1 overflow-auto custom-scroll">
                     <table className="w-full text-left border-collapse min-w-[1000px]">
                         <thead className="sticky top-0 bg-jtg-card z-10 shadow-lg"><tr><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Opened</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Closed</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Strategy</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Pair</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Type</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Lot</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Entry</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Exit</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Outcome</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-right">PnL</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Share</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Action</th></tr></thead>

@@ -148,15 +148,22 @@ const App = () => {
     }, [trades, user]);
 
     const addAccount = async (accountData) => {
-        if (!user) return false;
+        if (!user) {
+            console.error("addAccount called but no user is logged in");
+            alert("You must be logged in to add an account.");
+            return false;
+        }
         try {
+            console.log("Adding account to Firebase...", accountData);
             const newAcc = { ...accountData, userId: user.uid, createdAt: new Date().toISOString() };
             const ref = await db.collection('accounts').add(newAcc);
+            console.log("Account added with ID:", ref.id);
             const savedAcc = { ...newAcc, id: ref.id };
             setAccounts([...accounts, savedAcc]);
             setActiveAccountId(ref.id);
             return true;
         } catch (e) {
+            console.error("Firebase Add Error:", e);
             alert("Error creating account: " + e.message);
             return false;
         }
@@ -315,6 +322,12 @@ const App = () => {
                     </div>
                 </div>
                 <div className="w-full pb-4 mt-8 shrink-0 flex flex-col gap-4 items-center">
+                    {/* SUPPORT BUTTON */}
+                    <button onClick={() => window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank')} className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition" title="Support">
+                        <Icons.Support />
+                        <span className="text-[9px] font-bold tracking-wider">SUPPORT</span>
+                    </button>
+
                     {/* LOGIN/LOGOUT BUTTON */}
                     {user ? (
                         <button onClick={logout} className="flex flex-col items-center gap-1 text-slate-500 hover:text-red-500 transition" title="Logout">
@@ -360,6 +373,10 @@ const App = () => {
                     ) : (
                         <button onClick={login} className="text-[10px] bg-jtg-green/20 text-jtg-green px-3 py-1.5 rounded border border-jtg-green/50">{isLoggingIn ? '...' : 'LOGIN'}</button>
                     )}
+
+                    <button onClick={() => window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank')} className="p-2 text-slate-400 hover:text-white transition">
+                        <Icons.Support />
+                    </button>
                 </div>
             </div>
 
@@ -399,6 +416,7 @@ const App = () => {
                     addAccount={addAccount}
                     deleteAccount={deleteAccount}
                     close={() => setShowAccountManager(false)}
+                    isPremium={user?.email === 'nwabuezebosco@gmail.com'}
                 />
             )}
         </div>
