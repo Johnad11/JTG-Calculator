@@ -64,8 +64,8 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         setNewAccountRules(newAccountRules.filter((_, i) => i !== index));
     };
 
-    const MAX_PERSONAL = isPremium ? 3 : 1;
-    const MAX_PROP = isPremium ? 5 : 1;
+    const MAX_PERSONAL = isPremium ? 3 : 2;
+    const MAX_PROP = isPremium ? 5 : 3;
 
     const canAddPersonal = personalAccounts.length < MAX_PERSONAL;
     const canAddProp = propAccounts.length < MAX_PROP;

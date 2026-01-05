@@ -4,8 +4,9 @@ import { Icons } from './Icons';
 import JtgPromo from './JtgPromo';
 import { LOGO_URL } from '../constants';
 
-const TradeList = ({ trades, deleteTrade }) => {
+const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, incrementExportCount }) => {
     const captureRef = useRef(null);
+    const [showPremiumModal, setShowPremiumModal] = React.useState(false);
 
     const downloadCard = async (trade) => {
         let logoBase64 = '';
@@ -121,6 +122,11 @@ const TradeList = ({ trades, deleteTrade }) => {
             return;
         }
 
+        if (!isPremium && exportCount >= 3) {
+            setShowPremiumModal(true);
+            return;
+        }
+
         const headers = ["Opened", "Closed", "Strategy", "Pair", "Type", "Lot", "Entry", "Exit", "Outcome", "PnL"];
         const rows = trades.map(t => [
             t.openDate ? t.openDate.split('T')[0] : '',
@@ -149,6 +155,10 @@ const TradeList = ({ trades, deleteTrade }) => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+
+        if (!isPremium && incrementExportCount) {
+            incrementExportCount();
+        }
     };
 
     return (
@@ -159,14 +169,21 @@ const TradeList = ({ trades, deleteTrade }) => {
                         <h2 className="text-2xl font-bold text-white tracking-wide flex items-center gap-3">
                             <span className="text-jtg-green"><Icons.List /></span> Trade History
                         </h2>
-                        <button
-                            onClick={handleExportCSV}
-                            className="bg-jtg-green/10 hover:bg-jtg-green/20 text-jtg-green border border-jtg-green/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 group"
-                            title="Export to CSV"
-                        >
-                            <Icons.Download />
-                            <span className="hidden sm:inline">EXPORT CSV</span>
-                        </button>
+                        <div className="flex flex-col items-center">
+                            <button
+                                onClick={handleExportCSV}
+                                className="bg-jtg-green/10 hover:bg-jtg-green/20 text-jtg-green border border-jtg-green/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 group"
+                                title="Export to CSV"
+                            >
+                                <Icons.Download />
+                                <span className="hidden sm:inline">EXPORT CSV</span>
+                            </button>
+                            {!isPremium && (
+                                <span className="text-[9px] text-slate-500 font-bold mt-1 uppercase tracking-tighter">
+                                    {Math.max(0, 3 - exportCount)} FREE EXPORTS LEFT
+                                </span>
+                            )}
+                        </div>
                     </div>
                     <div className="bg-jtg-blue/20 px-4 py-2 rounded-full border border-jtg-blue/40">
                         <span className="text-white font-bold font-mono">{trades.length}</span> <span className="text-slate-400 text-xs uppercase">Records</span>
@@ -199,6 +216,35 @@ const TradeList = ({ trades, deleteTrade }) => {
                 </div>
             </div>
             <JtgPromo />
+
+            {/* UPGRADE MODAL */}
+            {showPremiumModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-6 text-center">
+                    <div className="flex flex-col items-center gap-4 bg-jtg-dark border border-jtg-green/30 p-8 rounded-2xl shadow-2xl max-w-sm">
+                        <div className="w-16 h-16 bg-jtg-green/20 rounded-full flex items-center justify-center text-jtg-green mb-2">
+                            <Icons.Star className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-bold text-white mb-2">Limit Reached</h3>
+                            <p className="text-slate-400 text-sm mb-6">
+                                Free users are limited to 3 data exports. Upgrade to Premium for unlimited access!
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank')}
+                            className="w-full py-3 bg-gradient-to-r from-jtg-green to-emerald-500 text-black font-bold rounded-lg hover:brightness-110 transition shadow-lg flex items-center justify-center gap-2"
+                        >
+                            <Icons.Star className="w-4 h-4" /> UPGRADE TO PREMIUM
+                        </button>
+                        <button
+                            onClick={() => setShowPremiumModal(false)}
+                            className="mt-2 text-slate-500 hover:text-white transition text-sm font-bold"
+                        >
+                            CLOSE
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

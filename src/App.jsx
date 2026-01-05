@@ -18,6 +18,7 @@ const App = () => {
     const [accounts, setAccounts] = useState([]);
     const [activeAccountId, setActiveAccountId] = useState(null);
     const [showAccountManager, setShowAccountManager] = useState(false);
+    const [exportCount, setExportCount] = useState(0);
 
     // GLOBAL ACCOUNT BALANCE SETTING
     const [globalBalance, setGlobalBalance] = useState(() => localStorage.getItem('jtg_global_balance') || '');
@@ -97,6 +98,15 @@ const App = () => {
                         setActiveAccountId(active ? active.id : null);
                         if (active) setGlobalBalance(active.balance);
 
+                        // 2. Load User Settings (Export Count)
+                        const settingsDoc = await db.collection('user_settings').doc(currentUser.uid).get();
+                        if (settingsDoc.exists) {
+                            setExportCount(settingsDoc.data().exportCount || 0);
+                        } else {
+                            await db.collection('user_settings').doc(currentUser.uid).set({ exportCount: 0 }, { merge: true });
+                            setExportCount(0);
+                        }
+
                     } catch (e) {
                         console.error("Error loading user data:", e);
                         // Fallback (e.g. offline)
@@ -105,6 +115,7 @@ const App = () => {
                     setAccounts([]);
                     setActiveAccountId(null);
                     setTrades([]);
+                    setExportCount(0);
                 }
             });
             return () => unsubscribe();
@@ -200,6 +211,17 @@ const App = () => {
             }
         } catch (e) {
             alert("Error deleting account: " + e.message);
+        }
+    };
+
+    const incrementExportCount = async () => {
+        if (!user) return;
+        const newCount = exportCount + 1;
+        setExportCount(newCount);
+        try {
+            await db.collection('user_settings').doc(user.uid).set({ exportCount: newCount }, { merge: true });
+        } catch (e) {
+            console.error("Error updating export count:", e);
         }
     };
 
@@ -400,7 +422,15 @@ const App = () => {
                     <div className="w-full h-full overflow-y-auto custom-scroll pt-20 pb-24 md:pt-0 md:pb-0">
                         {page === 'calc' && <Calculator globalBalance={globalBalance} />}
                         {page === 'journal' && <Journal addTrade={addTrade} />}
-                        {page === 'trades' && <TradeList trades={trades} deleteTrade={deleteTrade} />}
+                        {page === 'trades' && (
+                            <TradeList
+                                trades={trades}
+                                deleteTrade={deleteTrade}
+                                isPremium={user?.email === 'nwabuezebosco@gmail.com'}
+                                exportCount={exportCount}
+                                incrementExportCount={incrementExportCount}
+                            />
+                        )}
                         {page === 'calendar' && <CalendarView trades={trades} />}
                         {page === 'perf' && <Performance trades={trades} globalBalance={globalBalance} updateGlobalBalance={updateGlobalBalance} />}
                     </div>
