@@ -7,7 +7,9 @@ import TradeList from './components/TradeList';
 import CalendarView from './components/CalendarView';
 import Performance from './components/Performance';
 import AccountManager from './components/AccountManager';
+import UsernameModal from './components/UsernameModal';
 import { LOGO_URL, CURRENCIES } from './constants';
+
 import { fetchExchangeRates } from './utils/exchangeRate';
 import { convertForDisplay, convertForStorage } from './utils/currencyConverter';
 
@@ -20,7 +22,10 @@ const App = () => {
     const [accounts, setAccounts] = useState([]);
     const [activeAccountId, setActiveAccountId] = useState(null);
     const [showAccountManager, setShowAccountManager] = useState(false);
+    const [username, setUsername] = useState('');
+    const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [exportCount, setExportCount] = useState(0);
+
 
     // CURRENCY STATE (Derived from active account)
     const activeAccount = accounts.find(a => a.id === activeAccountId);
@@ -133,14 +138,23 @@ const App = () => {
                         setActiveAccountId(active ? active.id : null);
                         if (active) setGlobalBalance(active.balance);
 
-                        // 2. Load User Settings (Export Count)
+                        // 2. Load User Settings (Export Count & Username)
                         const settingsDoc = await db.collection('user_settings').doc(currentUser.uid).get();
                         if (settingsDoc.exists) {
-                            setExportCount(settingsDoc.data().exportCount || 0);
+                            const data = settingsDoc.data();
+                            setExportCount(data.exportCount || 0);
+                            if (data.username) {
+                                setUsername(data.username);
+                                setShowUsernameModal(false);
+                            } else {
+                                setShowUsernameModal(true);
+                            }
                         } else {
                             await db.collection('user_settings').doc(currentUser.uid).set({ exportCount: 0 }, { merge: true });
                             setExportCount(0);
+                            setShowUsernameModal(true);
                         }
+
 
                         // No longer loading global currency from settings
 
@@ -517,8 +531,10 @@ const App = () => {
                                 currency={currency}
                                 exchangeRates={exchangeRates}
                                 ratesLoading={ratesLoading}
+                                username={username}
                             />
                         )}
+
                         {page === 'calendar' && <CalendarView trades={trades} />}
                         {page === 'perf' && <Performance trades={trades} globalBalance={globalBalance} updateGlobalBalance={updateGlobalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
                     </div>
@@ -540,7 +556,18 @@ const App = () => {
                     exchangeRates={exchangeRates}
                 />
             )}
+
+            {showUsernameModal && user && (
+                <UsernameModal
+                    user={user}
+                    onUsernameSet={(name) => {
+                        setUsername(name);
+                        setShowUsernameModal(false);
+                    }}
+                />
+            )}
         </div>
+
     );
 };
 

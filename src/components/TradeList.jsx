@@ -5,7 +5,7 @@ import JtgPromo from './JtgPromo';
 import { LOGO_URL } from '../constants';
 import { convertForDisplay } from '../utils/currencyConverter';
 
-const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, incrementExportCount, currencySymbol = '$', currency = 'USD', exchangeRates }) => {
+const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, incrementExportCount, currencySymbol = '$', currency = 'USD', exchangeRates, username }) => {
     const captureRef = useRef(null);
     const [showPremiumModal, setShowPremiumModal] = React.useState(false);
 
@@ -20,7 +20,7 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                         <stop offset="100%" stopColor="#162C99" />
                     </linearGradient>
                 </defs>
-                <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2-1-2-1-2 1 2 1zm0-3.5L6 7l6 2.5L18 7l-6-2.5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="url(#g1)" />
+                <path d="M12 2L2 7l10 5 10-5-10-5-10-5zm0 9l2-1-2-1-2 1 2 1zm0-3.5L6 7l6 2.5L18 7l-6-2.5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="url(#g1)" />
             </svg>
         `;
 
@@ -71,7 +71,10 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; position: relative; z-index: 10;">
                 <div style="display: flex; align-items: center; gap: 15px;">
                     ${logoHtml}
-                    <span style="font-size: 20px; font-weight: 800; letter-spacing: 1px;">JTG FX JOURNAL</span>
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 20px; font-weight: 800; letter-spacing: 1px;">JTG FX JOURNAL</span>
+                        <span style="font-size: 10px; color: ${accentColor}; font-weight: 700; letter-spacing: 0.5px; opacity: 0.9;">VERIFIED TRADER: @${username || 'GUEST'}</span>
+                    </div>
                 </div>
                 <span style="font-size: 14px; opacity: 0.6; font-weight: 500;">${new Date().toLocaleDateString()}</span>
             </div>
@@ -90,7 +93,6 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                 </div>
                 <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
                     <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px;">Strategy</p>
-                    <!-- FIXED TEXT CLIPPING: Added Line-Height and Padding -->
                     <p style="margin: 0; font-size: 18px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; padding-bottom: 10px; display: block;">${trade.strategy || 'Standard'}</p>
                 </div>
             </div>
@@ -105,6 +107,7 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                     <p style="margin: 5px 0 0; font-size: 14px; font-weight: 600; opacity: 0.8;">jtg-journals.vercel.app</p>
                 </div>
             </div>
+
         `;
 
         document.body.appendChild(element);
