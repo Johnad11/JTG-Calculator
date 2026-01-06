@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Icons } from './Icons';
 import JtgPromo from './JtgPromo';
 import StatCard from './StatCard';
+import { convertForDisplay } from '../utils/currencyConverter';
 
-const Performance = ({ trades, globalBalance, updateGlobalBalance, currencySymbol = '$' }) => {
+const Performance = ({ trades, globalBalance, updateGlobalBalance, currencySymbol = '$', currency = 'USD', exchangeRates }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [tempBalance, setTempBalance] = useState(globalBalance || '');
 
@@ -56,8 +57,8 @@ const Performance = ({ trades, globalBalance, updateGlobalBalance, currencySymbo
                         </div>
                     ) : (
                         <div className="grid grid-cols-3 gap-4">
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Starting</p><p className="text-sm md:text-lg font-mono text-slate-300">{currencySymbol}{parseFloat(globalBalance).toLocaleString()}</p></div>
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Current</p><p className="text-lg md:text-2xl font-mono text-white font-bold">{currencySymbol}{parseFloat(stats.currentBalance).toLocaleString()}</p></div>
+                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Starting</p><p className="text-sm md:text-lg font-mono text-slate-300">{currencySymbol}{exchangeRates ? convertForDisplay(globalBalance, currency, exchangeRates).toFixed(currency === 'NGN' ? 0 : 2) : parseFloat(globalBalance).toLocaleString()}</p></div>
+                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Current</p><p className="text-lg md:text-2xl font-mono text-white font-bold">{currencySymbol}{exchangeRates ? convertForDisplay(stats.currentBalance, currency, exchangeRates).toFixed(currency === 'NGN' ? 0 : 2) : parseFloat(stats.currentBalance).toLocaleString()}</p></div>
                             <div><p className="text-[10px] text-slate-500 uppercase font-bold">Growth</p><p className={`text-sm md:text-lg font-mono font-bold ${stats.growthPct >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>{stats.growthPct > 0 ? '+' : ''}{stats.growthPct}%</p></div>
                         </div>
                     )}
@@ -65,7 +66,7 @@ const Performance = ({ trades, globalBalance, updateGlobalBalance, currencySymbo
 
                 <h2 className="text-3xl font-bold text-white mb-8 tracking-wide">Performance Data</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <StatCard title="Net PnL" value={`${currencySymbol}${stats.netPnL}`} color={parseFloat(stats.netPnL) >= 0 ? 'emerald' : 'red'} />
+                    <StatCard title="Net PnL" value={`${currencySymbol}${exchangeRates ? convertForDisplay(stats.netPnL, currency, exchangeRates).toFixed(currency === 'NGN' ? 0 : 2) : stats.netPnL}`} color={parseFloat(stats.netPnL) >= 0 ? 'emerald' : 'red'} />
                     <StatCard title="Win Rate" value={`${stats.winRate}%`} color="white" />
                     <StatCard title="Profit Factor" value={stats.profitFactor} color="white" />
                     <StatCard title="Top Pair" value={stats.bestPair} color="emerald" icon={<span className="text-jtg-green"><Icons.Trophy /></span>} />

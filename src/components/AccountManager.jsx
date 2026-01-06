@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Icons } from './Icons';
+import { convertForDisplay, convertForStorage } from '../utils/currencyConverter';
 
-const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close, isPremium = false, currencySymbol = '$' }) => {
+const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close, isPremium = false, currencySymbol = '$', currency = 'USD', exchangeRates }) => {
     const canDelete = accounts.length > 1;
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
     const [newAccountName, setNewAccountName] = useState('');
     const [newAccountType, setNewAccountType] = useState('Personal');
     const [newAccountBalance, setNewAccountBalance] = useState('');
+    const [newAccountCurrency, setNewAccountCurrency] = useState('USD');
     const [newAccountRules, setNewAccountRules] = useState([]);
     const [ruleInput, setRuleInput] = useState('');
 
@@ -43,7 +45,8 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
             const addPromise = addAccount({
                 name: newAccountName,
                 type: newAccountType,
-                balance: newAccountBalance,
+                balance: exchangeRates ? convertForStorage(newAccountBalance, newAccountCurrency, exchangeRates).toString() : newAccountBalance,
+                currency: newAccountCurrency,
                 rules: newAccountRules
             });
 
@@ -59,6 +62,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                 setNewAccountName('');
                 setNewAccountBalance('');
                 setNewAccountType('Personal');
+                setNewAccountCurrency('USD');
                 setNewAccountRules([]);
                 setRuleInput('');
                 setIsFormOpen(false); // Close the form
@@ -123,11 +127,17 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         className={`flex-1 flex items-center justify-between p-3 rounded-lg border transition-all ${activeAccountId === acc.id ? 'bg-jtg-green/20 border-jtg-green text-white' : 'bg-jtg-blue/10 border-transparent text-slate-300 hover:bg-jtg-blue/20'}`}
                                     >
                                         <span className="font-semibold">{acc.name}</span>
-                                        <span className="font-mono text-sm opacity-80">{currencySymbol}{acc.balance}</span>
+                                        <span className="font-mono text-sm opacity-80">
+                                            {currencySymbol}{exchangeRates ? convertForDisplay(acc.balance, currency, exchangeRates).toFixed(currency === 'NGN' ? 0 : 2) : parseFloat(acc.balance).toFixed(2)}
+                                        </span>
                                     </button>
                                     {canDelete && (
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); deleteAccount(acc.id); }}
+                                            onClick={(e) => {
+                                                console.log("AccountManager: Personal Delete clicked", acc.id);
+                                                e.stopPropagation();
+                                                deleteAccount(acc.id);
+                                            }}
                                             className="p-2 text-slate-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                                             title="Delete Account"
                                         >
@@ -155,7 +165,9 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         >
                                             <span className="font-semibold">{acc.name}</span>
                                             <div className="text-right">
-                                                <div className="font-mono text-sm opacity-80">{currencySymbol}{acc.balance}</div>
+                                                <div className="font-mono text-sm opacity-80">
+                                                    {currencySymbol}{exchangeRates ? convertForDisplay(acc.balance, currency, exchangeRates).toFixed(currency === 'NGN' ? 0 : 2) : parseFloat(acc.balance).toFixed(2)}
+                                                </div>
                                                 {acc.rules && acc.rules.length > 0 && (
                                                     <div className="text-[10px] text-jtg-green opacity-70">{acc.rules.length} Rules Active</div>
                                                 )}
@@ -163,7 +175,11 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         </button>
                                         {canDelete && (
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); deleteAccount(acc.id); }}
+                                                onClick={(e) => {
+                                                    console.log("AccountManager: Prop Delete clicked", acc.id);
+                                                    e.stopPropagation();
+                                                    deleteAccount(acc.id);
+                                                }}
                                                 className="p-2 text-slate-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                                                 title="Delete Account"
                                             >
@@ -213,9 +229,15 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                     placeholder="Account Name"
                                     value={newAccountName}
                                     onChange={(e) => setNewAccountName(e.target.value)}
-                                    className="flex-1 bg-black/40 border border-slate-700 rounded p-2 text-white text-sm focus:border-jtg-green outline-none"
                                     required
                                 />
+                                <select
+                                    value={newAccountCurrency}
+                                    onChange={(e) => setNewAccountCurrency(e.target.value)}
+                                    className="bg-black/40 border border-slate-700 rounded p-2 text-white text-sm focus:border-jtg-green outline-none"
+                                >
+                                    <option value="USD">USD ($)</option>
+                                </select>
                             </div>
                             <input
                                 type="number"

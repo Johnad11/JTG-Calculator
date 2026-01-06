@@ -2,11 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { Icons } from './Icons';
 import JtgPromo from './JtgPromo';
 import { ASSETS } from '../constants';
+import { convertForDisplay, convertForStorage } from '../utils/currencyConverter';
 
-const Calculator = ({ globalBalance, currencySymbol = '$' }) => {
-    const [balance, setBalance] = useState(globalBalance || 100000);
-    // Update local balance if global balance changes
-    useEffect(() => { if (globalBalance) setBalance(globalBalance); }, [globalBalance]);
+const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exchangeRates, ratesLoading = false }) => {
+    // Convert global balance from USD to selected currency for display
+    const displayBalance = exchangeRates && globalBalance
+        ? convertForDisplay(globalBalance, currency, exchangeRates)
+        : globalBalance || 100000;
+
+    const [balance, setBalance] = useState(displayBalance);
+
+    // Update local balance when global balance or currency changes
+    useEffect(() => {
+        if (globalBalance && exchangeRates) {
+            const converted = convertForDisplay(globalBalance, currency, exchangeRates);
+            setBalance(converted);
+        } else if (globalBalance) {
+            setBalance(globalBalance);
+        }
+    }, [globalBalance, currency, exchangeRates]);
 
     const [riskMode, setRiskMode] = useState('percent');
     const [riskValue, setRiskValue] = useState(1.0);
@@ -55,6 +69,11 @@ const Calculator = ({ globalBalance, currencySymbol = '$' }) => {
 
     return (
         <div className="flex flex-col h-full overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
+            {ratesLoading && currency !== 'USD' && (
+                <div className="mb-4 p-3 bg-jtg-blue/20 border border-jtg-blue/40 rounded-lg text-center">
+                    <p className="text-xs text-slate-300">Loading exchange rates...</p>
+                </div>
+            )}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pop mb-auto">
                 <div className="lg:col-span-7 space-y-8">
                     <div className="flex gap-2 p-1.5 bg-jtg-input rounded-xl overflow-x-auto shadow-inner border border-jtg-blue/30 no-scrollbar">

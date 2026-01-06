@@ -8,6 +8,8 @@ import CalendarView from './components/CalendarView';
 import Performance from './components/Performance';
 import AccountManager from './components/AccountManager';
 import { LOGO_URL, CURRENCIES } from './constants';
+import { fetchExchangeRates } from './utils/exchangeRate';
+import { convertForDisplay, convertForStorage } from './utils/currencyConverter';
 
 const App = () => {
     const [page, setPage] = useState('calc');
@@ -20,9 +22,15 @@ const App = () => {
     const [showAccountManager, setShowAccountManager] = useState(false);
     const [exportCount, setExportCount] = useState(0);
 
-    // CURRENCY STATE
-    const [currency, setCurrency] = useState(() => localStorage.getItem('jtg_currency') || 'USD');
+    // CURRENCY STATE (Derived from active account)
+    const activeAccount = accounts.find(a => a.id === activeAccountId);
+    const currency = activeAccount?.currency || 'USD';
     const currencySymbol = CURRENCIES[currency]?.symbol || '$';
+
+    // EXCHANGE RATE STATE
+    const [exchangeRates, setExchangeRates] = useState(null);
+    const [ratesLoading, setRatesLoading] = useState(true);
+    const [ratesError, setRatesError] = useState(null);
 
     // GLOBAL ACCOUNT BALANCE SETTING
     const [globalBalance, setGlobalBalance] = useState(() => localStorage.getItem('jtg_global_balance') || '');
@@ -37,27 +45,43 @@ const App = () => {
 
     // Update Balance Handler
     const updateGlobalBalance = async (newBal) => {
-        setGlobalBalance(newBal);
-        localStorage.setItem('jtg_global_balance', newBal);
+        // Convert input from selected currency to USD for storage
+        const balanceInUSD = exchangeRates && currency !== 'USD'
+            ? convertForStorage(newBal, currency, exchangeRates)
+            : newBal;
+
+        setGlobalBalance(balanceInUSD);
+        localStorage.setItem('jtg_global_balance', balanceInUSD);
 
         if (user && activeAccountId) {
-            // Update the specific account
+            // Update the specific account with USD value
             try {
-                await db.collection('accounts').doc(activeAccountId).update({ balance: newBal });
-                setAccounts(accounts.map(a => a.id === activeAccountId ? { ...a, balance: newBal } : a));
+                await db.collection('accounts').doc(activeAccountId).update({ balance: balanceInUSD });
+                setAccounts(accounts.map(a => a.id === activeAccountId ? { ...a, balance: balanceInUSD } : a));
             } catch (e) { console.error("Error updating balance:", e); }
         }
     };
 
-    const updateCurrency = async (newCurrency) => {
-        setCurrency(newCurrency);
-        localStorage.setItem('jtg_currency', newCurrency);
-        if (user) {
-            try {
-                await db.collection('user_settings').doc(user.uid).set({ currency: newCurrency }, { merge: true });
-            } catch (e) { console.error("Error updating currency setting:", e); }
+    // Removed updateCurrency global handler. Currency is now account-specific.
+
+    const loadExchangeRates = async () => {
+        try {
+            setRatesLoading(true);
+            setRatesError(null);
+            const rates = await fetchExchangeRates();
+            setExchangeRates(rates);
+        } catch (error) {
+            setRatesError('Failed to load exchange rates');
+            console.error('Error loading exchange rates:', error);
+        } finally {
+            setRatesLoading(false);
         }
     };
+
+    // LOAD EXCHANGE RATES ON MOUNT
+    useEffect(() => {
+        loadExchangeRates();
+    }, []);
 
     // AUTH & DATA LOADING
     useEffect(() => {
@@ -118,10 +142,7 @@ const App = () => {
                             setExportCount(0);
                         }
 
-                        if (settingsDoc.exists && settingsDoc.data().currency) {
-                            setCurrency(settingsDoc.data().currency);
-                            localStorage.setItem('jtg_currency', settingsDoc.data().currency);
-                        }
+                        // No longer loading global currency from settings
 
                     } catch (e) {
                         console.error("Error loading user data:", e);
@@ -214,24 +235,44 @@ const App = () => {
     };
 
     const deleteAccount = async (id) => {
-        if (!user) return;
+        console.log("App: deleteAccount called with ID:", id);
+        if (!user) {
+            console.log("App: deleteAccount aborting - no user");
+            return;
+        }
         if (accounts.length <= 1) {
+            console.log("App: deleteAccount aborting - only one account left");
             alert("You must have at least one account.");
             return;
         }
 
-        if (!window.confirm("Are you sure you want to delete this account? All associated trades will be permanently deleted.")) return;
+        console.log("App: deleteAccount - prompting for confirmation");
+        if (!window.confirm("Are you sure you want to delete this account? All associated trades will be permanently deleted.")) {
+            console.log("App: deleteAccount - user cancelled confirmation");
+            return;
+        }
+        console.log("App: deleteAccount - user confirmed deletion");
 
         try {
-            // 1. Delete associated trades
-            const tradesRef = db.collection('trades').where('accountId', '==', id);
-            const tradesSnap = await tradesRef.get();
-            const batch = db.batch();
-            tradesSnap.docs.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
+            // 1. Delete associated trades - only for this user and this account
+            const tradesRef = db.collection('trades')
+                .where('userId', '==', user.uid)
+                .where('accountId', '==', id);
 
-            // 2. Delete account
-            await db.collection('accounts').doc(id).delete();
+            const tradesSnap = await tradesRef.get();
+            if (!tradesSnap.empty) {
+                const batch = db.batch();
+                tradesSnap.docs.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+            }
+
+            // 2. Delete account - ensure it belongs to the user
+            const accountDoc = await db.collection('accounts').doc(id).get();
+            if (accountDoc.exists && accountDoc.data().userId === user.uid) {
+                await db.collection('accounts').doc(id).delete();
+            } else {
+                throw new Error("Account not found or not owned by you.");
+            }
 
             // 3. Update local state
             const remainingAccounts = accounts.filter(a => a.id !== id);
@@ -243,7 +284,8 @@ const App = () => {
                 setGlobalBalance(nextAcc.balance);
             }
         } catch (e) {
-            alert("Error deleting account: " + e.message);
+            console.error("Deletion error details:", e);
+            alert("Error deleting account: " + (e.code === 'permission-denied' ? "Missing permissions. Please ensure you are the owner." : e.message));
         }
     };
 
@@ -309,7 +351,12 @@ const App = () => {
             else pnl = (diff * formData.lot * contract).toFixed(2);
         }
 
-        const newTrade = { ...formData, id: Date.now(), outcome, pnl, userId: user ? user.uid : 'guest', accountId: activeAccountId };
+        // Convert PnL to USD for storage if in different currency
+        const pnlInUSD = exchangeRates && currency !== 'USD'
+            ? convertForStorage(pnl, currency, exchangeRates).toFixed(2)
+            : pnl;
+
+        const newTrade = { ...formData, id: Date.now(), outcome, pnl: pnlInUSD, userId: user ? user.uid : 'guest', accountId: activeAccountId };
 
         if (user) {
             try {
@@ -376,19 +423,7 @@ const App = () => {
                         <NavBtn id="perf" icon={<Icons.Chart />} label="DATA" />
                     </div>
 
-                    {/* CURRENCY SELECTOR */}
-                    <div className="mt-8 flex flex-col items-center gap-2 w-full px-4">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Currency</label>
-                        <select
-                            value={currency}
-                            onChange={(e) => updateCurrency(e.target.value)}
-                            className="w-full bg-jtg-blue/10 border border-jtg-blue/30 rounded-lg p-1 text-xs text-white outline-none focus:ring-1 focus:ring-jtg-green/50"
-                        >
-                            {Object.entries(CURRENCIES).map(([key, val]) => (
-                                <option key={key} value={key} className="bg-jtg-dark">{val.label} ({val.symbol})</option>
-                            ))}
-                        </select>
-                    </div>
+                    {/* Removed Global Currency Selector */}
                 </div>
                 <div className="w-full pb-4 mt-8 shrink-0 flex flex-col gap-4 items-center">
                     {/* SUPPORT BUTTON */}
@@ -443,15 +478,7 @@ const App = () => {
                         <button onClick={login} className="text-[10px] bg-jtg-green/20 text-jtg-green px-3 py-1.5 rounded border border-jtg-green/50">{isLoggingIn ? '...' : 'LOGIN'}</button>
                     )}
 
-                    <select
-                        value={currency}
-                        onChange={(e) => updateCurrency(e.target.value)}
-                        className="bg-jtg-blue/10 border border-jtg-blue/30 rounded-lg p-1.5 text-[10px] text-white outline-none"
-                    >
-                        {Object.entries(CURRENCIES).map(([key, val]) => (
-                            <option key={key} value={key} className="bg-jtg-dark">{val.symbol}</option>
-                        ))}
-                    </select>
+                    {/* Removed Global Currency Selector */}
 
                     <button onClick={() => window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank')} className="p-2 text-slate-400 hover:text-white transition">
                         <Icons.Support />
@@ -477,7 +504,7 @@ const App = () => {
 
                     {/* Scrollable Container */}
                     <div className="w-full h-full overflow-y-auto custom-scroll pt-20 pb-24 md:pt-0 md:pb-0">
-                        {page === 'calc' && <Calculator globalBalance={globalBalance} currencySymbol={currencySymbol} />}
+                        {page === 'calc' && <Calculator globalBalance={globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
                         {page === 'journal' && <Journal addTrade={addTrade} />}
                         {page === 'trades' && (
                             <TradeList
@@ -487,10 +514,13 @@ const App = () => {
                                 exportCount={exportCount}
                                 incrementExportCount={incrementExportCount}
                                 currencySymbol={currencySymbol}
+                                currency={currency}
+                                exchangeRates={exchangeRates}
+                                ratesLoading={ratesLoading}
                             />
                         )}
                         {page === 'calendar' && <CalendarView trades={trades} />}
-                        {page === 'perf' && <Performance trades={trades} globalBalance={globalBalance} updateGlobalBalance={updateGlobalBalance} currencySymbol={currencySymbol} />}
+                        {page === 'perf' && <Performance trades={trades} globalBalance={globalBalance} updateGlobalBalance={updateGlobalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
                     </div>
                 </div>
             </main>
@@ -506,6 +536,8 @@ const App = () => {
                     close={() => setShowAccountManager(false)}
                     isPremium={user?.email === 'nwabuezebosco@gmail.com'}
                     currencySymbol={currencySymbol}
+                    currency={currency}
+                    exchangeRates={exchangeRates}
                 />
             )}
         </div>

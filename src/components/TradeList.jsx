@@ -3,8 +3,9 @@ import html2canvas from 'html2canvas';
 import { Icons } from './Icons';
 import JtgPromo from './JtgPromo';
 import { LOGO_URL } from '../constants';
+import { convertForDisplay } from '../utils/currencyConverter';
 
-const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, incrementExportCount, currencySymbol = '$' }) => {
+const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, incrementExportCount, currencySymbol = '$', currency = 'USD', exchangeRates }) => {
     const captureRef = useRef(null);
     const [showPremiumModal, setShowPremiumModal] = React.useState(false);
 
@@ -78,7 +79,7 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
             <div style="text-align: center; margin-bottom: 40px; position: relative; z-index: 10;">
                 <p style="margin: 0; font-size: 14px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Net Profit / Loss</p>
                 <h1 style="margin: 10px 0 0; font-size: 64px; font-weight: 900; color: ${accentColor}; text-shadow: 0 0 30px ${accentColor}40;">
-                    ${isWin ? '+' : ''}${currencySymbol}${trade.pnl}
+                    ${isWin ? '+' : ''}${currencySymbol}${exchangeRates ? convertForDisplay(trade.pnl, currency, exchangeRates).toFixed(currency === 'NGN' ? 0 : 2) : parseFloat(trade.pnl).toFixed(2)}
                 </h1>
             </div>
 
@@ -204,7 +205,9 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                                     <td className="p-4 text-xs font-mono text-white">{trade.entry}</td>
                                     <td className="p-4 text-xs font-mono text-slate-400">{trade.exit || '-'}</td>
                                     <td className="p-4"><span className={`text-[10px] font-bold px-2 py-1 rounded border ${trade.outcome.includes('WIN') || trade.outcome.includes('TP') ? 'bg-jtg-green/10 text-jtg-green border-jtg-green/30' : trade.outcome.includes('LOSS') || trade.outcome.includes('SL') ? 'bg-red-500/10 text-red-500 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>{trade.outcome}</span></td>
-                                    <td className={`p-4 text-sm font-mono font-bold text-right ${parseFloat(trade.pnl) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>{parseFloat(trade.pnl) >= 0 ? '+' : ''}{currencySymbol}{trade.pnl}</td>
+                                    <td className={`p-4 text-sm font-mono font-bold text-right ${parseFloat(trade.pnl) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>
+                                        {parseFloat(trade.pnl) >= 0 ? '+' : ''}{currencySymbol}{exchangeRates ? convertForDisplay(trade.pnl, currency, exchangeRates).toFixed(currency === 'NGN' ? 0 : 2) : parseFloat(trade.pnl).toFixed(2)}
+                                    </td>
                                     <td className="p-4 text-center">
                                         <button onClick={() => downloadCard(trade)} className="text-slate-500 hover:text-jtg-green transition-colors"><Icons.Share /></button>
                                     </td>

@@ -6,9 +6,16 @@ export const ASSETS = {
 };
 
 export const CURRENCIES = {
-    USD: { symbol: '$', label: 'USD' },
-    NGN: { symbol: '₦', label: 'NGN' },
-    GBP: { symbol: '£', label: 'GBP' }
+    USD: { symbol: '$', label: 'USD' }
+};
+
+export const BASE_CURRENCY = 'USD';
+
+export const EXCHANGE_RATE_API = {
+    endpoint: 'https://api.exchangerate-api.com/v4/latest/',
+    cacheKey: 'jtg_exchange_rates',
+    cacheTimeKey: 'jtg_exchange_rates_time',
+    cacheDateKey: 'jtg_exchange_rates_date'
 };
 
 export const LOGO_URL = "/logo.png";
