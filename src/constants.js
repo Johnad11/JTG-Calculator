@@ -5,4 +5,10 @@ export const ASSETS = {
     forex: { label: 'Forex', pairs: ['AUDCAD', 'AUDCHF', 'AUDJPY', 'AUDNZD', 'AUDUSD', 'CADCHF', 'CADJPY', 'CHFJPY', 'EURAUD', 'EURCAD', 'EURCHF', 'EURGBP', 'EURJPY', 'EURNZD', 'EURUSD', 'GBPAUD', 'GBPCAD', 'GBPCHF', 'GBPJPY', 'GBPNZD', 'GBPUSD', 'NZDCAD', 'NZDCHF', 'NZDJPY', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'USDMXN', 'USDZAR'], contract: 100000 }
 };
 
+export const CURRENCIES = {
+    USD: { symbol: '$', label: 'USD' },
+    NGN: { symbol: '₦', label: 'NGN' },
+    GBP: { symbol: '£', label: 'GBP' }
+};
+
 export const LOGO_URL = "/logo.png";

@@ -7,7 +7,7 @@ import TradeList from './components/TradeList';
 import CalendarView from './components/CalendarView';
 import Performance from './components/Performance';
 import AccountManager from './components/AccountManager';
-import { LOGO_URL } from './constants';
+import { LOGO_URL, CURRENCIES } from './constants';
 
 const App = () => {
     const [page, setPage] = useState('calc');
@@ -19,6 +19,10 @@ const App = () => {
     const [activeAccountId, setActiveAccountId] = useState(null);
     const [showAccountManager, setShowAccountManager] = useState(false);
     const [exportCount, setExportCount] = useState(0);
+
+    // CURRENCY STATE
+    const [currency, setCurrency] = useState(() => localStorage.getItem('jtg_currency') || 'USD');
+    const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
     // GLOBAL ACCOUNT BALANCE SETTING
     const [globalBalance, setGlobalBalance] = useState(() => localStorage.getItem('jtg_global_balance') || '');
@@ -42,9 +46,16 @@ const App = () => {
                 await db.collection('accounts').doc(activeAccountId).update({ balance: newBal });
                 setAccounts(accounts.map(a => a.id === activeAccountId ? { ...a, balance: newBal } : a));
             } catch (e) { console.error("Error updating balance:", e); }
-        } else if (user) {
-            // Fallback for migration edge cases
-            db.collection('user_settings').doc(user.uid).set({ balance: newBal }, { merge: true });
+        }
+    };
+
+    const updateCurrency = async (newCurrency) => {
+        setCurrency(newCurrency);
+        localStorage.setItem('jtg_currency', newCurrency);
+        if (user) {
+            try {
+                await db.collection('user_settings').doc(user.uid).set({ currency: newCurrency }, { merge: true });
+            } catch (e) { console.error("Error updating currency setting:", e); }
         }
     };
 
@@ -107,6 +118,11 @@ const App = () => {
                             setExportCount(0);
                         }
 
+                        if (settingsDoc.exists && settingsDoc.data().currency) {
+                            setCurrency(settingsDoc.data().currency);
+                            localStorage.setItem('jtg_currency', settingsDoc.data().currency);
+                        }
+
                     } catch (e) {
                         console.error("Error loading user data:", e);
                         // Fallback (e.g. offline)
@@ -164,6 +180,23 @@ const App = () => {
             alert("You must be logged in to add an account.");
             return false;
         }
+
+        const isPremium = user.email === 'nwabuezebosco@gmail.com';
+        const personalAccounts = accounts.filter(a => a.type === 'Personal');
+        const propAccounts = accounts.filter(a => a.type === 'Prop Firm');
+
+        const MAX_PERSONAL = isPremium ? 3 : 2;
+        const MAX_PROP = isPremium ? 5 : 3;
+
+        if (accountData.type === 'Personal' && personalAccounts.length >= MAX_PERSONAL) {
+            alert(`Limit reached: Free accounts can have up to ${MAX_PERSONAL} personal accounts.`);
+            return false;
+        }
+        if (accountData.type === 'Prop Firm' && propAccounts.length >= MAX_PROP) {
+            alert(`Limit reached: Free accounts can have up to ${MAX_PROP} prop firm accounts.`);
+            return false;
+        }
+
         try {
             console.log("Adding account to Firebase...", accountData);
             const newAcc = { ...accountData, userId: user.uid, createdAt: new Date().toISOString() };
@@ -342,6 +375,20 @@ const App = () => {
                         <NavBtn id="calendar" icon={<Icons.Calendar />} label="CALENDAR" />
                         <NavBtn id="perf" icon={<Icons.Chart />} label="DATA" />
                     </div>
+
+                    {/* CURRENCY SELECTOR */}
+                    <div className="mt-8 flex flex-col items-center gap-2 w-full px-4">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Currency</label>
+                        <select
+                            value={currency}
+                            onChange={(e) => updateCurrency(e.target.value)}
+                            className="w-full bg-jtg-blue/10 border border-jtg-blue/30 rounded-lg p-1 text-xs text-white outline-none focus:ring-1 focus:ring-jtg-green/50"
+                        >
+                            {Object.entries(CURRENCIES).map(([key, val]) => (
+                                <option key={key} value={key} className="bg-jtg-dark">{val.label} ({val.symbol})</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
                 <div className="w-full pb-4 mt-8 shrink-0 flex flex-col gap-4 items-center">
                     {/* SUPPORT BUTTON */}
@@ -396,6 +443,16 @@ const App = () => {
                         <button onClick={login} className="text-[10px] bg-jtg-green/20 text-jtg-green px-3 py-1.5 rounded border border-jtg-green/50">{isLoggingIn ? '...' : 'LOGIN'}</button>
                     )}
 
+                    <select
+                        value={currency}
+                        onChange={(e) => updateCurrency(e.target.value)}
+                        className="bg-jtg-blue/10 border border-jtg-blue/30 rounded-lg p-1.5 text-[10px] text-white outline-none"
+                    >
+                        {Object.entries(CURRENCIES).map(([key, val]) => (
+                            <option key={key} value={key} className="bg-jtg-dark">{val.symbol}</option>
+                        ))}
+                    </select>
+
                     <button onClick={() => window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank')} className="p-2 text-slate-400 hover:text-white transition">
                         <Icons.Support />
                     </button>
@@ -420,7 +477,7 @@ const App = () => {
 
                     {/* Scrollable Container */}
                     <div className="w-full h-full overflow-y-auto custom-scroll pt-20 pb-24 md:pt-0 md:pb-0">
-                        {page === 'calc' && <Calculator globalBalance={globalBalance} />}
+                        {page === 'calc' && <Calculator globalBalance={globalBalance} currencySymbol={currencySymbol} />}
                         {page === 'journal' && <Journal addTrade={addTrade} />}
                         {page === 'trades' && (
                             <TradeList
@@ -429,10 +486,11 @@ const App = () => {
                                 isPremium={user?.email === 'nwabuezebosco@gmail.com'}
                                 exportCount={exportCount}
                                 incrementExportCount={incrementExportCount}
+                                currencySymbol={currencySymbol}
                             />
                         )}
                         {page === 'calendar' && <CalendarView trades={trades} />}
-                        {page === 'perf' && <Performance trades={trades} globalBalance={globalBalance} updateGlobalBalance={updateGlobalBalance} />}
+                        {page === 'perf' && <Performance trades={trades} globalBalance={globalBalance} updateGlobalBalance={updateGlobalBalance} currencySymbol={currencySymbol} />}
                     </div>
                 </div>
             </main>
@@ -447,6 +505,7 @@ const App = () => {
                     deleteAccount={deleteAccount}
                     close={() => setShowAccountManager(false)}
                     isPremium={user?.email === 'nwabuezebosco@gmail.com'}
+                    currencySymbol={currencySymbol}
                 />
             )}
         </div>

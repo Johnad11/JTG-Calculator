@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Icons } from './Icons';
 
-const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close, isPremium = false }) => {
+const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close, isPremium = false, currencySymbol = '$' }) => {
     const canDelete = accounts.length > 1;
+    const [isFormOpen, setIsFormOpen] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
     const [newAccountName, setNewAccountName] = useState('');
     const [newAccountType, setNewAccountType] = useState('Personal');
@@ -22,34 +23,56 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
             return;
         }
 
+        // Final check for limits before proceeding
+        if (newAccountType === 'Personal' && personalAccounts.length >= MAX_PERSONAL) {
+            alert(`You've reached the maximum of ${MAX_PERSONAL} personal accounts on your current plan.`);
+            setIsAdding(false);
+            return;
+        }
+        if (newAccountType === 'Prop Firm' && propAccounts.length >= MAX_PROP) {
+            alert(`You've reached the maximum of ${MAX_PROP} prop firm accounts on your current plan.`);
+            setIsAdding(false);
+            return;
+        }
+
         setIsAdding(true);
         console.log("Attempting to add account:", { newAccountName, newAccountType, newAccountBalance, newAccountRules });
 
         try {
-            const success = await addAccount({
+            // Add a safety timeout of 10 seconds
+            const addPromise = addAccount({
                 name: newAccountName,
                 type: newAccountType,
                 balance: newAccountBalance,
                 rules: newAccountRules
             });
 
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Request timed out. Please check your connection.")), 15000)
+            );
+
+            const success = await Promise.race([addPromise, timeoutPromise]);
+
             console.log("Add account result:", success);
 
             if (success) {
-                setIsAdding(false);
                 setNewAccountName('');
                 setNewAccountBalance('');
                 setNewAccountType('Personal');
                 setNewAccountRules([]);
                 setRuleInput('');
+                setIsFormOpen(false); // Close the form
+                setIsAdding(false); // Explicitly set false after success
             } else {
-                alert("Failed to create account. Please try again or check console for details.");
+                // If addAccount returned false (e.g. handled internal error)
+                setIsAdding(false);
             }
         } catch (err) {
             console.error("Error in handleAdd:", err);
             alert("An error occurred: " + err.message);
+            setIsAdding(false);
         } finally {
-            setIsAdding(false); // Ensure loading state is cleared
+            setIsAdding(false); // Double safety to ensure loading state is cleared
         }
     };
 
@@ -100,7 +123,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         className={`flex-1 flex items-center justify-between p-3 rounded-lg border transition-all ${activeAccountId === acc.id ? 'bg-jtg-green/20 border-jtg-green text-white' : 'bg-jtg-blue/10 border-transparent text-slate-300 hover:bg-jtg-blue/20'}`}
                                     >
                                         <span className="font-semibold">{acc.name}</span>
-                                        <span className="font-mono text-sm opacity-80">${acc.balance}</span>
+                                        <span className="font-mono text-sm opacity-80">{currencySymbol}{acc.balance}</span>
                                     </button>
                                     {canDelete && (
                                         <button
@@ -132,7 +155,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         >
                                             <span className="font-semibold">{acc.name}</span>
                                             <div className="text-right">
-                                                <div className="font-mono text-sm opacity-80">${acc.balance}</div>
+                                                <div className="font-mono text-sm opacity-80">{currencySymbol}{acc.balance}</div>
                                                 {acc.rules && acc.rules.length > 0 && (
                                                     <div className="text-[10px] text-jtg-green opacity-70">{acc.rules.length} Rules Active</div>
                                                 )}
@@ -167,9 +190,9 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
 
                 {/* Footer / Add Action */}
                 <div className="p-4 border-t border-jtg-green/20 bg-jtg-blue/5">
-                    {!isAdding ? (
+                    {!isFormOpen ? (
                         <button
-                            onClick={() => setIsAdding(true)}
+                            onClick={() => setIsFormOpen(true)}
                             className="w-full py-3 bg-jtg-green text-black font-bold rounded hover:bg-green-400 transition flex items-center justify-center gap-2"
                         >
                             <Icons.Plus /> ADD NEW ACCOUNT
@@ -259,7 +282,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                 <div className="flex gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => setIsAdding(false)}
+                                        onClick={() => setIsFormOpen(false)}
                                         className="flex-1 py-2 bg-slate-700 text-white rounded hover:bg-slate-600 transition text-sm font-bold"
                                     >
                                         CANCEL

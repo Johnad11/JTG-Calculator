@@ -3,7 +3,7 @@ import { Icons } from './Icons';
 import JtgPromo from './JtgPromo';
 import { ASSETS } from '../constants';
 
-const Calculator = ({ globalBalance }) => {
+const Calculator = ({ globalBalance, currencySymbol = '$' }) => {
     const [balance, setBalance] = useState(globalBalance || 100000);
     // Update local balance if global balance changes
     useEffect(() => { if (globalBalance) setBalance(globalBalance); }, [globalBalance]);
@@ -78,7 +78,7 @@ const Calculator = ({ globalBalance }) => {
                         </div>
                         <div className="grid grid-cols-2 gap-6 mb-8">
                             <div><label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Balance (Required)</label><input type="number" value={balance} onChange={(e) => setBalance(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono text-lg font-medium focus:ring-2 focus:ring-jtg-green/50 outline-none" required /></div>
-                            <div><label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Risk</label><div className="flex bg-jtg-input border border-jtg-blue/40 rounded-xl overflow-hidden"><input type="number" value={riskValue} onChange={(e) => setRiskValue(e.target.value)} className="w-full bg-transparent p-4 text-white font-mono text-lg font-medium outline-none z-10" /><button onClick={() => setRiskMode(riskMode === 'percent' ? 'usd' : 'percent')} className="bg-jtg-blue/20 border-l border-jtg-blue/40 px-6 text-sm font-bold text-jtg-green hover:bg-jtg-blue/40 transition">{riskMode === 'percent' ? '%' : '$'}</button></div></div>
+                            <div><label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Risk</label><div className="flex bg-jtg-input border border-jtg-blue/40 rounded-xl overflow-hidden"><input type="number" value={riskValue} onChange={(e) => setRiskValue(e.target.value)} className="w-full bg-transparent p-4 text-white font-mono text-lg font-medium outline-none z-10" /><button onClick={() => setRiskMode(riskMode === 'percent' ? 'usd' : 'percent')} className="bg-jtg-blue/20 border-l border-jtg-blue/40 px-6 text-sm font-bold text-jtg-green hover:bg-jtg-blue/40 transition">{riskMode === 'percent' ? '%' : currencySymbol}</button></div></div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div><label className="text-xs font-bold text-jtg-green uppercase">Entry</label><input type="number" placeholder="0.00" value={entryPrice} onChange={(e) => setEntryPrice(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-jtg-green/50 outline-none" /></div>
@@ -98,8 +98,8 @@ const Calculator = ({ globalBalance }) => {
                                 <div className="inline-block bg-jtg-green/10 text-jtg-green border border-jtg-green/20 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-10">Standard Lots</div>
                                 <div className="w-full h-px bg-jtg-blue/30 mb-8"></div>
                                 <div className="flex justify-between items-center w-full px-2 mb-6">
-                                    <div className="text-left"><p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Risk</p><p className="text-xl font-bold text-red-500 font-mono">${result.risk}</p></div>
-                                    {result.profit && <div className="text-right"><p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Gain</p><p className="text-xl font-bold text-jtg-green font-mono">+${result.profit}</p></div>}
+                                    <div className="text-left"><p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Risk</p><p className="text-xl font-bold text-red-500 font-mono">{currencySymbol}{result.risk}</p></div>
+                                    {result.profit && <div className="text-right"><p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Gain</p><p className="text-xl font-bold text-jtg-green font-mono">+{currencySymbol}{result.profit}</p></div>}
                                 </div>
                                 {result.rr && <div className="w-full bg-slate-800/40 rounded-xl p-4 border border-slate-700/50 flex justify-between items-center"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-jtg-green"></div><span className="text-slate-400 text-xs font-bold uppercase">R:R</span></div><span className="text-white font-mono text-xl font-bold">1 : {result.rr}</span></div>}
                             </div>
