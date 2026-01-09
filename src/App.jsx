@@ -8,7 +8,7 @@ import CalendarView from './components/CalendarView';
 import Performance from './components/Performance';
 import AccountManager from './components/AccountManager';
 import UsernameModal from './components/UsernameModal';
-import { LOGO_URL, CURRENCIES } from './constants';
+import { LOGO_URL, CURRENCIES, ASSETS } from './constants';
 
 import { fetchExchangeRates } from './utils/exchangeRate';
 import { convertForDisplay, convertForStorage } from './utils/currencyConverter';
@@ -219,9 +219,11 @@ const App = () => {
         const isPremium = user.email === 'nwabuezebosco@gmail.com';
         const personalAccounts = accounts.filter(a => a.type === 'Personal');
         const propAccounts = accounts.filter(a => a.type === 'Prop Firm');
+        const syntheticAccounts = accounts.filter(a => a.type === 'Synthetic');
 
         const MAX_PERSONAL = isPremium ? 3 : 2;
         const MAX_PROP = isPremium ? 5 : 3;
+        const MAX_SYNTHETIC = isPremium ? 5 : 2;
 
         if (accountData.type === 'Personal' && personalAccounts.length >= MAX_PERSONAL) {
             alert(`Limit reached: Free accounts can have up to ${MAX_PERSONAL} personal accounts.`);
@@ -229,6 +231,10 @@ const App = () => {
         }
         if (accountData.type === 'Prop Firm' && propAccounts.length >= MAX_PROP) {
             alert(`Limit reached: Free accounts can have up to ${MAX_PROP} prop firm accounts.`);
+            return false;
+        }
+        if (accountData.type === 'Synthetic' && syntheticAccounts.length >= MAX_SYNTHETIC) {
+            alert(`Limit reached: Free accounts can have up to ${MAX_SYNTHETIC} synthetic accounts.`);
             return false;
         }
 
@@ -352,11 +358,13 @@ const App = () => {
         }
 
         let contract = 1;
-        // FIX FOR GOLD PNL BUG - CHECK METAL BEFORE FOREX
+        // FIND CONTRACT SIZE FROM ASSETS
         if (formData.pair.includes('XAU')) contract = 100;
         else if (formData.pair.includes('XAG')) contract = 5000;
-        else if (formData.pair.length === 6 && !formData.pair.includes('USD')) contract = 100000;
-        else if (formData.pair.includes('USD') && formData.pair.length === 6 && !formData.pair.includes('BTC') && !formData.pair.includes('ETH')) contract = 100000;
+        else {
+            const assetKey = Object.keys(ASSETS).find(key => ASSETS[key].pairs.includes(formData.pair));
+            contract = ASSETS[assetKey]?.contract || 1;
+        }
 
         let pnl = '0.00';
         if (x) {
@@ -519,7 +527,7 @@ const App = () => {
                     {/* Scrollable Container */}
                     <div className="w-full h-full overflow-y-auto custom-scroll pt-20 pb-24 md:pt-0 md:pb-0">
                         {page === 'calc' && <Calculator globalBalance={globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
-                        {page === 'journal' && <Journal addTrade={addTrade} />}
+                        {page === 'journal' && <Journal addTrade={addTrade} accountType={activeAccount?.type} />}
                         {page === 'trades' && (
                             <TradeList
                                 trades={trades}

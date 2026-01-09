@@ -41,11 +41,11 @@ const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exc
         const tp = takeProfit ? parseFloat(takeProfit) : null;
         const dist = Math.abs(entry - sl);
 
-        let contractSize = 1;
-        // FIXED GOLD PnL LOGIC
+        let contractSize = ASSETS[assetClass]?.contract || 1;
+
+        // CUSTOM OVERRIDES FOR SPECIAL PAIRS
         if (pair.includes('XAU')) contractSize = 100;
         else if (pair.includes('XAG')) contractSize = 5000;
-        else if (assetClass === 'forex') contractSize = 100000;
 
         let lot = 0;
         if (pair.includes('JPY') && assetClass === 'forex') lot = riskDollars / (dist * 100 * 6.8);

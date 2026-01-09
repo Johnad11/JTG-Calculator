@@ -15,6 +15,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
 
     const personalAccounts = accounts.filter(a => a.type === 'Personal');
     const propAccounts = accounts.filter(a => a.type === 'Prop Firm');
+    const syntheticAccounts = accounts.filter(a => a.type === 'Synthetic');
 
     const [showPremiumModal, setShowPremiumModal] = useState(false);
 
@@ -33,6 +34,11 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         }
         if (newAccountType === 'Prop Firm' && propAccounts.length >= MAX_PROP) {
             alert(`You've reached the maximum of ${MAX_PROP} prop firm accounts on your current plan.`);
+            setIsAdding(false);
+            return;
+        }
+        if (newAccountType === 'Synthetic' && syntheticAccounts.length >= MAX_SYNTHETIC) {
+            alert(`You've reached the maximum of ${MAX_SYNTHETIC} synthetic accounts on your current plan.`);
             setIsAdding(false);
             return;
         }
@@ -93,9 +99,11 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
 
     const MAX_PERSONAL = isPremium ? 3 : 2;
     const MAX_PROP = isPremium ? 5 : 3;
+    const MAX_SYNTHETIC = isPremium ? 5 : 2;
 
     const canAddPersonal = personalAccounts.length < MAX_PERSONAL;
     const canAddProp = propAccounts.length < MAX_PROP;
+    const canAddSynthetic = syntheticAccounts.length < MAX_SYNTHETIC;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -202,6 +210,46 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                             {propAccounts.length === 0 && <div className="text-slate-500 text-sm italic p-2 text-center">No prop firm accounts</div>}
                         </div>
                     </div>
+
+                    {/* SYNTHETIC ACCOUNTS */}
+                    <div className="mb-6">
+                        <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 flex justify-between">
+                            Synthetic Accounts <span>{syntheticAccounts.length}/{MAX_SYNTHETIC}</span>
+                        </h3>
+                        <div className="flex flex-col gap-2">
+                            {syntheticAccounts.map(acc => (
+                                <div key={acc.id} className="flex flex-col mb-2">
+                                    <div className="flex items-center gap-2 group">
+                                        <button
+                                            onClick={() => switchAccount(acc.id)}
+                                            className={`flex-1 flex items-center justify-between p-3 rounded-lg border transition-all ${activeAccountId === acc.id ? 'bg-jtg-green/20 border-jtg-green text-white' : 'bg-jtg-blue/10 border-transparent text-slate-300 hover:bg-jtg-blue/20'}`}
+                                        >
+                                            <span className="font-semibold">{acc.name}</span>
+                                            <div className="text-right">
+                                                <div className="font-mono text-sm opacity-80">
+                                                    {currencySymbol}{exchangeRates ? convertForDisplay(acc.balance, currency, exchangeRates).toFixed(currency === 'NGN' ? 0 : 2) : parseFloat(acc.balance).toFixed(2)}
+                                                </div>
+                                                <div className="text-[10px] text-jtg-green opacity-70">Weltrade Info Sync</div>
+                                            </div>
+                                        </button>
+                                        {canDelete && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    deleteAccount(acc.id);
+                                                }}
+                                                className="p-2 text-slate-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                title="Delete Account"
+                                            >
+                                                <Icons.Trash />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            {syntheticAccounts.length === 0 && <div className="text-slate-500 text-sm italic p-2 text-center">No synthetic accounts</div>}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Footer / Add Action */}
@@ -223,6 +271,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                 >
                                     <option value="Personal">Personal</option>
                                     <option value="Prop Firm">Prop Firm</option>
+                                    <option value="Synthetic">Synthetic</option>
                                 </select>
                                 <input
                                     type="text"
@@ -249,43 +298,16 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                 required
                             />
 
-                            {newAccountType === 'Prop Firm' && (
-                                <div className="bg-black/20 p-3 rounded border border-slate-700/50">
-                                    <div className="text-xs font-bold text-slate-400 mb-2 uppercase">Account Rules</div>
-                                    <div className="flex gap-2 mb-2">
-                                        <input
-                                            type="text"
-                                            value={ruleInput}
-                                            onChange={(e) => setRuleInput(e.target.value)}
-                                            placeholder="e.g. Max Daily Loss 5%"
-                                            className="flex-1 bg-black/40 border border-slate-700 rounded p-1.5 text-white text-xs focus:border-jtg-green outline-none"
-                                            onKeyDown={(e) => e.key === 'Enter' && addRule(e)}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={addRule}
-                                            className="bg-jtg-green/20 text-jtg-green border border-jtg-green/30 rounded px-3 hover:bg-jtg-green/30 transition"
-                                        >
-                                            <Icons.Plus />
-                                        </button>
+                            {newAccountType === 'Synthetic' && (
+                                <div className="bg-jtg-green/5 p-3 rounded border border-jtg-green/20 text-[11px] text-slate-300 mb-2 italic">
+                                    <div className="flex items-center gap-2 text-jtg-green font-bold mb-1 uppercase tracking-wider">
+                                        <Icons.Journal className="w-3 h-3" /> Weltrade Info
                                     </div>
-
-                                    {newAccountRules.length > 0 && (
-                                        <ul className="space-y-1 max-h-24 overflow-y-auto custom-scroll">
-                                            {newAccountRules.map((rule, idx) => (
-                                                <li key={idx} className="flex justify-between items-center text-xs text-slate-300 bg-black/40 p-1.5 rounded">
-                                                    <span>{rule}</span>
-                                                    <button type="button" onClick={() => removeRule(idx)} className="text-red-400 hover:text-red-300">
-                                                        <Icons.X />
-                                                    </button>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
+                                    Synthetic accounts follow Weltrade synthetic pairs specifications and are restricted to synthetic instruments.
                                 </div>
                             )}
 
-                            {(newAccountType === 'Personal' && !canAddPersonal) || (newAccountType === 'Prop Firm' && !canAddProp) ? (
+                            {(newAccountType === 'Personal' && !canAddPersonal) || (newAccountType === 'Prop Firm' && !canAddProp) || (newAccountType === 'Synthetic' && !canAddSynthetic) ? (
                                 <div className="text-center p-3">
                                     <div className="text-red-400 text-xs font-bold mb-2">
                                         {isPremium ? 'Maximum Account Limit Reached' : `Free Plan Limit Reached (${newAccountType === 'Personal' ? MAX_PERSONAL : MAX_PROP}/${newAccountType === 'Personal' ? MAX_PERSONAL : MAX_PROP})`}
