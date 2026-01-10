@@ -40,6 +40,9 @@ const App = () => {
     // GLOBAL ACCOUNT BALANCE SETTING
     const [globalBalance, setGlobalBalance] = useState(() => localStorage.getItem('jtg_global_balance') || '');
 
+    // WITHDRAWALS STATE
+    const [withdrawals, setWithdrawals] = useState([]);
+
     // TRADES STATE
     const [trades, setTrades] = useState(() => {
         try {
@@ -178,6 +181,7 @@ const App = () => {
         if (user && activeAccountId) {
             const loadTrades = async () => {
                 try {
+                    // Load Trades
                     const q = db.collection('trades')
                         .where('userId', '==', user.uid)
                         .where('accountId', '==', activeAccountId); // Filter by Account
@@ -186,6 +190,15 @@ const App = () => {
                     const cloudTrades = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                     // Sort locally
                     setTrades(cloudTrades.sort((a, b) => b.id - a.id));
+
+                    // Load Withdrawals (for Performance)
+                    const wQ = db.collection('withdrawals')
+                        .where('userId', '==', user.uid)
+                        .where('accountId', '==', activeAccountId);
+
+                    const wSnap = await wQ.get();
+                    const cloudWithdrawals = wSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                    setWithdrawals(cloudWithdrawals);
 
                     // Update active account balance in UI if needed
                     const acc = accounts.find(a => a.id === activeAccountId);
@@ -240,7 +253,13 @@ const App = () => {
 
         try {
             console.log("Adding account to Firebase...", accountData);
-            const newAcc = { ...accountData, userId: user.uid, createdAt: new Date().toISOString() };
+            const initialBalance = accountData.balance; // Store initial balance
+            const newAcc = {
+                ...accountData,
+                initialBalance, // Add initialBalance field
+                userId: user.uid,
+                createdAt: new Date().toISOString()
+            };
             const ref = await db.collection('accounts').add(newAcc);
             console.log("Account added with ID:", ref.id);
             const savedAcc = { ...newAcc, id: ref.id };
@@ -252,6 +271,97 @@ const App = () => {
             alert("Error creating account: " + e.message);
             return false;
         }
+    };
+
+    const withdrawFunds = async (accountId, amount, note, date) => {
+        if (!user) return false;
+        const account = accounts.find(a => a.id === accountId);
+        if (!account) return false;
+
+        const amountNum = parseFloat(amount);
+        if (isNaN(amountNum) || amountNum <= 0) {
+            alert("Invalid amount");
+            return false;
+        }
+
+        const currentBal = parseFloat(account.balance);
+        if (currentBal < amountNum) {
+            // Optional: Prevent overdraft? For journals, maybe just warn or allow negative?
+            // Usually journals allow negative if user missed a trade entry.
+            // But let's allow it with a warning or just allow it.
+        }
+
+        // Convert withdrawal to USD for consistency if account is in other currency
+        // But wait, balance is stored in USD (mostly) or whatever the account currency is?
+        // App.jsx:54 -> convertForStorage suggests storage is in USD if currency != USD.
+        // Let's stick to storing withdrawals in the ACCOUNT'S native currency value in the withdrawal doc,
+        // but when updating the account balance (which is stored in USD as per line 54 precedent), we need to be careful.
+
+        // Wait, line 64 updates account balance in USD.
+        // So we need to convert the withdrawal amount to USD if the account currency is not USD.
+
+        let amountInUSD = amountNum;
+        if (currency !== 'USD' && exchangeRates) {
+            // If the INPUT is in NGN (because user is viewing in NGN), we convert to USD.
+            amountInUSD = convertForStorage(amountNum, currency, exchangeRates);
+        }
+
+        // 1. Update Account Balance
+        const newBalance = (parseFloat(account.balance) - amountInUSD).toString();
+
+        try {
+            // Update Account
+            await db.collection('accounts').doc(accountId).update({ balance: newBalance });
+
+            // 2. Log Withdrawal
+            const withdrawal = {
+                userId: user.uid,
+                accountId,
+                amount: amountInUSD, // Store standardized amount
+                displayAmount: amountNum, // Store what user entered (approx)
+                currency: currency, // Store currency of entry
+                note,
+                date: date || new Date().toISOString(),
+                createdAt: new Date().toISOString(),
+                type: 'WITHDRAWAL'
+            };
+            await db.collection('withdrawals').add(withdrawal);
+
+            // 3. Update Local State
+            const updatedAccounts = accounts.map(a => a.id === accountId ? { ...a, balance: newBalance } : a);
+            setAccounts(updatedAccounts);
+            if (activeAccountId === accountId) {
+                setGlobalBalance(newBalance);
+                setWithdrawals([{ ...withdrawal, id: 'temp-' + Date.now() }, ...withdrawals]);
+            }
+            return true;
+        } catch (e) {
+            console.error("Withdrawal Error:", e);
+            alert("Error processing withdrawal: " + e.message);
+            return false;
+        }
+    };
+
+    const updateAccount = async (accountId, updates) => {
+        if (!user) return false;
+        try {
+            await db.collection('accounts').doc(accountId).update(updates);
+            setAccounts(accounts.map(a => a.id === accountId ? { ...a, ...updates } : a));
+            return true;
+        } catch (e) {
+            console.error("Error updating account:", e);
+            alert("Error updating account: " + e.message);
+            return false;
+        }
+    };
+
+    const updateInitialBalance = async (newBalance) => {
+        if (!activeAccountId) return;
+        const bal = exchangeRates && currency !== 'USD'
+            ? convertForStorage(newBalance, currency, exchangeRates)
+            : newBalance;
+
+        await updateAccount(activeAccountId, { initialBalance: bal.toString() });
     };
 
     const deleteAccount = async (id) => {
@@ -385,6 +495,18 @@ const App = () => {
                 const docRef = await db.collection('trades').add(newTrade);
                 const tradeWithId = { ...newTrade, id: docRef.id };
                 setTrades([tradeWithId, ...trades]);
+
+                // Update Account Balance with PnL
+                if (activeAccountId) {
+                    const currentBal = parseFloat(activeAccount.balance);
+                    const pnlVal = parseFloat(pnlInUSD); // already stored in USD/Base
+                    const newBal = (currentBal + pnlVal).toString();
+
+                    await db.collection('accounts').doc(activeAccountId).update({ balance: newBal });
+                    setAccounts(accounts.map(a => a.id === activeAccountId ? { ...a, balance: newBal } : a));
+                    setGlobalBalance(newBal); // Update global view
+                }
+
             } catch (e) {
                 alert("Error saving to cloud: " + e.message);
             }
@@ -396,8 +518,24 @@ const App = () => {
     const deleteTrade = async (id) => {
         if (user) {
             try {
+                const tradeToDelete = trades.find(t => t.id === id);
                 await db.collection('trades').doc(id.toString()).delete();
                 setTrades(trades.filter(t => t.id !== id));
+
+                // Revert Account Balance (Subtract PnL)
+                if (tradeToDelete && tradeToDelete.accountId) {
+                    const acc = accounts.find(a => a.id === tradeToDelete.accountId);
+                    if (acc) {
+                        const currentBal = parseFloat(acc.balance);
+                        const pnlVal = parseFloat(tradeToDelete.pnl);
+                        // Subtracting PnL reverses the trade effect
+                        const newBal = (currentBal - pnlVal).toString();
+
+                        await db.collection('accounts').doc(tradeToDelete.accountId).update({ balance: newBal });
+                        setAccounts(accounts.map(a => a.id === tradeToDelete.accountId ? { ...a, balance: newBal } : a));
+                        if (activeAccountId === tradeToDelete.accountId) setGlobalBalance(newBal);
+                    }
+                }
             } catch (e) {
                 alert("Error deleting from cloud: " + e.message);
             }
@@ -544,7 +682,8 @@ const App = () => {
                         )}
 
                         {page === 'calendar' && <CalendarView trades={trades} />}
-                        {page === 'perf' && <Performance trades={trades} globalBalance={globalBalance} updateGlobalBalance={updateGlobalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
+                        {page === 'calendar' && <CalendarView trades={trades} />}
+                        {page === 'perf' && <Performance trades={trades} withdrawals={withdrawals} globalInitialBalance={activeAccount?.initialBalance} globalBalance={globalBalance} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
                     </div>
                 </div>
             </main>
@@ -561,7 +700,10 @@ const App = () => {
                     isPremium={user?.email === 'nwabuezebosco@gmail.com'}
                     currencySymbol={currencySymbol}
                     currency={currency}
-                    exchangeRates={exchangeRates}
+                    options={exchangeRates}
+                    withdrawFunds={withdrawFunds}
+                    updateAccount={updateAccount}
+                    userId={user?.uid}
                 />
             )}
 
