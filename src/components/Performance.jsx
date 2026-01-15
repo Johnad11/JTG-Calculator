@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Icons } from './Icons';
 import JtgPromo from './JtgPromo';
 import StatCard from './StatCard';
+import EquityChart from './EquityChart';
 import { convertForDisplay } from '../utils/currencyConverter';
 
 const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBalance, updateGlobalBalance, updateInitialBalance, currencySymbol = '$', currency = 'USD', exchangeRates }) => {
@@ -44,9 +45,29 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
             bestPair,
             currentBalance: currentBalance.toFixed(2),
             growthPct: growthPct.toFixed(2),
-            totalWithdrawals: totalWithdrawals.toFixed(2)
+            totalWithdrawals: totalWithdrawals.toFixed(2),
+            chartData: []
         };
     }, [trades, globalBalance, withdrawals]);
+
+    const chartData = useMemo(() => {
+        const startBal = parseFloat(globalInitialBalance || globalBalance || 0);
+        const data = [{
+            date: 'Start',
+            balance: startBal
+        }];
+
+        let runningBalance = startBal;
+        trades.forEach((t, index) => {
+            runningBalance += parseFloat(t.pnl || 0);
+            data.push({
+                date: t.closeDate ? new Date(t.closeDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : `Trade ${index + 1}`,
+                balance: runningBalance
+            });
+        });
+
+        return data;
+    }, [trades, globalInitialBalance, globalBalance]);
 
     const saveBalance = () => {
         if (updateInitialBalance) {
@@ -98,10 +119,33 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
                     <StatCard title="Winning Trades" value={stats.wins} color="emerald" icon={<span className="text-jtg-green"><Icons.ThumbsUp /></span>} />
                     <StatCard title="Losing Trades" value={stats.loss} color="red" icon={<span className="text-red-500"><Icons.ThumbsDown /></span>} />
                 </div>
-                <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-8 shadow-xl flex flex-col items-center justify-center min-h-[300px] mb-8">
-                    <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4"><span className="text-jtg-green"><Icons.Chart /></span></div>
-                    <h3 className="text-lg font-bold text-white">Equity Curve Visualizer</h3>
-                    <p className="text-slate-400 text-sm max-w-md text-center mt-2">Log more trades to generate your consistency graph.</p>
+                <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-4 md:p-8 shadow-xl flex flex-col min-h-[400px] mb-8 overflow-hidden">
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <span className="text-jtg-green"><Icons.Chart /></span> Equity Curve
+                            </h3>
+                            <p className="text-slate-400 text-xs">Visualizing your account growth trajectory</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold">Total Return</p>
+                            <p className={`text-sm font-bold ${parseFloat(stats.netPnL) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>
+                                {stats.growthPct}%
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="w-full h-[300px] mt-4">
+                        {trades.length > 0 ? (
+                            <EquityChart data={chartData} currencySymbol={currencySymbol} />
+                        ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-center opacity-50 py-10">
+                                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 text-jtg-green"><Icons.Chart /></div>
+                                <h3 className="text-lg font-bold text-white">Log trades to see your curve</h3>
+                                <p className="text-slate-400 text-sm max-w-md mt-2">Your performance visualization will appear here.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
             <JtgPromo />
