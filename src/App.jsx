@@ -188,8 +188,13 @@ const App = () => {
 
                     const snapshot = await q.get();
                     const cloudTrades = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                    // Sort locally
-                    setTrades(cloudTrades.sort((a, b) => b.id - a.id));
+                    // Sort by closing date (lowest to highest)
+                    const sortedTrades = cloudTrades.sort((a, b) => {
+                        const dateA = new Date(a.closeDate || a.openDate || 0);
+                        const dateB = new Date(b.closeDate || b.openDate || 0);
+                        return dateA - dateB;
+                    });
+                    setTrades(sortedTrades);
 
                     // Load Withdrawals (for Performance)
                     const wQ = db.collection('withdrawals')
@@ -494,7 +499,12 @@ const App = () => {
             try {
                 const docRef = await db.collection('trades').add(newTrade);
                 const tradeWithId = { ...newTrade, id: docRef.id };
-                setTrades([tradeWithId, ...trades]);
+                const updatedTrades = [...trades, tradeWithId].sort((a, b) => {
+                    const dateA = new Date(a.closeDate || a.openDate || 0);
+                    const dateB = new Date(b.closeDate || b.openDate || 0);
+                    return dateA - dateB;
+                });
+                setTrades(updatedTrades);
 
                 // Update Account Balance with PnL
                 if (activeAccountId) {
@@ -511,7 +521,12 @@ const App = () => {
                 alert("Error saving to cloud: " + e.message);
             }
         } else {
-            setTrades([newTrade, ...trades]);
+            const updatedTrades = [...trades, newTrade].sort((a, b) => {
+                const dateA = new Date(a.closeDate || a.openDate || 0);
+                const dateB = new Date(b.closeDate || b.openDate || 0);
+                return dateA - dateB;
+            });
+            setTrades(updatedTrades);
         }
     };
 
