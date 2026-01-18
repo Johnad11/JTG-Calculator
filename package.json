@@ -9,6 +9,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "driver.js": "^1.4.0",
         "firebase": "^10.0.0",
         "html2canvas": "^1.4.1",
         "react": "^18.2.0",

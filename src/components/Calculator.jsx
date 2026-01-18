@@ -68,7 +68,7 @@ const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exc
     }, [balance, riskMode, riskValue, entryPrice, stopLoss, takeProfit, pair]);
 
     return (
-        <div className="flex flex-col h-full overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
+        <div id="calculator-container" className="flex flex-col h-full overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
             {ratesLoading && currency !== 'USD' && (
                 <div className="mb-4 p-3 bg-jtg-blue/20 border border-jtg-blue/40 rounded-lg text-center">
                     <p className="text-xs text-slate-300">Loading exchange rates...</p>

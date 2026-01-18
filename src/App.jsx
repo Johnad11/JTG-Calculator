@@ -12,6 +12,7 @@ import { LOGO_URL, CURRENCIES, ASSETS } from './constants';
 
 import { fetchExchangeRates } from './utils/exchangeRate';
 import { convertForDisplay, convertForStorage } from './utils/currencyConverter';
+import { startAppTour } from './utils/AppTour';
 
 const App = () => {
     const [page, setPage] = useState('calc');
@@ -560,7 +561,7 @@ const App = () => {
     };
 
     const NavBtn = ({ id, icon, label }) => (
-        <button onClick={() => setPage(id)} className={`flex flex-col items-center gap-1 w-full py-4 transition-all duration-300 border-l-4 ${page === id ? 'border-jtg-green bg-jtg-blue/20 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
+        <button id={`nav-${id}`} onClick={() => setPage(id)} className={`flex flex-col items-center gap-1 w-full py-4 transition-all duration-300 border-l-4 ${page === id ? 'border-jtg-green bg-jtg-blue/20 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
             <span className={page === id ? 'text-jtg-green' : 'text-current'}>{icon}</span>
             <span className="text-[10px] font-bold tracking-wider">{label}</span>
         </button>
@@ -579,11 +580,12 @@ const App = () => {
                     {user && (
                         <div className="mb-6 w-full px-4">
                             <button
+                                id="account-switcher-button"
                                 onClick={() => setShowAccountManager(true)}
                                 className="w-full bg-jtg-green/10 border border-jtg-green/30 rounded-lg p-2 flex flex-col items-center gap-1 hover:bg-jtg-green/20 transition group"
                             >
                                 <div className="text-jtg-green"><Icons.User /></div>
-                                <span className="text-[10px] font-bold text-white max-w-full truncate">
+                                <span id="active-account-name" className="text-[10px] font-bold text-white max-w-full truncate">
                                     {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
                                 </span>
                             </button>
@@ -601,6 +603,11 @@ const App = () => {
                     {/* Removed Global Currency Selector */}
                 </div>
                 <div className="w-full pb-4 mt-8 shrink-0 flex flex-col gap-4 items-center">
+                    <button id="tour-button" onClick={() => startAppTour()} className="flex flex-col items-center gap-1 text-jtg-green hover:text-white transition mb-4" title="Start Tour">
+                        <Icons.Check className="w-5 h-5" />
+                        <span className="text-[9px] font-bold tracking-wider">TOUR</span>
+                    </button>
+
                     {/* SUPPORT BUTTON */}
                     <button onClick={() => window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank')} className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition" title="Support">
                         <Icons.Support />
@@ -653,6 +660,10 @@ const App = () => {
                         <button onClick={login} className="text-[10px] bg-jtg-green/20 text-jtg-green px-3 py-1.5 rounded border border-jtg-green/50">{isLoggingIn ? '...' : 'LOGIN'}</button>
                     )}
 
+                    <button id="mobile-tour-button" onClick={() => startAppTour()} className="p-2 text-jtg-green hover:text-white transition" title="Start Tour">
+                        <Icons.Check className="w-5 h-5" />
+                    </button>
+
                     {/* Removed Global Currency Selector */}
 
                     <button onClick={() => window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank')} className="p-2 text-slate-400 hover:text-white transition">
@@ -663,11 +674,11 @@ const App = () => {
 
             {/* MOBILE BOTTOM NAV */}
             <div className="md:hidden fixed bottom-0 w-full bg-jtg-dark border-t border-jtg-blue/30 z-30 flex justify-around pb-safe h-20 items-center">
-                <button onClick={() => setPage('calc')} className={`p-2 flex flex-col items-center ${page === 'calc' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Calculator /><span className="text-[9px] font-bold mt-1">Calc</span></button>
-                <button onClick={() => setPage('journal')} className={`p-2 flex flex-col items-center ${page === 'journal' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Journal /><span className="text-[9px] font-bold mt-1">Entry</span></button>
-                <button onClick={() => setPage('trades')} className={`p-2 flex flex-col items-center ${page === 'trades' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.List /><span className="text-[9px] font-bold mt-1">Trades</span></button>
-                <button onClick={() => setPage('calendar')} className={`p-2 flex flex-col items-center ${page === 'calendar' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Calendar /><span className="text-[9px] font-bold mt-1">Cal</span></button>
-                <button onClick={() => setPage('perf')} className={`p-2 flex flex-col items-center ${page === 'perf' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Chart /><span className="text-[9px] font-bold mt-1">Data</span></button>
+                <button id="mobile-nav-calc" onClick={() => setPage('calc')} className={`p-2 flex flex-col items-center ${page === 'calc' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Calculator /><span className="text-[9px] font-bold mt-1">Calc</span></button>
+                <button id="mobile-nav-journal" onClick={() => setPage('journal')} className={`p-2 flex flex-col items-center ${page === 'journal' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Journal /><span className="text-[9px] font-bold mt-1">Entry</span></button>
+                <button id="mobile-nav-trades" onClick={() => setPage('trades')} className={`p-2 flex flex-col items-center ${page === 'trades' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.List /><span className="text-[9px] font-bold mt-1">Trades</span></button>
+                <button id="mobile-nav-calendar" onClick={() => setPage('calendar')} className={`p-2 flex flex-col items-center ${page === 'calendar' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Calendar /><span className="text-[9px] font-bold mt-1">Cal</span></button>
+                <button id="mobile-nav-perf" onClick={() => setPage('perf')} className={`p-2 flex flex-col items-center ${page === 'perf' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Chart /><span className="text-[9px] font-bold mt-1">Data</span></button>
             </div>
 
             {/* MAIN CONTENT AREA */}
@@ -728,6 +739,8 @@ const App = () => {
                     onUsernameSet={(name) => {
                         setUsername(name);
                         setShowUsernameModal(false);
+                        // Trigger tour for new users immediately after they set identity
+                        setTimeout(() => startAppTour(), 500);
                     }}
                 />
             )}
