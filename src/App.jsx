@@ -627,7 +627,7 @@ const App = () => {
                         </button>
                     )}
 
-                    <button onClick={() => window.open('https://johnadtradersgroup.vercel.app/#services', '_blank')} className="flex flex-col items-center gap-1 text-slate-500 w-full py-4 hover:text-white transition border-t border-jtg-blue/20 pt-6">
+                    <button onClick={() => window.open('https://jtg-ecosystem.vercel.app/', '_blank')} className="flex flex-col items-center gap-1 text-slate-500 w-full py-4 hover:text-white transition border-t border-jtg-blue/20 pt-6">
                         <Icons.Home /><span className="text-[10px] font-bold tracking-wider">HOME</span>
                     </button>
                 </div>
