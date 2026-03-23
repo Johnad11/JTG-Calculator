@@ -4,7 +4,7 @@ import JtgPromo from './JtgPromo';
 import { ASSETS } from '../constants';
 import { convertForDisplay, convertForStorage } from '../utils/currencyConverter';
 
-const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exchangeRates, ratesLoading = false }) => {
+const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exchangeRates, ratesLoading = false, activeAccount }) => {
     // Convert global balance from USD to selected currency for display
     const displayBalance = exchangeRates && globalBalance
         ? convertForDisplay(globalBalance, currency, exchangeRates)
@@ -35,7 +35,14 @@ const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exc
 
     const calculate = () => {
         if (!entryPrice || !stopLoss || !balance) return;
-        const riskDollars = riskMode === 'percent' ? balance * (riskValue / 100) : parseFloat(riskValue);
+        
+        // Risk in account currency (e.g. NGN)
+        const riskInAccountCurrency = riskMode === 'percent' ? balance * (riskValue / 100) : parseFloat(riskValue);
+        
+        // IMPORTANT: Convert risk to BASE_CURRENCY (USD) for lot calculation
+        // Forex lot formulas standardized for USD base unless the pair itself is specified in account currency
+        const riskDollars = convertForStorage(riskInAccountCurrency, currency, exchangeRates);
+        
         const entry = parseFloat(entryPrice);
         const sl = parseFloat(stopLoss);
         const tp = takeProfit ? parseFloat(takeProfit) : null;
@@ -51,13 +58,18 @@ const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exc
         if (pair.includes('JPY') && assetClass === 'forex') lot = riskDollars / (dist * 100 * 6.8);
         else lot = riskDollars / (dist * contractSize);
 
-        let profit = null; let rr = null;
+        let profitInUSD = null; let rr = null;
         if (tp) {
             const reward = Math.abs(tp - entry);
             rr = (reward / dist).toFixed(2);
-            profit = (riskDollars * (reward / dist)).toFixed(2);
+            profitInUSD = (riskDollars * (reward / dist)).toFixed(2);
         }
-        setResult({ lot: lot.toFixed(2), risk: riskDollars.toFixed(2), rr: rr, profit: profit });
+        
+        // Convert profit back to account currency for display
+        const profit = profitInUSD ? convertForDisplay(profitInUSD, currency, exchangeRates).toFixed(currency === 'NGN' ? 0 : 2) : null;
+        const displayRisk = riskInAccountCurrency.toFixed(currency === 'NGN' ? 0 : 2);
+
+        setResult({ lot: lot.toFixed(2), risk: displayRisk, rr: rr, profit: profit });
     };
 
     useEffect(() => {
@@ -70,8 +82,8 @@ const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exc
     return (
         <div id="calculator-container" className="flex flex-col h-full overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
             {ratesLoading && currency !== 'USD' && (
-                <div className="mb-4 p-3 bg-jtg-blue/20 border border-jtg-blue/40 rounded-lg text-center">
-                    <p className="text-xs text-slate-300">Loading exchange rates...</p>
+                <div className="mb-4 p-3 bg-jtg-blue/20 border border-jtg-blue/40 rounded-lg text-center flex items-center justify-center gap-2">
+                    <p className="text-xs text-slate-300">Loading live exchange rates...</p>
                 </div>
             )}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pop mb-auto">

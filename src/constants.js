@@ -17,7 +17,8 @@ export const ASSETS = {
 };
 
 export const CURRENCIES = {
-    USD: { symbol: '$', label: 'USD' }
+    USD: { symbol: '$', label: 'USD' },
+    NGN: { symbol: '₦', label: 'NGN' }
 };
 
 export const BASE_CURRENCY = 'USD';

@@ -5,13 +5,14 @@ import { BASE_CURRENCY } from '../constants';
  * @param {number} amount - Amount in the selected currency
  * @param {string} fromCurrency - Currency code (USD, NGN, GBP)
  * @param {object} rates - Exchange rates object
+ * @param {number} [customRate] - Optional custom exchange rate
  * @returns {number} Amount in USD
  */
 export const toBase = (amount, fromCurrency, rates) => {
     if (!amount || isNaN(amount)) return 0;
     if (fromCurrency === BASE_CURRENCY) return parseFloat(amount);
 
-    const rate = rates[fromCurrency];
+    const rate = rates ? rates[fromCurrency] : null;
     if (!rate) {
         console.warn(`No rate found for ${fromCurrency}, returning original amount`);
         return parseFloat(amount);
@@ -26,13 +27,14 @@ export const toBase = (amount, fromCurrency, rates) => {
  * @param {number} amount - Amount in USD
  * @param {string} toCurrency - Currency code (USD, NGN, GBP)
  * @param {object} rates - Exchange rates object
+ * @param {number} [customRate] - Optional custom exchange rate
  * @returns {number} Amount in selected currency
  */
 export const fromBase = (amount, toCurrency, rates) => {
     if (!amount || isNaN(amount)) return 0;
     if (toCurrency === BASE_CURRENCY) return parseFloat(amount);
 
-    const rate = rates[toCurrency];
+    const rate = rates ? rates[toCurrency] : null;
     if (!rate) {
         console.warn(`No rate found for ${toCurrency}, returning original amount`);
         return parseFloat(amount);
@@ -64,6 +66,7 @@ export const formatCurrency = (amount, currency, symbol) => {
  * @param {string|number} value - Value stored in base currency
  * @param {string} currency - Target currency code
  * @param {object} rates - Exchange rates object
+ * @param {number} [customRate] - Optional custom exchange rate
  * @returns {number} Converted value
  */
 export const convertForDisplay = (value, currency, rates) => {
@@ -75,6 +78,7 @@ export const convertForDisplay = (value, currency, rates) => {
  * @param {string|number} value - User input in selected currency
  * @param {string} currency - Current currency code
  * @param {object} rates - Exchange rates object
+ * @param {number} [customRate] - Optional custom exchange rate
  * @returns {number} Value in base currency
  */
 export const convertForStorage = (value, currency, rates) => {

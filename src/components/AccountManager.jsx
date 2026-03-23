@@ -90,7 +90,10 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         e.preventDefault();
         setIsSaving(true);
         try {
-            await updateAccount(editMode, { name: editName, rules: editRules });
+            await updateAccount(editMode, { 
+                name: editName, 
+                rules: editRules
+            });
             setEditMode(null);
         } catch (e) {
             console.error(e);
@@ -147,7 +150,6 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         console.log("Attempting to add account:", { newAccountName, newAccountType, newAccountBalance, newAccountRules });
 
         try {
-            // Add a safety timeout of 10 seconds
             const addPromise = addAccount({
                 name: newAccountName,
                 type: newAccountType,
@@ -562,15 +564,18 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                     />
                                     <select
                                         value={newAccountCurrency}
-                                        onChange={(e) => setNewAccountCurrency(e.target.value)}
+                                        onChange={(e) => {
+                                            setNewAccountCurrency(e.target.value);
+                                        }}
                                         className="bg-black/40 border border-slate-700 rounded p-2 text-white text-sm focus:border-jtg-green outline-none"
                                     >
                                         <option value="USD">USD ($)</option>
+                                        <option value="NGN">NGN (₦)</option>
                                     </select>
                                 </div>
                                 <input
                                     type="number"
-                                    step="0.01"
+                                    step={newAccountCurrency === 'NGN' ? '1' : '0.01'}
                                     placeholder="Initial Balance"
                                     value={newAccountBalance}
                                     onChange={(e) => setNewAccountBalance(e.target.value)}

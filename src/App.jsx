@@ -77,7 +77,31 @@ const App = () => {
         try {
             setRatesLoading(true);
             setRatesError(null);
-            const rates = await fetchExchangeRates();
+            
+            const today = new Date().toISOString().split('T')[0];
+            let rates = null;
+
+            if (user) {
+                // Try Firestore first for global consistency
+                const rateDoc = await db.collection('global_data').doc('daily_rates').get();
+                if (rateDoc.exists && rateDoc.data().date === today) {
+                    rates = rateDoc.data().rates;
+                    console.log('Using Firestore daily rates:', today);
+                }
+            }
+
+            if (!rates) {
+                rates = await fetchExchangeRates();
+                // If we fetched fresh rates and are logged in, save to Firestore for others
+                if (user && rates) {
+                    await db.collection('global_data').doc('daily_rates').set({
+                        date: today,
+                        rates: rates,
+                        updatedAt: new Date().toISOString()
+                    }, { merge: true });
+                }
+            }
+
             setExchangeRates(rates);
         } catch (error) {
             setRatesError('Failed to load exchange rates');
@@ -489,12 +513,24 @@ const App = () => {
             else pnl = (diff * formData.lot * contract).toFixed(2);
         }
 
-        // Convert PnL to USD for storage if in different currency
-        const pnlInUSD = exchangeRates && currency !== 'USD'
-            ? convertForStorage(pnl, currency, exchangeRates).toFixed(2)
-            : pnl;
+        // PnL calculated above is already in USD (standardized market value)
+        const pnlInUSD = pnl;
+        
+        // LOCK IN THE EXCHANGE RATE
+        const currentRate = (exchangeRates ? exchangeRates[currency] : 1);
+        const pnlNative = exchangeRates ? convertForDisplay(pnlInUSD, currency, exchangeRates) : pnlInUSD;
 
-        const newTrade = { ...formData, id: Date.now(), outcome, pnl: pnlInUSD, userId: user ? user.uid : 'guest', accountId: activeAccountId };
+        const newTrade = { 
+            ...formData, 
+            id: Date.now(), 
+            outcome, 
+            pnl: pnlInUSD, 
+            pnlNative: pnlNative,
+            exchangeRate: currentRate,
+            currency: currency,
+            userId: user ? user.uid : 'guest', 
+            accountId: activeAccountId 
+        };
 
         if (user) {
             try {
@@ -507,15 +543,15 @@ const App = () => {
                 });
                 setTrades(updatedTrades);
 
-                // Update Account Balance with PnL
+                // Update Account Balance with PnL (STABLE NATIVE BALANCE)
                 if (activeAccountId) {
                     const currentBal = parseFloat(activeAccount.balance);
-                    const pnlVal = parseFloat(pnlInUSD); // already stored in USD/Base
-                    const newBal = (currentBal + pnlVal).toString();
+                    // Add the native PnL to the native balance to avoid drift
+                    const newBal = (currentBal + parseFloat(pnlNative)).toString();
 
                     await db.collection('accounts').doc(activeAccountId).update({ balance: newBal });
                     setAccounts(accounts.map(a => a.id === activeAccountId ? { ...a, balance: newBal } : a));
-                    setGlobalBalance(newBal); // Update global view
+                    setGlobalBalance(newBal); // Update global view (Note: globalBalance in state will now be in account's native currency)
                 }
 
             } catch (e) {
@@ -543,8 +579,8 @@ const App = () => {
                     const acc = accounts.find(a => a.id === tradeToDelete.accountId);
                     if (acc) {
                         const currentBal = parseFloat(acc.balance);
-                        const pnlVal = parseFloat(tradeToDelete.pnl);
-                        // Subtracting PnL reverses the trade effect
+                        // Use native PnL if available, otherwise fallback to current rate conversion
+                        const pnlVal = tradeToDelete.pnlNative ? parseFloat(tradeToDelete.pnlNative) : (exchangeRates ? convertForDisplay(tradeToDelete.pnl, acc.currency, exchangeRates) : parseFloat(tradeToDelete.pnl));
                         const newBal = (currentBal - pnlVal).toString();
 
                         await db.collection('accounts').doc(tradeToDelete.accountId).update({ balance: newBal });
@@ -690,7 +726,7 @@ const App = () => {
 
                     {/* Scrollable Container */}
                     <div className="w-full h-full overflow-y-auto custom-scroll pt-20 pb-24 md:pt-0 md:pb-0">
-                        {page === 'calc' && <Calculator globalBalance={globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
+                        {page === 'calc' && <Calculator globalBalance={globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} activeAccount={activeAccount} />}
                         {page === 'journal' && <Journal addTrade={addTrade} accountType={activeAccount?.type} />}
                         {page === 'trades' && (
                             <TradeList
@@ -703,7 +739,7 @@ const App = () => {
                                 currency={currency}
                                 exchangeRates={exchangeRates}
                                 ratesLoading={ratesLoading}
-                                username={username}
+                                activeAccount={activeAccount}
                             />
                         )}
 
@@ -726,7 +762,7 @@ const App = () => {
                     isPremium={user?.email === 'nwabuezebosco@gmail.com'}
                     currencySymbol={currencySymbol}
                     currency={currency}
-                    options={exchangeRates}
+                    exchangeRates={exchangeRates}
                     withdrawFunds={withdrawFunds}
                     updateAccount={updateAccount}
                     userId={user?.uid}

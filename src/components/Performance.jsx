@@ -5,16 +5,28 @@ import StatCard from './StatCard';
 import EquityChart from './EquityChart';
 import { convertForDisplay } from '../utils/currencyConverter';
 
-const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBalance, updateGlobalBalance, updateInitialBalance, currencySymbol = '$', currency = 'USD', exchangeRates }) => {
+const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBalance, updateGlobalBalance, updateInitialBalance, currencySymbol = '$', currency = 'USD', exchangeRates, activeAccount }) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [tempBalance, setTempBalance] = useState(globalInitialBalance || globalBalance || '');
+    const [tempBalance, setTempBalance] = useState(() => {
+        const bal = globalInitialBalance || globalBalance || '';
+        if (bal && exchangeRates && currency !== 'USD') {
+            return convertForDisplay(bal, currency, exchangeRates);
+        }
+        return bal;
+    });
 
     const stats = useMemo(() => {
         const total = trades.length;
         const wins = trades.filter(t => parseFloat(t.pnl) > 0).length;
-        const grossProfit = trades.reduce((acc, t) => parseFloat(t.pnl) > 0 ? acc + parseFloat(t.pnl) : acc, 0);
-        const grossLoss = Math.abs(trades.reduce((acc, t) => parseFloat(t.pnl) < 0 ? acc + parseFloat(t.pnl) : acc, 0));
-        const netPnL = grossProfit - grossLoss;
+        const grossProfitNative = trades.reduce((acc, t) => {
+            const val = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl));
+            return val > 0 ? acc + val : acc;
+        }, 0);
+        const grossLossNative = Math.abs(trades.reduce((acc, t) => {
+            const val = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl));
+            return val < 0 ? acc + val : acc;
+        }, 0));
+        const netPnLNative = grossProfitNative - grossLossNative;
         const pairStats = {};
         trades.forEach(t => { if (!pairStats[t.pair]) pairStats[t.pair] = 0; pairStats[t.pair] += parseFloat(t.pnl); });
         let bestPair = '-'; let maxPnL = -Infinity;
@@ -40,8 +52,8 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
             wins,
             loss: total - wins,
             winRate: total > 0 ? ((wins / total) * 100).toFixed(1) : 0,
-            netPnL: netPnL.toFixed(2),
-            profitFactor: grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : (grossProfit > 0 ? 'MAX' : '0.00'),
+            netPnL: netPnLNative.toFixed(currency === 'NGN' ? 0 : 2),
+            profitFactor: grossLossNative > 0 ? (grossProfitNative / grossLossNative).toFixed(2) : (grossProfitNative > 0 ? 'MAX' : '0.00'),
             bestPair,
             currentBalance: currentBalance.toFixed(2),
             growthPct: growthPct.toFixed(2),
@@ -51,15 +63,16 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
     }, [trades, globalBalance, withdrawals]);
 
     const chartData = useMemo(() => {
-        const startBal = parseFloat(globalInitialBalance || globalBalance || 0);
+        const startBalNative = activeAccount?.balance ? parseFloat(activeAccount.balance) - trades.reduce((acc, t) => acc + (t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl))), 0) : 0;
         const data = [{
             date: 'Start',
-            balance: startBal
+            balance: startBalNative
         }];
 
-        let runningBalance = startBal;
+        let runningBalance = startBalNative;
         trades.forEach((t, index) => {
-            runningBalance += parseFloat(t.pnl || 0);
+            const pnlVal = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl));
+            runningBalance += pnlVal;
             data.push({
                 date: t.closeDate ? new Date(t.closeDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : `Trade ${index + 1}`,
                 balance: runningBalance
@@ -67,7 +80,7 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
         });
 
         return data;
-    }, [trades, globalInitialBalance, globalBalance]);
+    }, [trades, globalInitialBalance, globalBalance, currency, exchangeRates]);
 
     const saveBalance = () => {
         if (updateInitialBalance) {
