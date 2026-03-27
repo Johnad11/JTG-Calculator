@@ -154,7 +154,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
             const addPromise = addAccount({
                 name: newAccountName,
                 type: newAccountType,
-                balance: exchangeRates ? convertForStorage(newAccountBalance, newAccountCurrency, exchangeRates).toString() : newAccountBalance,
+                balance: newAccountBalance, // Store native balance directly
                 currency: newAccountCurrency,
                 rules: newAccountRules
             });
@@ -287,7 +287,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                             <div key={w.id} className="bg-slate-800/30 border border-slate-700/50 p-3 rounded flex justify-between items-center">
                                                 <div>
                                                     <div className="text-red-400 font-bold font-mono text-sm">
-                                                        -{currencySymbol}{exchangeRates ? convertForDisplay(w.amount, currency, exchangeRates).toFixed(2) : parseFloat(w.amount || w.displayAmount).toFixed(2)}
+                                                        -{currencySymbol}{parseFloat(w.amount || w.displayAmount).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}
                                                     </div>
                                                     <div className="text-[10px] text-slate-500">{new Date(w.date).toLocaleDateString()}</div>
                                                 </div>
@@ -358,7 +358,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                             >
                                                 <span className="font-semibold">{acc.name}</span>
                                                 <span className="font-mono text-sm opacity-80">
-                                                    {CURRENCIES[acc.currency]?.symbol || '$'}{parseFloat(acc.balance).toFixed(acc.currency === 'NGN' ? 0 : 2)}
+                                                    {CURRENCIES[acc.currency]?.symbol || '$'}{parseFloat(acc.balance).toLocaleString(undefined, { minimumFractionDigits: acc.currency === 'NGN' ? 0 : 2, maximumFractionDigits: acc.currency === 'NGN' ? 0 : 2 })}
                                                 </span>
                                             </button>
                                             <button
@@ -416,7 +416,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                                     <span className="font-semibold">{acc.name}</span>
                                                     <div className="text-right">
                                                         <div className="font-mono text-sm opacity-80">
-                                                            {CURRENCIES[acc.currency]?.symbol || '$'}{exchangeRates ? convertForDisplay(acc.balance, acc.currency, exchangeRates).toFixed(acc.currency === 'NGN' ? 0 : 2) : parseFloat(acc.balance).toFixed(2)}
+                                                            {CURRENCIES[acc.currency]?.symbol || '$'}{parseFloat(acc.balance).toLocaleString(undefined, { minimumFractionDigits: acc.currency === 'NGN' ? 0 : 2, maximumFractionDigits: acc.currency === 'NGN' ? 0 : 2 })}
                                                         </div>
                                                         {acc.rules && acc.rules.length > 0 && (
                                                             <div className="text-[10px] text-jtg-green opacity-70">{acc.rules.length} Rules Active</div>
@@ -489,7 +489,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                                     <span className="font-semibold">{acc.name}</span>
                                                     <div className="text-right">
                                                         <div className="font-mono text-sm opacity-80">
-                                                            {CURRENCIES[acc.currency]?.symbol || '$'}{exchangeRates ? convertForDisplay(acc.balance, acc.currency, exchangeRates).toFixed(acc.currency === 'NGN' ? 0 : 2) : parseFloat(acc.balance).toFixed(2)}
+                                                            {CURRENCIES[acc.currency]?.symbol || '$'}{parseFloat(acc.balance).toLocaleString(undefined, { minimumFractionDigits: acc.currency === 'NGN' ? 0 : 2, maximumFractionDigits: acc.currency === 'NGN' ? 0 : 2 })}
                                                         </div>
                                                         <div className="text-[10px] text-jtg-green opacity-70">Weltrade Info Sync</div>
                                                     </div>

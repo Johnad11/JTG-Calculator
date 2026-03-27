@@ -5,22 +5,19 @@ import { ASSETS } from '../constants';
 import { convertForDisplay, convertForStorage } from '../utils/currencyConverter';
 
 const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exchangeRates, ratesLoading = false, activeAccount }) => {
-    // Convert global balance from USD to selected currency for display
-    const displayBalance = exchangeRates && globalBalance
-        ? convertForDisplay(globalBalance, currency, exchangeRates).toFixed(2)
-        : (globalBalance ? parseFloat(globalBalance).toFixed(2) : "100000.00");
+    // Global balance is now stored in account's native currency
+    const displayBalance = globalBalance 
+        ? parseFloat(globalBalance).toFixed(2) 
+        : "100000.00";
 
     const [balance, setBalance] = useState(displayBalance);
 
     // Update local balance when global balance or currency changes
     useEffect(() => {
-        if (globalBalance && exchangeRates) {
-            const converted = convertForDisplay(globalBalance, currency, exchangeRates);
-            setBalance(parseFloat(converted).toFixed(2));
-        } else if (globalBalance) {
+        if (globalBalance) {
             setBalance(parseFloat(globalBalance).toFixed(2));
         }
-    }, [globalBalance, currency, exchangeRates]);
+    }, [globalBalance]);
 
     const [riskMode, setRiskMode] = useState('percent');
     const [riskValue, setRiskValue] = useState(1.0);

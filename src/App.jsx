@@ -54,19 +54,17 @@ const App = () => {
 
     // Update Balance Handler
     const updateGlobalBalance = async (newBal) => {
-        // Convert input from selected currency to USD for storage
-        const balanceInUSD = exchangeRates && currency !== 'USD'
-            ? convertForStorage(newBal, currency, exchangeRates)
-            : newBal;
+        // Store balance in account's native currency
+        const balanceInNative = newBal;
 
-        setGlobalBalance(balanceInUSD);
-        localStorage.setItem('jtg_global_balance', balanceInUSD);
+        setGlobalBalance(balanceInNative);
+        localStorage.setItem('jtg_global_balance', balanceInNative);
 
         if (user && activeAccountId) {
-            // Update the specific account with USD value
+            // Update the specific account with native value
             try {
-                await db.collection('accounts').doc(activeAccountId).update({ balance: balanceInUSD });
-                setAccounts(accounts.map(a => a.id === activeAccountId ? { ...a, balance: balanceInUSD } : a));
+                await db.collection('accounts').doc(activeAccountId).update({ balance: balanceInNative });
+                setAccounts(accounts.map(a => a.id === activeAccountId ? { ...a, balance: balanceInNative } : a));
             } catch (e) { console.error("Error updating balance:", e); }
         }
     };
@@ -321,23 +319,8 @@ const App = () => {
             // But let's allow it with a warning or just allow it.
         }
 
-        // Convert withdrawal to USD for consistency if account is in other currency
-        // But wait, balance is stored in USD (mostly) or whatever the account currency is?
-        // App.jsx:54 -> convertForStorage suggests storage is in USD if currency != USD.
-        // Let's stick to storing withdrawals in the ACCOUNT'S native currency value in the withdrawal doc,
-        // but when updating the account balance (which is stored in USD as per line 54 precedent), we need to be careful.
-
-        // Wait, line 64 updates account balance in USD.
-        // So we need to convert the withdrawal amount to USD if the account currency is not USD.
-
-        let amountInUSD = amountNum;
-        if (currency !== 'USD' && exchangeRates) {
-            // If the INPUT is in NGN (because user is viewing in NGN), we convert to USD.
-            amountInUSD = convertForStorage(amountNum, currency, exchangeRates);
-        }
-
-        // 1. Update Account Balance
-        const newBalance = (parseFloat(account.balance) - amountInUSD).toString();
+        // 1. Update Account Balance (Subtractions are now in native currency)
+        const newBalance = (parseFloat(account.balance) - amountNum).toString();
 
         try {
             // Update Account
@@ -347,9 +330,9 @@ const App = () => {
             const withdrawal = {
                 userId: user.uid,
                 accountId,
-                amount: amountInUSD, // Store standardized amount
-                displayAmount: amountNum, // Store what user entered (approx)
-                currency: currency, // Store currency of entry
+                amount: amountNum, // Store native amount
+                displayAmount: amountNum,
+                currency: currency,
                 note,
                 date: date || new Date().toISOString(),
                 createdAt: new Date().toISOString(),
@@ -387,9 +370,7 @@ const App = () => {
 
     const updateInitialBalance = async (newBalance) => {
         if (!activeAccountId) return;
-        const bal = exchangeRates && currency !== 'USD'
-            ? convertForStorage(newBalance, currency, exchangeRates)
-            : newBalance;
+        const bal = newBalance; // Store in native currency
 
         await updateAccount(activeAccountId, { initialBalance: bal.toString() });
     };
