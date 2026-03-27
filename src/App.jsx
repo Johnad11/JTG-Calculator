@@ -724,8 +724,7 @@ const App = () => {
                             />
                         )}
 
-                        {page === 'calendar' && <CalendarView trades={trades} />}
-                        {page === 'calendar' && <CalendarView trades={trades} />}
+                        {page === 'calendar' && <CalendarView trades={trades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
                         {page === 'perf' && <Performance trades={trades} withdrawals={withdrawals} globalInitialBalance={activeAccount?.initialBalance} globalBalance={globalBalance} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
                     </div>
                 </div>

@@ -1,16 +1,25 @@
 import React, { useState, useMemo } from 'react';
 import { Icons } from './Icons';
 import JtgPromo from './JtgPromo';
+import { convertForDisplay } from '../utils/currencyConverter';
 
-const CalendarView = ({ trades }) => {
+const CalendarView = ({ trades, currency = 'USD', currencySymbol = '$', exchangeRates }) => {
     const [date, setDate] = useState(new Date());
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     const pnlMap = useMemo(() => {
         const map = {};
-        trades.forEach(t => { if (t.closeDate) { const day = t.closeDate.split('T')[0]; if (!map[day]) map[day] = 0; map[day] += parseFloat(t.pnl); } });
+        trades.forEach(t => { 
+            if (t.closeDate) { 
+                const day = t.closeDate.split('T')[0]; 
+                if (!map[day]) map[day] = 0; 
+                
+                const val = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl));
+                map[day] += val; 
+            } 
+        });
         return map;
-    }, [trades]);
+    }, [trades, currency, exchangeRates]);
 
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -46,7 +55,9 @@ const CalendarView = ({ trades }) => {
                             return (
                                 <div key={idx} className={`${bgClass} rounded-xl p-3 flex flex-col justify-between transition-all hover:scale-[1.02] cursor-default`}>
                                     <span className="text-slate-400 text-xs font-bold">{day}</span>
-                                    {pnl !== undefined && <div className={`text-[10px] sm:text-xs md:text-lg font-black tracking-tight ${textClass} break-all leading-none`}>{pnl > 0 ? '+' : ''}{pnl.toFixed(0)}</div>}
+                                    {pnl !== undefined && <div className={`text-[10px] sm:text-xs md:text-lg font-black tracking-tight ${textClass} break-all leading-none`}>
+                                        {pnl > 0 ? '+' : pnl < 0 ? '-' : ''}{currencySymbol}{Math.abs(pnl).toFixed(0)}
+                                    </div>}
                                 </div>
                             );
                         })}
