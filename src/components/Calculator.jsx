@@ -7,8 +7,8 @@ import { convertForDisplay, convertForStorage } from '../utils/currencyConverter
 const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exchangeRates, ratesLoading = false, activeAccount }) => {
     // Convert global balance from USD to selected currency for display
     const displayBalance = exchangeRates && globalBalance
-        ? convertForDisplay(globalBalance, currency, exchangeRates)
-        : globalBalance || 100000;
+        ? convertForDisplay(globalBalance, currency, exchangeRates).toFixed(2)
+        : (globalBalance ? parseFloat(globalBalance).toFixed(2) : "100000.00");
 
     const [balance, setBalance] = useState(displayBalance);
 
@@ -16,9 +16,9 @@ const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exc
     useEffect(() => {
         if (globalBalance && exchangeRates) {
             const converted = convertForDisplay(globalBalance, currency, exchangeRates);
-            setBalance(converted);
+            setBalance(parseFloat(converted).toFixed(2));
         } else if (globalBalance) {
-            setBalance(globalBalance);
+            setBalance(parseFloat(globalBalance).toFixed(2));
         }
     }, [globalBalance, currency, exchangeRates]);
 

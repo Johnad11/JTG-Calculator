@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
+import { CURRENCIES } from '../constants';
 import { Icons } from './Icons';
 import { convertForDisplay, convertForStorage } from '../utils/currencyConverter';
 
@@ -357,7 +358,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                             >
                                                 <span className="font-semibold">{acc.name}</span>
                                                 <span className="font-mono text-sm opacity-80">
-                                                    {currencySymbol}{parseFloat(acc.balance).toFixed(2)}
+                                                    {CURRENCIES[acc.currency]?.symbol || '$'}{parseFloat(acc.balance).toFixed(acc.currency === 'NGN' ? 0 : 2)}
                                                 </span>
                                             </button>
                                             <button
@@ -415,7 +416,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                                     <span className="font-semibold">{acc.name}</span>
                                                     <div className="text-right">
                                                         <div className="font-mono text-sm opacity-80">
-                                                            {currencySymbol}{exchangeRates ? convertForDisplay(acc.balance, currency, exchangeRates).toFixed(currency === 'NGN' ? 0 : 2) : parseFloat(acc.balance).toFixed(2)}
+                                                            {CURRENCIES[acc.currency]?.symbol || '$'}{exchangeRates ? convertForDisplay(acc.balance, acc.currency, exchangeRates).toFixed(acc.currency === 'NGN' ? 0 : 2) : parseFloat(acc.balance).toFixed(2)}
                                                         </div>
                                                         {acc.rules && acc.rules.length > 0 && (
                                                             <div className="text-[10px] text-jtg-green opacity-70">{acc.rules.length} Rules Active</div>
@@ -488,7 +489,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                                     <span className="font-semibold">{acc.name}</span>
                                                     <div className="text-right">
                                                         <div className="font-mono text-sm opacity-80">
-                                                            {currencySymbol}{exchangeRates ? convertForDisplay(acc.balance, currency, exchangeRates).toFixed(currency === 'NGN' ? 0 : 2) : parseFloat(acc.balance).toFixed(2)}
+                                                            {CURRENCIES[acc.currency]?.symbol || '$'}{exchangeRates ? convertForDisplay(acc.balance, acc.currency, exchangeRates).toFixed(acc.currency === 'NGN' ? 0 : 2) : parseFloat(acc.balance).toFixed(2)}
                                                         </div>
                                                         <div className="text-[10px] text-jtg-green opacity-70">Weltrade Info Sync</div>
                                                     </div>

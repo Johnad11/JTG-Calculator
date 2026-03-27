@@ -8,7 +8,7 @@ import CalendarView from './components/CalendarView';
 import Performance from './components/Performance';
 import AccountManager from './components/AccountManager';
 import UsernameModal from './components/UsernameModal';
-import { LOGO_URL, CURRENCIES, ASSETS } from './constants';
+import { LOGO_URL, CURRENCIES, ASSETS, PREMIUM_EMAILS } from './constants';
 
 import { fetchExchangeRates } from './utils/exchangeRate';
 import { convertForDisplay, convertForStorage } from './utils/currencyConverter';
@@ -259,7 +259,7 @@ const App = () => {
             return false;
         }
 
-        const isPremium = user.email === 'nwabuezebosco@gmail.com';
+        const isPremium = PREMIUM_EMAILS.includes(user.email);
         const personalAccounts = accounts.filter(a => a.type === 'Personal');
         const propAccounts = accounts.filter(a => a.type === 'Prop Firm');
         const syntheticAccounts = accounts.filter(a => a.type === 'Synthetic');
@@ -732,7 +732,7 @@ const App = () => {
                             <TradeList
                                 trades={trades}
                                 deleteTrade={deleteTrade}
-                                isPremium={user?.email === 'nwabuezebosco@gmail.com'}
+                                isPremium={PREMIUM_EMAILS.includes(user?.email)}
                                 exportCount={exportCount}
                                 incrementExportCount={incrementExportCount}
                                 currencySymbol={currencySymbol}
@@ -759,7 +759,7 @@ const App = () => {
                     addAccount={addAccount}
                     deleteAccount={deleteAccount}
                     close={() => setShowAccountManager(false)}
-                    isPremium={user?.email === 'nwabuezebosco@gmail.com'}
+                    isPremium={PREMIUM_EMAILS.includes(user?.email)}
                     currencySymbol={currencySymbol}
                     currency={currency}
                     exchangeRates={exchangeRates}

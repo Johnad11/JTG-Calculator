@@ -30,4 +30,9 @@ export const EXCHANGE_RATE_API = {
     cacheDateKey: 'jtg_exchange_rates_date'
 };
 
+export const PREMIUM_EMAILS = [
+    'nwabuezebosco@gmail.com',
+    'sagemutalib@gmail.com'
+];
+
 export const LOGO_URL = "/logo.png";

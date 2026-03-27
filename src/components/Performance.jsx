@@ -43,7 +43,7 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
         if (globalInitialBalance || globalBalance) {
             const startBal = globalInitialBalance ? parseFloat(globalInitialBalance) : parseFloat(globalBalance);
             if (startBal > 0) {
-                growthPct = (netPnL / startBal) * 100;
+                growthPct = (netPnLNative / startBal) * 100;
             }
         }
 
