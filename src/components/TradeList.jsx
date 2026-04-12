@@ -131,7 +131,7 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
             return;
         }
 
-        const headers = ["Opened", "Closed", "Strategy", "Pair", "Type", "Lot", "Entry", "Exit", "Outcome", "PnL"];
+        const headers = ["Opened", "Closed", "Strategy", "Pair", "Type", "Lot", "Entry", "Exit", "Outcome", "Emotion", "Setup Qual", "Disciplined", "PnL"];
         const rows = trades.map(t => [
             t.openDate ? t.openDate.split('T')[0] : '',
             t.closeDate ? t.closeDate.split('T')[0] : '-',
@@ -142,6 +142,9 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
             t.entry,
             t.exit || '-',
             t.outcome,
+            t.emotion || '-',
+            t.setupQuality || '-',
+            t.ruleAdherence || '-',
             t.pnlNative || t.pnl // Use native PnL if available for CSV export
         ]);
 
@@ -162,6 +165,18 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
 
         if (!isPremium && incrementExportCount) {
             incrementExportCount();
+        }
+    };
+
+    const getEmotionColor = (emotion) => {
+        switch (emotion) {
+            case 'Confident': return 'text-emerald-400';
+            case 'Calm': return 'text-jtg-green';
+            case 'Anxious': return 'text-yellow-400';
+            case 'FOMO': return 'text-orange-400';
+            case 'Greedy': return 'text-red-400';
+            case 'Fearful': return 'text-purple-400';
+            default: return 'text-slate-400';
         }
     };
 
@@ -194,19 +209,46 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                     </div>
                 </div>
                 <div className="flex-1 overflow-auto custom-scroll">
-                    <table className="w-full text-left border-collapse min-w-[1000px]">
-                        <thead className="sticky top-0 bg-jtg-card z-10 shadow-lg"><tr><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Opened</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Closed</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Strategy</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Pair</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Type</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Lot</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Entry</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Exit</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Outcome</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-right">PnL</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Share</th><th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Action</th></tr></thead>
+                    <table className="w-full text-left border-collapse min-w-[1200px]">
+                        <thead className="sticky top-0 bg-jtg-card z-10 shadow-lg">
+                            <tr>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Opened</th>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Closed</th>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Pair</th>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Type</th>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Lot</th>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Emotion</th>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Setup</th>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Rules</th>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Outcome</th>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-right">PnL</th>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Share</th>
+                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Action</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                            {trades.length === 0 ? (<tr><td colSpan="12" className="p-12 text-center text-slate-500 italic">No trade history found. Go to Journal to add entries.</td></tr>) : (trades.map(trade => (
+                            {trades.length === 0 ? (<tr><td colSpan="12" className="p-12 text-center text-slate-500 italic">No trade history found. Go to Journal to add entries.</td></tr>) : ([...trades].reverse().map(trade => (
                                 <tr key={trade.id} className="border-b border-slate-800 hover:bg-slate-800/30 transition-colors group">
                                     <td className="p-4 text-xs text-white font-mono">{trade.openDate.split('T')[0]}</td>
                                     <td className="p-4 text-xs text-slate-400 font-mono">{trade.closeDate ? trade.closeDate.split('T')[0] : '-'}</td>
-                                    <td className="p-4 text-xs text-white font-medium">{trade.strategy}</td>
                                     <td className="p-4 text-sm font-bold text-white">{trade.pair}</td>
                                     <td className={`p-4 text-xs font-bold ${trade.type === 'BUY' ? 'text-jtg-green' : 'text-red-500'}`}>{trade.type}</td>
                                     <td className="p-4 text-xs text-slate-300 font-mono">{trade.lot}</td>
-                                    <td className="p-4 text-xs font-mono text-white">{trade.entry}</td>
-                                    <td className="p-4 text-xs font-mono text-slate-400">{trade.exit || '-'}</td>
+                                    <td className="p-4 text-center">
+                                        <span className={`text-[10px] font-bold ${getEmotionColor(trade.emotion)}`}>{trade.emotion || '-'}</span>
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${trade.setupQuality === 'A+' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-slate-700 text-slate-300'}`}>
+                                            {trade.setupQuality || '-'}
+                                        </span>
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        {trade.ruleAdherence === 'Yes' ? (
+                                            <span className="text-jtg-green scale-75 inline-block"><Icons.Check /></span>
+                                        ) : (
+                                            <span className="text-red-500 scale-75 inline-block"><Icons.Trash /></span> // Using Trash as a placeholder for "X" if no X icon
+                                        )}
+                                    </td>
                                     <td className="p-4"><span className={`text-[10px] font-bold px-2 py-1 rounded border ${trade.outcome.includes('WIN') || trade.outcome.includes('TP') ? 'bg-jtg-green/10 text-jtg-green border-jtg-green/30' : trade.outcome.includes('LOSS') || trade.outcome.includes('SL') ? 'bg-red-500/10 text-red-500 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>{trade.outcome}</span></td>
                                     <td className={`p-4 text-sm font-mono font-bold text-right ${parseFloat(trade.pnl) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>
                                         {parseFloat(trade.pnl) >= 0 ? '+' : ''}{currencySymbol}{trade.pnlNative ? parseFloat(trade.pnlNative).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 }) : parseFloat(trade.pnl).toLocaleString()}

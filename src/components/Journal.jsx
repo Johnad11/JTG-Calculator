@@ -24,7 +24,10 @@ const Journal = ({ addTrade, accountType = 'Personal' }) => {
         sl: '',
         tp: '',
         lot: '',
-        exit: ''
+        exit: '',
+        emotion: 'Calm',
+        setupQuality: 'A',
+        ruleAdherence: 'Yes'
     });
 
     // Update pair when account type changes
@@ -38,7 +41,19 @@ const Journal = ({ addTrade, accountType = 'Personal' }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         addTrade(formData);
-        setFormData({ ...formData, entry: '', sl: '', tp: '', lot: '', exit: '', closeDate: '' });
+        // Keep persistent fields but reset entry/exit data
+        setFormData({ 
+            ...formData, 
+            entry: '', 
+            sl: '', 
+            tp: '', 
+            lot: '', 
+            exit: '', 
+            closeDate: '',
+            emotion: 'Calm',
+            setupQuality: 'A',
+            ruleAdherence: 'Yes'
+        });
     };
 
     return (
@@ -78,6 +93,49 @@ const Journal = ({ addTrade, accountType = 'Personal' }) => {
                     </div>
                     <div className="grid grid-cols-3 gap-3"><div><label className="text-[10px] font-bold text-jtg-green uppercase mb-1 block">Entry</label><input type="number" step="any" value={formData.entry} onChange={e => setFormData({ ...formData, entry: e.target.value })} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-3 text-white outline-none" required /></div><div><label className="text-[10px] font-bold text-red-500 uppercase mb-1 block">SL</label><input type="number" step="any" value={formData.sl} onChange={e => setFormData({ ...formData, sl: e.target.value })} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-3 text-white outline-none" /></div><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">TP</label><input type="number" step="any" value={formData.tp} onChange={e => setFormData({ ...formData, tp: e.target.value })} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-3 text-white outline-none" /></div></div>
                     <div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Lot Size</label><input type="number" step="0.01" value={formData.lot} onChange={e => setFormData({ ...formData, lot: e.target.value })} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-3 text-white outline-none" required /></div><div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Exit Price</label><input type="number" step="any" value={formData.exit} onChange={e => setFormData({ ...formData, exit: e.target.value })} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-3 text-white outline-none" /></div></div>
+                    
+                    {/* PSYCHOLOGY SECTION */}
+                    <div className="pt-4 border-t border-jtg-blue/20">
+                        <label className="text-xs font-bold text-jtg-green uppercase tracking-widest mb-4 block">Psychology & Discipline</label>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Dominant Emotion</label>
+                                <select 
+                                    value={formData.emotion} 
+                                    onChange={e => setFormData({ ...formData, emotion: e.target.value })} 
+                                    className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-2 text-white text-xs outline-none"
+                                >
+                                    {['Calm', 'Confident', 'Anxious', 'FOMO', 'Greedy', 'Fearful'].map(emo => (
+                                        <option key={emo} value={emo}>{emo}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Setup Quality</label>
+                                <select 
+                                    value={formData.setupQuality} 
+                                    onChange={e => setFormData({ ...formData, setupQuality: e.target.value })} 
+                                    className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-2 text-white text-xs outline-none"
+                                >
+                                    {['A+', 'A', 'B', 'C'].map(q => (
+                                        <option key={q} value={q}>{q} Setup</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Followed Rules?</label>
+                                <select 
+                                    value={formData.ruleAdherence} 
+                                    onChange={e => setFormData({ ...formData, ruleAdherence: e.target.value })} 
+                                    className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-2 text-white text-xs outline-none"
+                                >
+                                    <option value="Yes">Yes (Disciplined)</option>
+                                    <option value="No">No (Impulsive)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <button type="submit" className="w-full bg-jtg-green hover:bg-emerald-600 text-white font-bold py-4 rounded-lg mt-6 transition-colors flex items-center justify-center gap-2 shadow-lg"><Icons.Plus /> ADD ENTRY TO LOGS</button>
                 </form>
             </div>
