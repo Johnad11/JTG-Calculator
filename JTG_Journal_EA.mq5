@@ -714,6 +714,7 @@ void PushTradesToCloud()
       SyncStatus = "Success";
       LastSyncTime = TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES);
       Print("JTG Success: " + IntegerToString(size) + " trades synced to dashboard successfully.");
+      SendNotification("JTG Journal: Successfully synced " + IntegerToString(size) + " trades to your web dashboard!");
    }
    else
    {
