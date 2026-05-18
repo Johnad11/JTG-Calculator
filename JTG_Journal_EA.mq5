@@ -17,10 +17,16 @@ int TimeHour(datetime t)  { MqlDateTime dt; TimeToStruct(t, dt); return dt.hour;
 int TimeDay(datetime t)   { MqlDateTime dt; TimeToStruct(t, dt); return dt.day; }
 
 //--- ENUMS
+#import "shell32.dll"
+int ShellExecuteW(int hwnd, string lpOperation, string lpFile, string lpParameters, string lpDirectory, int nShowCmd);
+#import
+
+//--- ENUMS
 enum ENUM_TAB { TAB_OVERVIEW, TAB_STATS, TAB_CALENDAR, TAB_HISTORY, TAB_CALC, TAB_ECOSYSTEM };
 
 //--- INPUT PARAMETERS
 input string         InpTerminalKey = "JTG-XXXX-XXXX"; // Sync Key (Optional)
+input string         InpSyncUrl     = "https://jtg-journal.vercel.app/api/sync"; // Sync Endpoint URL
 input ENUM_BASE_CORNER InpCorner    = CORNER_RIGHT_UPPER; // Dock Corner
 input color          InpMainColor   = C'0, 255, 136';   // Electric Green
 input color          InpBgColor     = C'13, 17, 23';    // Deep Navy
@@ -51,6 +57,8 @@ double         DailyPnL[32]; // Max 31 days
 double         HourlyPnL[24];
 double         SessionPnL[3]; // 0=Tokyo, 1=London, 2=NY
 int            CurrentMonth = 0;
+string         LastSyncTime = "Never";
+string         SyncStatus = "Idle";
 
 //--- Advanced Stats
 double         StatExpectancy = 0;
@@ -319,6 +327,7 @@ void DrawUI()
       default:            DrawTabOverview();  break; // Safety fallback
    }
    
+   DrawFooter();
    Canvas.Update();
 }
 
@@ -577,8 +586,19 @@ void DrawInputBox(int x, int y, int w, int h, string label, string val)
    Canvas.FontSet("Outfit", 10, FW_BOLD);
    Canvas.TextOut(x+15, y+12, val, ARGB_Helper(clrWhite));
    
-   // Cursor highlight
-   Canvas.FillRectangle(x+w-25, y+10, x+w-5, y+30, ARGB_Helper(InpMainColor, 40));
+   // Minus Button
+   int btnMinusX1 = x + w - 50;
+   int btnMinusY1 = y + 10;
+   DrawRoundedRect(btnMinusX1, btnMinusY1, btnMinusX1 + 20, btnMinusY1 + 20, 4, ARGB_Helper(C'48, 54, 61', 200), true);
+   Canvas.FontSet("Outfit", 8, FW_BOLD);
+   Canvas.TextOut(btnMinusX1 + 7, btnMinusY1 + 4, "-", ARGB_Helper(clrWhite));
+   
+   // Plus Button
+   int btnPlusX1 = x + w - 25;
+   int btnPlusY1 = y + 10;
+   DrawRoundedRect(btnPlusX1, btnPlusY1, btnPlusX1 + 20, btnPlusY1 + 20, 4, ARGB_Helper(InpMainColor, 200), true);
+   Canvas.FontSet("Outfit", 8, FW_BOLD);
+   Canvas.TextOut(btnPlusX1 + 5, btnPlusY1 + 4, "+", ARGB_Helper(clrWhite));
 }
 
 //--- Tab: Ecosystem
@@ -588,22 +608,129 @@ void DrawTabEcosystem()
    Canvas.FontSet("Outfit", 12, FW_BOLD);
    Canvas.TextOut(20, y, "JTG ECOSYSTEM", ARGB_Helper(clrWhite));
    
-   DrawGlassPanel(20, y+35, 280, 100, 15);
+   DrawGlassPanel(20, y+35, 280, 120, 15);
    Canvas.FontSet("Outfit", 9, FW_NORMAL);
-   Canvas.TextOut(40, y+55, "SYSTEM CONNECTED", ARGB_Helper(InpMainColor));
+   Canvas.TextOut(40, y+50, "SYSTEM CONNECTED", ARGB_Helper(InpMainColor));
    
    Canvas.FontSet("Outfit", 7, FW_NORMAL);
-   Canvas.TextOut(40, y+85, "Evolution Build: v1.10", ARGB_Helper(clrWhite, 150));
-   Canvas.TextOut(40, y+100, "Cloud Sync Status: Active", ARGB_Helper(clrSlateGray));
+   Canvas.TextOut(40, y+75, "Evolution Build: v1.10", ARGB_Helper(clrWhite, 150));
+   Canvas.TextOut(40, y+92, "Sync Status: " + SyncStatus, ARGB_Helper(clrSlateGray));
+   Canvas.TextOut(40, y+109, "Last Sync: " + LastSyncTime, ARGB_Helper(clrSlateGray));
    
-   // Action Button
-   DrawRoundedRect(40, y+155, 280, y+205, 10, ARGB_Helper(InpMainColor), true);
+   // Open Web Dash Button
+   DrawRoundedRect(40, y+175, 280, y+225, 10, ARGB_Helper(InpMainColor), true);
    Canvas.FontSet("Outfit", 10, FW_BOLD);
-   Canvas.TextOut(105, y+170, "OPEN WEB DASH", ARGB_Helper(clrWhite));
+   Canvas.TextOut(105, y+190, "OPEN WEB DASH", ARGB_Helper(clrWhite));
    
-   // Footer
+   // Sync Now Button
+   DrawRoundedRect(40, y+235, 280, y+285, 10, ARGB_Helper(C'22, 44, 153', 200), true);
+   DrawRoundedRect(40, y+235, 280, y+285, 10, ARGB_Helper(InpMainColor, 150), false);
+   Canvas.FontSet("Outfit", 10, FW_BOLD);
+   Canvas.TextOut(115, y+250, "SYNC NOW", ARGB_Helper(clrWhite));
+}
+
+// Footer
+void DrawFooter()
+{
    Canvas.FontSet("Outfit", 6, FW_NORMAL);
    Canvas.TextOut(100, PANEL_H - 30, "© 2026 JTG ECOSYSTEM LTD", ARGB_Helper(clrGray, 100));
+}
+//+------------------------------------------------------------------+
+//| Dynamic Risk Lot Calculator                                      |
+//+------------------------------------------------------------------+
+void RecalculateLot()
+{
+   double balanced = AccountInfoDouble(ACCOUNT_BALANCE);
+   double riskVal = balanced * (CalcRiskPct/100.0);
+   double tickVal = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   
+   if(CalcSL > 0 && tickSize > 0)
+   {
+      // Universal lot calculation formula
+      CalcResultLot = riskVal / (CalcSL * 10.0 * (tickVal / tickSize * _Point));
+      
+      // Normalize to broker limits
+      double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+      double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+      double stepLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+      
+      if(CalcResultLot < minLot) CalcResultLot = minLot;
+      if(CalcResultLot > maxLot) CalcResultLot = maxLot;
+      
+      // Round to nearest step
+      CalcResultLot = MathRound(CalcResultLot / stepLot) * stepLot;
+   }
+   else
+   {
+      CalcResultLot = 0;
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Cloud Sync Integration                                           |
+//+------------------------------------------------------------------+
+void PushTradesToCloud()
+{
+   SyncStatus = "Syncing...";
+   DrawUI();
+   
+   if(InpTerminalKey == "JTG-XXXX-XXXX" || InpTerminalKey == "")
+   {
+      SyncStatus = "Error: Key Missing";
+      DrawUI();
+      Print("JTG Error: Sync Key is missing. Please generate a Sync Key on the web dashboard and paste it into InpTerminalKey.");
+      return;
+   }
+   
+   // 1. Serialize trades to JSON
+   string json = "[";
+   int size = ArraySize(HistoryData);
+   for(int i = 0; i < size; i++)
+   {
+      if(i > 0) json += ",";
+      json += "{";
+      json += "\"ticket\":" + IntegerToString(HistoryData[i].ticket) + ",";
+      json += "\"symbol\":\"" + HistoryData[i].symbol + "\",";
+      json += "\"volume\":" + DoubleToString(HistoryData[i].volume, 2) + ",";
+      json += "\"pnl\":" + DoubleToString(HistoryData[i].pnl, 2) + ",";
+      json += "\"closeTime\":" + IntegerToString((long)HistoryData[i].closeTime) + ",";
+      json += "\"type\":" + IntegerToString(HistoryData[i].type);
+      json += "}";
+   }
+   json += "]";
+   
+   // 2. Prep headers & POST data
+   string headers = "Content-Type: application/json\r\n" +
+                    "X-Sync-Key: " + InpTerminalKey + "\r\n";
+   uchar post_data[];
+   int len = StringToCharArray(json, post_data, 0, WHOLE_ARRAY, CP_UTF8);
+   if(len > 1) ArrayResize(post_data, len - 1); // remove null terminator
+   
+   uchar result[];
+   string result_headers;
+   
+   // 3. Make WebRequest
+   ResetLastError();
+   int res = WebRequest("POST", InpSyncUrl, headers, 5000, post_data, result, result_headers);
+   
+   if(res >= 200 && res < 300)
+   {
+      SyncStatus = "Success";
+      LastSyncTime = TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES);
+      Print("JTG Success: " + IntegerToString(size) + " trades synced to dashboard successfully.");
+   }
+   else
+   {
+      SyncStatus = "Failed (" + IntegerToString(res) + ")";
+      Print("JTG Error: Cloud Sync failed with response code: " + IntegerToString(res) + ". Error Code: " + IntegerToString(GetLastError()));
+      if(res == -1)
+      {
+         Print("JTG Hint: Please check if InpSyncUrl is whitelisted in MT5 -> Tools -> Options -> Expert Advisors -> Allow WebRequest for listed URL.");
+      }
+   }
+   
+   DrawUI();
 }
 
 //+------------------------------------------------------------------+
@@ -638,6 +765,54 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
          }
       }
       
+      // Calculator tab button clicks (minus/plus adjustments)
+      if(CurrentTab == TAB_CALC)
+      {
+         // Risk Minus: btnMinusX1 = x + w - 50 = 230, btnMinusY1 = baseCalcY + 70 + 10 = 190
+         if(relativeX >= 230 && relativeX <= 250 && relativeY >= 190 && relativeY <= 210)
+         {
+            CalcRiskPct = MathMax(0.1, CalcRiskPct - 0.5);
+            RecalculateLot();
+            DrawUI();
+         }
+         // Risk Plus: btnPlusX1 = 255, btnPlusY1 = 190
+         if(relativeX >= 255 && relativeX <= 275 && relativeY >= 190 && relativeY <= 210)
+         {
+            CalcRiskPct = MathMin(10.0, CalcRiskPct + 0.5);
+            RecalculateLot();
+            DrawUI();
+         }
+         // SL Minus: btnMinusX1 = 230, btnMinusY1 = baseCalcY + 130 + 10 = 250
+         if(relativeX >= 230 && relativeX <= 250 && relativeY >= 250 && relativeY <= 270)
+         {
+            CalcSL = MathMax(1.0, CalcSL - 5.0);
+            RecalculateLot();
+            DrawUI();
+         }
+         // SL Plus: btnPlusX1 = 255, btnPlusY1 = 250
+         if(relativeX >= 255 && relativeX <= 275 && relativeY >= 250 && relativeY <= 270)
+         {
+            CalcSL = MathMin(200.0, CalcSL + 5.0);
+            RecalculateLot();
+            DrawUI();
+         }
+      }
+      
+      // Ecosystem tab button clicks
+      if(CurrentTab == TAB_ECOSYSTEM)
+      {
+         // Open Web Dash Button: x1=40, y1=y+175 (285), x2=280, y2=y+225 (335)
+         if(relativeX >= 40 && relativeX <= 280 && relativeY >= 285 && relativeY <= 335)
+         {
+            ShellExecuteW(0, "open", "https://jtg-journal.vercel.app/", "", "", 1);
+         }
+         // Sync Now Button: x1=40, y1=y+235 (345), x2=280, y2=y+285 (395)
+         if(relativeX >= 40 && relativeX <= 280 && relativeY >= 345 && relativeY <= 395)
+         {
+            PushTradesToCloud();
+         }
+      }
+      
       // Calculator Interaction: Click chart to set SL if on CALC tab
       if(CurrentTab == TAB_CALC && relativeX < 0) // Clicked outside panel (on chart)
       {
@@ -646,13 +821,7 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
          CalcSL = MathAbs(SymbolInfoDouble(_Symbol, SYMBOL_BID) - price) / _Point / 10.0; // Pips
          
          // Auto-calculate lot
-         double balanced = AccountInfoDouble(ACCOUNT_BALANCE);
-         double riskVal = balanced * (CalcRiskPct/100.0);
-         double tickVal = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-         double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
-         
-         if(CalcSL > 0)
-            CalcResultLot = riskVal / (CalcSL * 10 * (tickVal / tickSize * _Point));
+         RecalculateLot();
          
          DrawUI();
          

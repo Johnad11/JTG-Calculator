@@ -68,9 +68,9 @@ const Mt5IntegrationModal = ({ user, close }) => {
         const fetchKey = async () => {
             try {
                 setLoading(true);
-                const doc = await db.collection('users').doc(user.uid).collection('settings').doc('integration').get();
+                const doc = await db.collection('user_settings').doc(user.uid).get();
                 if (doc.exists) {
-                    setSyncKey(doc.data().syncKey || '');
+                    setSyncKey(doc.data().mt5SyncKey || '');
                 }
             } catch (err) {
                 console.error("Error fetching sync key:", err);
@@ -91,9 +91,9 @@ const Mt5IntegrationModal = ({ user, close }) => {
             const part2 = Math.random().toString(36).substring(2, 6).toUpperCase();
             const newKey = `JTG-${part1}-${part2}`;
 
-            await db.collection('users').doc(user.uid).collection('settings').doc('integration').set({
-                syncKey: newKey,
-                generatedAt: new Date().toISOString()
+            await db.collection('user_settings').doc(user.uid).set({
+                mt5SyncKey: newKey,
+                mt5SyncKeyGeneratedAt: new Date().toISOString()
             }, { merge: true });
 
             setSyncKey(newKey);
