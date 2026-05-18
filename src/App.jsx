@@ -8,6 +8,7 @@ import CalendarView from './components/CalendarView';
 import Performance from './components/Performance';
 import AccountManager from './components/AccountManager';
 import UsernameModal from './components/UsernameModal';
+import Mt5IntegrationModal from './components/Mt5IntegrationModal';
 import { LOGO_URL, CURRENCIES, ASSETS, PREMIUM_EMAILS } from './constants';
 
 import { fetchExchangeRates } from './utils/exchangeRate';
@@ -25,6 +26,7 @@ const App = () => {
     const [showAccountManager, setShowAccountManager] = useState(false);
     const [username, setUsername] = useState('');
     const [showUsernameModal, setShowUsernameModal] = useState(false);
+    const [showSyncModal, setShowSyncModal] = useState(false);
     const [exportCount, setExportCount] = useState(0);
 
 
@@ -595,7 +597,7 @@ const App = () => {
 
                     {/* ACCOUNT SWITCHER */}
                     {user && (
-                        <div className="mb-6 w-full px-4">
+                        <div className="mb-6 w-full px-4 flex flex-col gap-2">
                             <button
                                 id="account-switcher-button"
                                 onClick={() => setShowAccountManager(true)}
@@ -604,6 +606,16 @@ const App = () => {
                                 <div className="text-jtg-green"><Icons.User /></div>
                                 <span id="active-account-name" className="text-[10px] font-bold text-white max-w-full truncate">
                                     {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
+                                </span>
+                            </button>
+                            <button
+                                id="mt5-sync-button"
+                                onClick={() => setShowSyncModal(true)}
+                                className="w-full bg-jtg-blue/10 border border-jtg-blue/30 rounded-lg p-2 flex flex-col items-center gap-1 hover:bg-jtg-blue/20 transition group"
+                            >
+                                <div className="text-jtg-green"><Icons.Key /></div>
+                                <span className="text-[10px] font-bold text-white max-w-full truncate">
+                                    MT5 Auto-Sync
                                 </span>
                             </button>
                         </div>
@@ -660,15 +672,27 @@ const App = () => {
                 {/* Mobile Account Switcher & Auth */}
                 <div className="flex items-center gap-2">
                     {user && (
-                        <button
-                            onClick={() => setShowAccountManager(true)}
-                            className="bg-jtg-green/10 border border-jtg-green/30 rounded-lg p-1.5 flex items-center gap-2 hover:bg-jtg-green/20 transition"
-                        >
-                            <span className="text-jtg-green scale-75"><Icons.User /></span>
-                            <span className="text-[10px] font-bold text-white max-w-[80px] truncate">
-                                {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
-                            </span>
-                        </button>
+                        <div className="flex gap-1.5">
+                            <button
+                                onClick={() => setShowAccountManager(true)}
+                                className="bg-jtg-green/10 border border-jtg-green/30 rounded-lg p-1.5 flex items-center gap-2 hover:bg-jtg-green/20 transition"
+                            >
+                                <span className="text-jtg-green scale-75"><Icons.User /></span>
+                                <span className="text-[10px] font-bold text-white max-w-[80px] truncate">
+                                    {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => setShowSyncModal(true)}
+                                className="bg-jtg-blue/10 border border-jtg-blue/30 rounded-lg p-1.5 flex items-center gap-2 hover:bg-jtg-blue/20 transition"
+                                title="MT5 Auto-Sync"
+                            >
+                                <span className="text-jtg-green scale-75"><Icons.Key /></span>
+                                <span className="text-[10px] font-bold text-white">
+                                    Sync
+                                </span>
+                            </button>
+                        </div>
                     )}
 
                     {user ? (
@@ -758,6 +782,13 @@ const App = () => {
                         // Trigger tour for new users immediately after they set identity
                         setTimeout(() => startAppTour(), 500);
                     }}
+                />
+            )}
+
+            {showSyncModal && user && (
+                <Mt5IntegrationModal
+                    user={user}
+                    close={() => setShowSyncModal(false)}
                 />
             )}
         </div>
