@@ -17,11 +17,6 @@ int TimeHour(datetime t)  { MqlDateTime dt; TimeToStruct(t, dt); return dt.hour;
 int TimeDay(datetime t)   { MqlDateTime dt; TimeToStruct(t, dt); return dt.day; }
 
 //--- ENUMS
-#import "shell32.dll"
-long ShellExecuteW(long hwnd, string lpOperation, string lpFile, string lpParameters, string lpDirectory, int nShowCmd);
-#import
-
-//--- ENUMS
 enum ENUM_TAB { TAB_OVERVIEW, TAB_STATS, TAB_CALENDAR, TAB_HISTORY, TAB_CALC, TAB_ECOSYSTEM };
 
 //--- INPUT PARAMETERS
@@ -804,7 +799,7 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
          // Open Web Dash Button: x1=40, y1=y+175 (285), x2=280, y2=y+225 (335)
          if(relativeX >= 40 && relativeX <= 280 && relativeY >= 285 && relativeY <= 335)
          {
-            ShellExecuteW(0, "open", "https://jtg-journal.vercel.app/", "", "", 1);
+            Print("JTG Ecosystem: Please open your browser and navigate to your dashboard at: https://jtg-journal.vercel.app/");
          }
          // Sync Now Button: x1=40, y1=y+235 (345), x2=280, y2=y+285 (395)
          if(relativeX >= 40 && relativeX <= 280 && relativeY >= 345 && relativeY <= 395)
