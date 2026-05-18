@@ -18,7 +18,7 @@ int TimeDay(datetime t)   { MqlDateTime dt; TimeToStruct(t, dt); return dt.day; 
 
 //--- ENUMS
 #import "shell32.dll"
-int ShellExecuteW(int hwnd, string lpOperation, string lpFile, string lpParameters, string lpDirectory, int nShowCmd);
+long ShellExecuteW(long hwnd, string lpOperation, string lpFile, string lpParameters, string lpDirectory, int nShowCmd);
 #import
 
 //--- ENUMS
