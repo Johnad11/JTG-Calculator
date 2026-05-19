@@ -174,6 +174,9 @@ int OnInit()
    }
    
    ObjectSetInteger(0, "JTG_Advanced_Dashboard", OBJPROP_CORNER, InpCorner);
+   ObjectSetInteger(0, "JTG_Advanced_Dashboard", OBJPROP_BACK, true);
+   ObjectSetInteger(0, "JTG_Advanced_Dashboard", OBJPROP_SELECTABLE, false);
+   ObjectSetInteger(0, "JTG_Advanced_Dashboard", OBJPROP_SELECTED, false);
    
    EventSetTimer(InpRefreshSec);
    FullHistoryScan();
