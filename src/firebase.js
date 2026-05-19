@@ -21,4 +21,11 @@ try {
 
 export const auth = firebase.auth();
 export const db = firebase.firestore();
+
+// Diagnostic Exposures
+if (typeof window !== 'undefined') {
+    window.firebase = firebase;
+    window.db = db;
+}
+
 export default firebase;
