@@ -54,6 +54,8 @@ double         SessionPnL[3]; // 0=Tokyo, 1=London, 2=NY
 int            CurrentMonth = 0;
 string         LastSyncTime = "Never";
 string         SyncStatus = "Idle";
+int            GlobalMouseX = 0;
+int            GlobalMouseY = 0;
 
 //--- Advanced Stats
 double         StatExpectancy = 0;
@@ -174,9 +176,12 @@ int OnInit()
    }
    
    ObjectSetInteger(0, "JTG_Advanced_Dashboard", OBJPROP_CORNER, InpCorner);
-   ObjectSetInteger(0, "JTG_Advanced_Dashboard", OBJPROP_BACK, true);
+   ObjectSetInteger(0, "JTG_Advanced_Dashboard", OBJPROP_BACK, false); // Render in foreground (in front of candles!)
    ObjectSetInteger(0, "JTG_Advanced_Dashboard", OBJPROP_SELECTABLE, false);
    ObjectSetInteger(0, "JTG_Advanced_Dashboard", OBJPROP_SELECTED, false);
+   
+   // Enable mouse tracking to capture coordinates on foreground canvas clicks
+   ChartSetInteger(0, CHART_EVENT_MOUSE_MOVE, true);
    
    EventSetTimer(InpRefreshSec);
    FullHistoryScan();
@@ -737,12 +742,21 @@ void PushTradesToCloud()
 //+------------------------------------------------------------------+
 void OnChartEvent(const int id, const long& lparam, const double& dparam, const string& sparam)
 {
-   if(id == CHARTEVENT_CLICK)
+   // 1. Update global coordinates on mouse move
+   if(id == CHARTEVENT_MOUSE_MOVE)
    {
-      // Coordinate logic relative to corner docking is tricky, 
-      // Simplified for fixed corner CORNER_RIGHT_UPPER (most common)
-      int x = (int)lparam;
-      int y = (int)dparam;
+      GlobalMouseX = (int)lparam;
+      GlobalMouseY = (int)dparam;
+      return; // No click handling for pure movement
+   }
+   
+   // 2. Handle both background chart clicks and foreground object clicks
+   if(id == CHARTEVENT_CLICK || (id == CHARTEVENT_OBJECT_CLICK && sparam == "JTG_Advanced_Dashboard"))
+   {
+      // Use the recorded mouse coordinates at the instant of the click
+      int x = GlobalMouseX;
+      int y = GlobalMouseY;
+      
       int chartW = (int)ChartGetInteger(0, CHART_WIDTH_IN_PIXELS);
       int chartH = (int)ChartGetInteger(0, CHART_HEIGHT_IN_PIXELS);
       
