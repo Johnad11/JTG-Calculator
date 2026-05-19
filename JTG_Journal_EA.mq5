@@ -743,11 +743,32 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
       // Simplified for fixed corner CORNER_RIGHT_UPPER (most common)
       int x = (int)lparam;
       int y = (int)dparam;
-      
-      // Correct for corner if needed, but standard logic for Upper Right:
       int chartW = (int)ChartGetInteger(0, CHART_WIDTH_IN_PIXELS);
-      int relativeX = x - (chartW - PANEL_W - 10);
-      int relativeY = y - 30;
+      int chartH = (int)ChartGetInteger(0, CHART_HEIGHT_IN_PIXELS);
+      
+      int relativeX = 0;
+      int relativeY = 0;
+      
+      if(InpCorner == CORNER_LEFT_UPPER)
+      {
+         relativeX = x - 10;
+         relativeY = y - 30;
+      }
+      else if(InpCorner == CORNER_RIGHT_UPPER)
+      {
+         relativeX = x - (chartW - PANEL_W - 10);
+         relativeY = y - 30;
+      }
+      else if(InpCorner == CORNER_LEFT_LOWER)
+      {
+         relativeX = x - 10;
+         relativeY = y - (chartH - PANEL_H - 30);
+      }
+      else if(InpCorner == CORNER_RIGHT_LOWER)
+      {
+         relativeX = x - (chartW - PANEL_W - 10);
+         relativeY = y - (chartH - PANEL_H - 30);
+      }
 
       // Updated Hitbox for Tabs (Matches the new UI layout)
       if(relativeY > 65 && relativeY < 110) {
@@ -813,7 +834,7 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
       }
       
       // Calculator Interaction: Click chart to set SL if on CALC tab
-      if(CurrentTab == TAB_CALC && relativeX < 0) // Clicked outside panel (on chart)
+      if(CurrentTab == TAB_CALC && (relativeX < 0 || relativeX > PANEL_W || relativeY < 0 || relativeY > PANEL_H)) // Clicked outside panel (on chart)
       {
          double price; datetime time; int sub;
          ChartXYToTimePrice(0, (int)lparam, (int)dparam, sub, time, price);
