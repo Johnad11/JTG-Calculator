@@ -53,9 +53,18 @@ export default async function handler(req, res) {
     const db = admin.firestore();
 
     try {
-        const trades = req.body;
-        if (!Array.isArray(trades)) {
-            return res.status(400).json({ error: 'Request body must be a JSON array of trades' });
+        let metadata = null;
+        let trades = [];
+        let balanceTransactions = [];
+
+        if (req.body && !Array.isArray(req.body) && req.body.metadata) {
+            metadata = req.body.metadata;
+            trades = req.body.trades || [];
+            balanceTransactions = req.body.balance_transactions || [];
+        } else if (Array.isArray(req.body)) {
+            trades = req.body;
+        } else {
+            return res.status(400).json({ error: 'Request body must be a JSON array of trades or a rich sync payload object' });
         }
 
         // 2. Authenticate the user by matching their mt5SyncKey
@@ -73,30 +82,85 @@ export default async function handler(req, res) {
         const userId = userDoc.id;
         console.log(`✅ Authenticated User ID: ${userId}`);
 
-        // 3. Find or create a default MT5 account for this user to tie the trades to
-        const accountsSnapshot = await db.collection('accounts')
-            .where('userId', '==', userId)
-            .limit(1)
-            .get();
-
+        // 3. Resolve or Create Dedicated Personal Account
         let accountId = '';
-        if (!accountsSnapshot.empty) {
-            accountId = accountsSnapshot.docs[0].id;
-        } else {
-            // Create a default sync account if they have none
-            const newAccountRef = await db.collection('accounts').add({
-                name: "MT5 Auto-Sync Account",
-                currency: "USD",
-                balance: "10000.00",
-                userId: userId,
-                createdAt: new Date().toISOString()
+        let accountRef = null;
+
+        if (metadata && metadata.login && metadata.broker) {
+            const login = String(metadata.login);
+            const broker = String(metadata.broker);
+
+            console.log(`🔍 Resolving dedicated account for login: ${login}, broker: ${broker}`);
+            const accountsSnapshot = await db.collection('accounts')
+                .where('userId', '==', userId)
+                .where('mt5Login', '==', login)
+                .where('mt5Broker', '==', broker)
+                .limit(1)
+                .get();
+
+            if (!accountsSnapshot.empty) {
+                accountRef = accountsSnapshot.docs[0].ref;
+                accountId = accountsSnapshot.docs[0].id;
+                console.log(`✅ Resolved existing dedicated account ID: ${accountId}`);
+            } else {
+                // Calculate initialBalance: balance - netPnL
+                let netPnL = 0;
+                for (const trade of trades) {
+                    netPnL += parseFloat(trade.pnl || 0);
+                }
+                const currentBalance = parseFloat(metadata.balance || 0);
+                const initialBalance = currentBalance - netPnL;
+
+                console.log(`✨ Creating dedicated personal account for MT5 - ${broker} (${login})`);
+                const newAccountDoc = {
+                    name: `MT5 - ${broker} (${login})`,
+                    type: "Personal",
+                    currency: metadata.currency || "USD",
+                    balance: currentBalance.toFixed(2),
+                    initialBalance: initialBalance.toFixed(2),
+                    mt5Login: login,
+                    mt5Broker: broker,
+                    userId: userId,
+                    createdAt: new Date().toISOString()
+                };
+
+                const newAccountRef = await db.collection('accounts').add(newAccountDoc);
+                accountId = newAccountRef.id;
+                accountRef = newAccountRef;
+                console.log(`✅ Created dedicated account ID: ${accountId}`);
+            }
+
+            // Update account's balance to match current terminal balance
+            console.log(`🔄 Updating live balance on account ${accountId} to ${metadata.balance}`);
+            await accountRef.update({
+                balance: parseFloat(metadata.balance || 0).toFixed(2)
             });
-            accountId = newAccountRef.id;
+        } else {
+            // Fallback for old format or missing metadata
+            console.log(`⚠️ Missing MT5 metadata. Resolving default sync account.`);
+            const accountsSnapshot = await db.collection('accounts')
+                .where('userId', '==', userId)
+                .limit(1)
+                .get();
+
+            if (!accountsSnapshot.empty) {
+                accountId = accountsSnapshot.docs[0].id;
+            } else {
+                const newAccountRef = await db.collection('accounts').add({
+                    name: "MT5 Auto-Sync Account",
+                    currency: "USD",
+                    balance: "10000.00",
+                    userId: userId,
+                    createdAt: new Date().toISOString()
+                });
+                accountId = newAccountRef.id;
+            }
         }
 
-        // 4. Batch write trades to avoid multiple round-trips
+        // 4. Batch write trades and balance transactions to avoid multiple round-trips
         const batch = db.batch();
         let syncedCount = 0;
+        let withdrawalCount = 0;
 
         for (const trade of trades) {
             if (!trade.ticket) continue;
@@ -119,7 +183,7 @@ export default async function handler(req, res) {
                 pnl: pnlVal,
                 pnlNative: pnlVal,
                 exchangeRate: 1,
-                currency: "USD",
+                currency: (metadata && metadata.currency) || "USD",
                 entry: 0,
                 exit: 0,
                 sl: 0,
@@ -136,12 +200,39 @@ export default async function handler(req, res) {
             syncedCount++;
         }
 
+        // 5. Batch write withdrawals from balance transactions
+        if (Array.isArray(balanceTransactions)) {
+            for (const tx of balanceTransactions) {
+                const amountVal = parseFloat(tx.amount || 0);
+                if (amountVal < 0) { // Only sync withdrawals (negative balance changes)
+                    const withdrawalId = `mt5_w_${tx.ticket}`;
+                    const withdrawalRef = db.collection('withdrawals').doc(withdrawalId);
+                    const absAmount = Math.abs(amountVal);
+
+                    const newWithdrawal = {
+                        userId: userId,
+                        accountId: accountId,
+                        amount: absAmount,
+                        displayAmount: absAmount,
+                        currency: (metadata && metadata.currency) || "USD",
+                        note: "Synced withdrawal from MT5",
+                        date: new Date((tx.time || Date.now() / 1000) * 1000).toISOString(),
+                        createdAt: new Date().toISOString(),
+                        type: 'WITHDRAWAL'
+                    };
+
+                    batch.set(withdrawalRef, newWithdrawal, { merge: true });
+                    withdrawalCount++;
+                }
+            }
+        }
+
         await batch.commit();
-        console.log(`🎉 Successfully synced ${syncedCount} trades for User ID: ${userId}`);
+        console.log(`🎉 Successfully synced ${syncedCount} trades and ${withdrawalCount} withdrawals for User ID: ${userId}`);
 
         return res.status(200).json({ 
             success: true, 
-            message: `Synced ${syncedCount} trades successfully.` 
+            message: `Synced ${syncedCount} trades and ${withdrawalCount} withdrawals successfully.` 
         });
 
     } catch (error) {

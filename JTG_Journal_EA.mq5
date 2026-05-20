@@ -42,11 +42,18 @@ struct TradeRecord {
    uchar    type; // 0=Buy, 1=Sell
 };
 
+struct BalanceRecord {
+   ulong    ticket;
+   double   amount;
+   datetime time;
+};
+
 //--- GLOBAL VARIABLES
 CCanvas        Canvas;
 ENUM_TAB       CurrentTab = TAB_OVERVIEW;
 string         AccountCurrency = "USD";
 TradeRecord    HistoryData[];
+BalanceRecord  BalanceData[];
 double         EquityCurve[];
 double         DailyPnL[32]; // Max 31 days
 double         HourlyPnL[24];
@@ -218,6 +225,7 @@ void FullHistoryScan()
    
    ArrayFree(HistoryData);
    ArrayFree(EquityCurve);
+   ArrayFree(BalanceData);
    ArrayFill(DailyPnL, 0, 32, 0);
    ArrayFill(HourlyPnL, 0, 24, 0);
    ArrayFill(SessionPnL, 0, 3, 0);
@@ -227,6 +235,7 @@ void FullHistoryScan()
    EquityCurve[0] = 0;
    
    int recordIdx = 0;
+   int balanceIdx = 0;
    double grossProfit = 0, grossLoss = 0;
    int wins = 0, losses = 0;
    
@@ -237,7 +246,20 @@ void FullHistoryScan()
    for(int i=0; i<totalDeals; i++)
    {
       ulong ticket = HistoryDealGetTicket(i);
-      if(HistoryDealGetInteger(ticket, DEAL_ENTRY) == DEAL_ENTRY_OUT)
+      long dealType = HistoryDealGetInteger(ticket, DEAL_TYPE);
+      
+      if(dealType == DEAL_TYPE_BALANCE)
+      {
+         double amount = HistoryDealGetDouble(ticket, DEAL_PROFIT);
+         datetime bTime = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
+         
+         ArrayResize(BalanceData, balanceIdx + 1);
+         BalanceData[balanceIdx].ticket = ticket;
+         BalanceData[balanceIdx].amount = amount;
+         BalanceData[balanceIdx].time = bTime;
+         balanceIdx++;
+      }
+      else if(HistoryDealGetInteger(ticket, DEAL_ENTRY) == DEAL_ENTRY_OUT)
       {
          double pnl = HistoryDealGetDouble(ticket, DEAL_PROFIT);
          double comm = HistoryDealGetDouble(ticket, DEAL_COMMISSION);
@@ -270,10 +292,10 @@ void FullHistoryScan()
          else SessionPnL[0] += net; // Late Asia
          
          if(TimeMonth(cTime) == CurrentMonth)
-         {
-            int day = TimeDay(cTime);
-            if(day >= 1 && day <= 31) DailyPnL[day] += net;
-         }
+          {
+             int day = TimeDay(cTime);
+             if(day >= 1 && day <= 31) DailyPnL[day] += net;
+          }
          
          // 3. Store History Record
          ArrayResize(HistoryData, recordIdx + 1);
@@ -282,6 +304,7 @@ void FullHistoryScan()
          HistoryData[recordIdx].volume = HistoryDealGetDouble(ticket, DEAL_VOLUME);
          HistoryData[recordIdx].pnl = net;
          HistoryData[recordIdx].closeTime = cTime;
+         HistoryData[recordIdx].type = (uchar)dealType;
          recordIdx++;
       }
    }
@@ -686,8 +709,27 @@ void PushTradesToCloud()
       return;
    }
    
-   // 1. Serialize trades to JSON
-   string json = "[";
+   // 1. Get account metadata
+   long accountLogin = AccountInfoInteger(ACCOUNT_LOGIN);
+   string accountBroker = AccountInfoString(ACCOUNT_COMPANY);
+   double accountBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+   
+   string brokerEscaped = accountBroker;
+   StringReplace(brokerEscaped, "\"", "\\\"");
+   
+   // 2. Serialize trades and balance transactions to rich JSON
+   string json = "{";
+   
+   // Metadata
+   json += "\"metadata\":{";
+   json += "\"login\":" + IntegerToString(accountLogin) + ",";
+   json += "\"broker\":\"" + brokerEscaped + "\",";
+   json += "\"balance\":" + DoubleToString(accountBalance, 2) + ",";
+   json += "\"currency\":\"" + AccountCurrency + "\"";
+   json += "},";
+   
+   // Trades
+   json += "\"trades\":[";
    int size = ArraySize(HistoryData);
    for(int i = 0; i < size; i++)
    {
@@ -701,7 +743,23 @@ void PushTradesToCloud()
       json += "\"type\":" + IntegerToString(HistoryData[i].type);
       json += "}";
    }
+   json += "],";
+   
+   // Balance Transactions
+   json += "\"balance_transactions\":[";
+   int balSize = ArraySize(BalanceData);
+   for(int i = 0; i < balSize; i++)
+   {
+      if(i > 0) json += ",";
+      json += "{";
+      json += "\"ticket\":" + IntegerToString(BalanceData[i].ticket) + ",";
+      json += "\"amount\":" + DoubleToString(BalanceData[i].amount, 2) + ",";
+      json += "\"time\":" + IntegerToString((long)BalanceData[i].time);
+      json += "}";
+   }
    json += "]";
+   
+   json += "}";
    
    // 2. Prep headers & POST data
    string headers = "Content-Type: application/json\r\n" +
