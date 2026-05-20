@@ -81,41 +81,46 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                 throw new Error("Paystack checkout library is still loading. Please try again in a few seconds.");
             }
 
+            // Define success helper to keep the Paystack callback parameter a standard, non-async function
+            const handleSuccessfulPayment = async (response) => {
+                try {
+                    setSubmitting(true);
+                    // Save transaction details and premium state directly to Firestore
+                    await db.collection('user_settings').doc(user.uid).set({
+                        isPremium: true,
+                        premiumPlan: planName,
+                        premiumUntil: premiumUntil.toISOString(),
+                        subscribedAt: now.toISOString(),
+                        paystackPaymentReference: response.reference,
+                        paystackPaymentStatus: 'SUCCESS'
+                    }, { merge: true });
+
+                    alert(`🎉 Thank you! Your payment of ₦${amountInKobo / 100} was successful (Ref: ${response.reference}). Your JTG Premium access is now fully unlocked until ${premiumUntil.toLocaleDateString()}!`);
+                    
+                    if (onSuccess) {
+                        onSuccess({
+                            isPremium: true,
+                            premiumPlan: planName,
+                            premiumUntil: premiumUntil.toISOString()
+                        });
+                    }
+                    close();
+                } catch (dbErr) {
+                    console.error("Error writing premium status:", dbErr);
+                    alert("Payment succeeded on Paystack, but failed to update your account database: " + dbErr.message + ". Please contact support with reference: " + response.reference);
+                } finally {
+                    setSubmitting(false);
+                }
+            };
+
             const handler = window.PaystackPop.setup({
                 key: PAYSTACK_PUBLIC_KEY,
                 email: user.email || 'customer@jtg-journal.app',
                 amount: amountInKobo,
                 currency: 'NGN',
                 ref: 'JTG_' + Math.floor((Math.random() * 1000000000) + 1),
-                callback: async function(response) {
-                    try {
-                        setSubmitting(true);
-                        // Save transaction details and premium state directly to Firestore
-                        await db.collection('user_settings').doc(user.uid).set({
-                            isPremium: true,
-                            premiumPlan: planName,
-                            premiumUntil: premiumUntil.toISOString(),
-                            subscribedAt: now.toISOString(),
-                            paystackPaymentReference: response.reference,
-                            paystackPaymentStatus: 'SUCCESS'
-                        }, { merge: true });
-
-                        alert(`🎉 Thank you! Your payment of ₦${amountInKobo / 100} was successful (Ref: ${response.reference}). Your JTG Premium access is now fully unlocked until ${premiumUntil.toLocaleDateString()}!`);
-                        
-                        if (onSuccess) {
-                            onSuccess({
-                                isPremium: true,
-                                premiumPlan: planName,
-                                premiumUntil: premiumUntil.toISOString()
-                            });
-                        }
-                        close();
-                    } catch (dbErr) {
-                        console.error("Error writing premium status:", dbErr);
-                        alert("Payment succeeded on Paystack, but failed to update your account database: " + dbErr.message + ". Please contact support with reference: " + response.reference);
-                    } finally {
-                        setSubmitting(false);
-                    }
+                callback: function(response) {
+                    handleSuccessfulPayment(response);
                 },
                 onClose: function() {
                     setSubmitting(false);
