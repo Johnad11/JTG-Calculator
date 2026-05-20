@@ -5,9 +5,8 @@ import JtgPromo from './JtgPromo';
 import { LOGO_URL } from '../constants';
 import { convertForDisplay } from '../utils/currencyConverter';
 
-const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, incrementExportCount, currencySymbol = '$', currency = 'USD', exchangeRates, username, activeAccountId, activeAccount }) => {
+const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, incrementExportCount, currencySymbol = '$', currency = 'USD', exchangeRates, username, activeAccountId, activeAccount, triggerUpgrade }) => {
     const captureRef = useRef(null);
-    const [showPremiumModal, setShowPremiumModal] = React.useState(false);
 
     const downloadCard = async (trade) => {
         let logoBase64 = '';
@@ -127,7 +126,7 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
         }
 
         if (!isPremium && exportCount >= 3) {
-            setShowPremiumModal(true);
+            triggerUpgrade();
             return;
         }
 
@@ -265,34 +264,6 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
             </div>
             <JtgPromo />
 
-            {/* UPGRADE MODAL */}
-            {showPremiumModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-6 text-center">
-                    <div className="flex flex-col items-center gap-4 bg-jtg-dark border border-jtg-green/30 p-8 rounded-2xl shadow-2xl max-w-sm">
-                        <div className="w-16 h-16 bg-jtg-green/20 rounded-full flex items-center justify-center text-jtg-green mb-2">
-                            <Icons.Star className="w-8 h-8" />
-                        </div>
-                        <div>
-                            <h3 className="text-2xl font-bold text-white mb-2">Limit Reached</h3>
-                            <p className="text-slate-400 text-sm mb-6">
-                                Free users are limited to 3 data exports. Upgrade to Premium for unlimited access!
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank')}
-                            className="w-full py-3 bg-gradient-to-r from-jtg-green to-emerald-500 text-black font-bold rounded-lg hover:brightness-110 transition shadow-lg flex items-center justify-center gap-2"
-                        >
-                            <Icons.Star className="w-4 h-4" /> UPGRADE TO PREMIUM
-                        </button>
-                        <button
-                            onClick={() => setShowPremiumModal(false)}
-                            className="mt-2 text-slate-500 hover:text-white transition text-sm font-bold"
-                        >
-                            CLOSE
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

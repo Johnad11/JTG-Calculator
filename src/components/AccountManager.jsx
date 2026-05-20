@@ -4,7 +4,7 @@ import { CURRENCIES } from '../constants';
 import { Icons } from './Icons';
 import { convertForDisplay, convertForStorage } from '../utils/currencyConverter';
 
-const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close, isPremium = false, currencySymbol = '$', currency = 'USD', exchangeRates, withdrawFunds, updateAccount, userId }) => {
+const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close, isPremium = false, currencySymbol = '$', currency = 'USD', exchangeRates, withdrawFunds, updateAccount, userId, triggerUpgrade }) => {
     const canDelete = accounts.length > 1;
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
@@ -121,8 +121,6 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
     const propAccounts = accounts.filter(a => a.type === 'Prop Firm');
     const syntheticAccounts = accounts.filter(a => a.type === 'Synthetic');
 
-    const [showPremiumModal, setShowPremiumModal] = useState(false);
-
     const handleAdd = async (e) => {
         e.preventDefault();
         if (!newAccountName || !newAccountBalance) {
@@ -132,17 +130,38 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
 
         // Final check for limits before proceeding
         if (newAccountType === 'Personal' && personalAccounts.length >= MAX_PERSONAL) {
-            alert(`You've reached the maximum of ${MAX_PERSONAL} personal accounts on your current plan.`);
+            if (!isPremium) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PERSONAL} Personal accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
+                    triggerUpgrade();
+                    close();
+                }
+            } else {
+                alert(`Limit reached: Premium accounts are limited to ${MAX_PERSONAL} Personal accounts.`);
+            }
             setIsAdding(false);
             return;
         }
         if (newAccountType === 'Prop Firm' && propAccounts.length >= MAX_PROP) {
-            alert(`You've reached the maximum of ${MAX_PROP} prop firm accounts on your current plan.`);
+            if (!isPremium) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PROP} Prop Firm accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
+                    triggerUpgrade();
+                    close();
+                }
+            } else {
+                alert(`Limit reached: Premium accounts are limited to ${MAX_PROP} Prop Firm accounts.`);
+            }
             setIsAdding(false);
             return;
         }
         if (newAccountType === 'Synthetic' && syntheticAccounts.length >= MAX_SYNTHETIC) {
-            alert(`You've reached the maximum of ${MAX_SYNTHETIC} synthetic accounts on your current plan.`);
+            if (!isPremium) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_SYNTHETIC} Synthetic accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
+                    triggerUpgrade();
+                    close();
+                }
+            } else {
+                alert(`Limit reached: Premium accounts are limited to ${MAX_SYNTHETIC} Synthetic accounts.`);
+            }
             setIsAdding(false);
             return;
         }
@@ -601,7 +620,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         {!isPremium && (
                                             <button
                                                 type="button"
-                                                onClick={() => setShowPremiumModal(true)}
+                                                onClick={() => { triggerUpgrade(); close(); }}
                                                 className="text-xs bg-gradient-to-r from-jtg-green to-emerald-500 text-black font-bold py-2 px-4 rounded hover:brightness-110 transition shadow-lg w-full flex items-center justify-center gap-2"
                                             >
                                                 <Icons.Star className="w-3 h-3" /> UPGRADE TO PREMIUM
@@ -629,29 +648,6 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                             </form>
                         )}
                     </div>
-
-                    {/* PREMIUM COMING SOON MODAL */}
-                    {showPremiumModal && (
-                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in p-6 text-center">
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="w-16 h-16 bg-jtg-green/20 rounded-full flex items-center justify-center text-jtg-green">
-                                    <Icons.Star className="w-8 h-8" />
-                                </div>
-                                <div>
-                                    <h3 className="text-2xl font-bold text-white mb-1">Coming Soon</h3>
-                                    <p className="text-slate-400 text-sm max-w-[200px]">
-                                        Premium features are currently under development. Stay tuned!
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => setShowPremiumModal(false)}
-                                    className="mt-2 px-6 py-2 bg-slate-700 text-white rounded-full text-sm font-bold hover:bg-slate-600 transition"
-                                >
-                                    Close
-                                </button>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         </div >

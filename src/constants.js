@@ -31,8 +31,9 @@ export const EXCHANGE_RATE_API = {
 };
 
 export const PREMIUM_EMAILS = [
-    'nwabuezebosco@gmail.com',
-    'sagemutalib@gmail.com'
+    'nwabuezebosco@gmail.com'
 ];
 
 export const LOGO_URL = "/logo.png";
+
+export const PAYSTACK_PUBLIC_KEY = 'pk_test_79b8c13a103619cfaeb2acdeaf3cc474cdd849f8';

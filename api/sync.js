@@ -80,7 +80,28 @@ export default async function handler(req, res) {
 
         const userDoc = userSettingsSnapshot.docs[0];
         const userId = userDoc.id;
+        const userData = userDoc.data();
         console.log(`✅ Authenticated User ID: ${userId}`);
+
+        // 3. Verify JTG Premium subscription status
+        const isPremium = userData.isPremium === true;
+        let isSubscriptionValid = false;
+
+        if (userData.premiumUntil) {
+            const expiryDate = new Date(userData.premiumUntil);
+            isSubscriptionValid = expiryDate > new Date();
+        } else if (isPremium) {
+            // Legacy premium or manual administrative grant without a set expiry
+            isSubscriptionValid = true;
+        }
+
+        if (!isPremium || !isSubscriptionValid) {
+            console.warn(`⛔ Unauthorized Sync Request: User ${userId} does not have active premium privileges.`);
+            return res.status(403).json({
+                error: 'Premium Subscription Required',
+                message: 'Auto-Sync is a premium JTG Ecosystem feature. Please unlock the premium tier (14-day free trial, Monthly ₦500, or Annual ₦5,000) inside the JTG Journal Web App to enable automated terminal syncing.'
+            });
+        }
 
         // 3. Resolve or Create Dedicated Personal Account
         let accountId = '';

@@ -9,11 +9,18 @@ import Performance from './components/Performance';
 import AccountManager from './components/AccountManager';
 import UsernameModal from './components/UsernameModal';
 import Mt5IntegrationModal from './components/Mt5IntegrationModal';
+import PremiumUpgradeModal from './components/PremiumUpgradeModal';
 import { LOGO_URL, CURRENCIES, ASSETS, PREMIUM_EMAILS } from './constants';
 
 import { fetchExchangeRates } from './utils/exchangeRate';
 import { convertForDisplay, convertForStorage } from './utils/currencyConverter';
 import { startAppTour } from './utils/AppTour';
+
+const PremiumStarIcon = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+);
 
 const App = () => {
     const [page, setPage] = useState('calc');
@@ -28,6 +35,8 @@ const App = () => {
     const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [showSyncModal, setShowSyncModal] = useState(false);
     const [exportCount, setExportCount] = useState(0);
+    const [isPremium, setIsPremium] = useState(false);
+    const [showPremiumUpgradeModal, setShowPremiumUpgradeModal] = useState(false);
 
 
     // CURRENCY STATE (Derived from active account)
@@ -168,9 +177,29 @@ const App = () => {
 
                         // 2. Load User Settings (Export Count & Username)
                         const settingsDoc = await db.collection('user_settings').doc(currentUser.uid).get();
+                        let userIsPremium = false;
+                        
                         if (settingsDoc.exists) {
                             const data = settingsDoc.data();
                             setExportCount(data.exportCount || 0);
+                            
+                            // Check Premium Status
+                            const isEmailPremium = PREMIUM_EMAILS.includes(currentUser.email);
+                            const hasActivePremiumSetting = data.isPremium === true;
+                            let isSubscriptionValid = false;
+                            
+                            if (hasActivePremiumSetting) {
+                                if (data.premiumUntil) {
+                                    const premiumUntilDate = new Date(data.premiumUntil);
+                                    isSubscriptionValid = premiumUntilDate > new Date();
+                                } else {
+                                    isSubscriptionValid = true; // Fallback if no date is stored
+                                }
+                            }
+                            
+                            userIsPremium = isEmailPremium || isSubscriptionValid;
+                            setIsPremium(userIsPremium);
+                            
                             if (data.username) {
                                 setUsername(data.username);
                                 setShowUsernameModal(false);
@@ -180,6 +209,8 @@ const App = () => {
                         } else {
                             await db.collection('user_settings').doc(currentUser.uid).set({ exportCount: 0 }, { merge: true });
                             setExportCount(0);
+                            const isEmailPremium = PREMIUM_EMAILS.includes(currentUser.email);
+                            setIsPremium(isEmailPremium);
                             setShowUsernameModal(true);
                         }
 
@@ -195,6 +226,7 @@ const App = () => {
                     setActiveAccountId(null);
                     setTrades([]);
                     setExportCount(0);
+                    setIsPremium(false);
                 }
             });
             return () => unsubscribe();
@@ -259,7 +291,6 @@ const App = () => {
             return false;
         }
 
-        const isPremium = PREMIUM_EMAILS.includes(user.email);
         const personalAccounts = accounts.filter(a => a.type === 'Personal');
         const propAccounts = accounts.filter(a => a.type === 'Prop Firm');
         const syntheticAccounts = accounts.filter(a => a.type === 'Synthetic');
@@ -269,15 +300,33 @@ const App = () => {
         const MAX_SYNTHETIC = isPremium ? 5 : 2;
 
         if (accountData.type === 'Personal' && personalAccounts.length >= MAX_PERSONAL) {
-            alert(`Limit reached: Free accounts can have up to ${MAX_PERSONAL} personal accounts.`);
+            if (!isPremium) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PERSONAL} Personal accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
+                    setShowPremiumUpgradeModal(true);
+                }
+            } else {
+                alert(`Limit reached: Premium accounts are limited to ${MAX_PERSONAL} Personal accounts.`);
+            }
             return false;
         }
         if (accountData.type === 'Prop Firm' && propAccounts.length >= MAX_PROP) {
-            alert(`Limit reached: Free accounts can have up to ${MAX_PROP} prop firm accounts.`);
+            if (!isPremium) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PROP} Prop Firm accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
+                    setShowPremiumUpgradeModal(true);
+                }
+            } else {
+                alert(`Limit reached: Premium accounts are limited to ${MAX_PROP} Prop Firm accounts.`);
+            }
             return false;
         }
         if (accountData.type === 'Synthetic' && syntheticAccounts.length >= MAX_SYNTHETIC) {
-            alert(`Limit reached: Free accounts can have up to ${MAX_SYNTHETIC} synthetic accounts.`);
+            if (!isPremium) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_SYNTHETIC} Synthetic accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
+                    setShowPremiumUpgradeModal(true);
+                }
+            } else {
+                alert(`Limit reached: Premium accounts are limited to ${MAX_SYNTHETIC} Synthetic accounts.`);
+            }
             return false;
         }
 
@@ -645,10 +694,21 @@ const App = () => {
 
                     {/* LOGIN/LOGOUT BUTTON */}
                     {user ? (
-                        <button onClick={logout} className="flex flex-col items-center gap-1 text-slate-500 hover:text-red-500 transition" title="Logout">
-                            <div className="w-8 h-8 rounded-full bg-jtg-green text-black flex items-center justify-center font-bold text-xs">{user.email[0].toUpperCase()}</div>
-                            <span className="text-[9px] font-bold tracking-wider">LOGOUT</span>
-                        </button>
+                        <div className="flex flex-col items-center gap-2 mb-2">
+                            {isPremium && (
+                                <div className="bg-[#1BA657]/20 border border-[#1BA657]/50 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-[0_0_10px_rgba(27,166,87,0.3)] animate-pulse mb-1">
+                                    <PremiumStarIcon className="w-2.5 h-2.5 text-[#1BA657]" />
+                                    <span className="text-[8px] font-extrabold text-[#1BA657] tracking-wider uppercase">PRO</span>
+                                </div>
+                            )}
+                            <button onClick={logout} className="flex flex-col items-center gap-1 text-slate-500 hover:text-red-500 transition" title="Logout">
+                                <div className="w-8 h-8 rounded-full bg-jtg-green text-black flex items-center justify-center font-bold text-xs relative">
+                                    {user.email[0].toUpperCase()}
+                                    {isPremium && <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center border border-jtg-dark font-extrabold" title="Premium Access">★</span>}
+                                </div>
+                                <span className="text-[9px] font-bold tracking-wider">LOGOUT</span>
+                            </button>
+                        </div>
                     ) : (
                         <button onClick={login} className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition" title="Login to Sync">
                             {isLoggingIn ? <span className="animate-spin">...</span> : <Icons.Google />}
@@ -696,7 +756,12 @@ const App = () => {
                     )}
 
                     {user ? (
-                        <button onClick={logout} className="text-[10px] bg-red-500/20 text-red-500 px-2 py-1.5 rounded border border-red-500/50">LOGOUT</button>
+                        <div className="flex items-center gap-1.5">
+                            {isPremium && (
+                                <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[8px] font-extrabold px-1.5 py-0.5 rounded shadow-[0_0_5px_rgba(27,166,87,0.3)] tracking-wider">PRO</span>
+                            )}
+                            <button onClick={logout} className="text-[10px] bg-red-500/20 text-red-500 px-2 py-1.5 rounded border border-red-500/50">LOGOUT</button>
+                        </div>
                     ) : (
                         <button onClick={login} className="text-[10px] bg-jtg-green/20 text-jtg-green px-3 py-1.5 rounded border border-jtg-green/50">{isLoggingIn ? '...' : 'LOGIN'}</button>
                     )}
@@ -737,7 +802,8 @@ const App = () => {
                             <TradeList
                                 trades={trades}
                                 deleteTrade={deleteTrade}
-                                isPremium={PREMIUM_EMAILS.includes(user?.email)}
+                                isPremium={isPremium}
+                                triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
                                 exportCount={exportCount}
                                 incrementExportCount={incrementExportCount}
                                 currencySymbol={currencySymbol}
@@ -763,7 +829,8 @@ const App = () => {
                     addAccount={addAccount}
                     deleteAccount={deleteAccount}
                     close={() => setShowAccountManager(false)}
-                    isPremium={PREMIUM_EMAILS.includes(user?.email)}
+                    isPremium={isPremium}
+                    triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
                     currencySymbol={currencySymbol}
                     currency={currency}
                     exchangeRates={exchangeRates}
@@ -788,7 +855,19 @@ const App = () => {
             {showSyncModal && user && (
                 <Mt5IntegrationModal
                     user={user}
+                    isPremium={isPremium}
+                    triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
                     close={() => setShowSyncModal(false)}
+                />
+            )}
+
+            {showPremiumUpgradeModal && user && (
+                <PremiumUpgradeModal
+                    user={user}
+                    close={() => setShowPremiumUpgradeModal(false)}
+                    onSuccess={(newSettings) => {
+                        setIsPremium(newSettings.isPremium);
+                    }}
                 />
             )}
         </div>
