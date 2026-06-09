@@ -10,6 +10,8 @@ import AccountManager from './components/AccountManager';
 import UsernameModal from './components/UsernameModal';
 import Mt5IntegrationModal from './components/Mt5IntegrationModal';
 import PremiumUpgradeModal from './components/PremiumUpgradeModal';
+import NotificationSettingsModal from './components/NotificationSettingsModal';
+import InAppReminderBanner from './components/InAppReminderBanner';
 import { LOGO_URL, CURRENCIES, ASSETS, PREMIUM_EMAILS } from './constants';
 
 import { fetchExchangeRates } from './utils/exchangeRate';
@@ -37,6 +39,17 @@ const App = () => {
     const [exportCount, setExportCount] = useState(0);
     const [isPremium, setIsPremium] = useState(false);
     const [showPremiumUpgradeModal, setShowPremiumUpgradeModal] = useState(false);
+    const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+    const [remindersEnabled, setRemindersEnabled] = useState(() => {
+        try {
+            return localStorage.getItem('jtg_reminders_enabled') === 'true';
+        } catch (e) { return false; }
+    });
+    const [reminderTime, setReminderTime] = useState(() => {
+        try {
+            return localStorage.getItem('jtg_reminder_time') || '20:00';
+        } catch (e) { return '20:00'; }
+    });
 
 
     // CURRENCY STATE (Derived from active account)
@@ -183,6 +196,15 @@ const App = () => {
                             const data = settingsDoc.data();
                             setExportCount(data.exportCount || 0);
                             
+                            if (data.remindersEnabled !== undefined) {
+                                setRemindersEnabled(data.remindersEnabled);
+                                localStorage.setItem('jtg_reminders_enabled', data.remindersEnabled);
+                            }
+                            if (data.reminderTime) {
+                                setReminderTime(data.reminderTime);
+                                localStorage.setItem('jtg_reminder_time', data.reminderTime);
+                            }
+                            
                             // Check Premium Status
                             const isEmailPremium = PREMIUM_EMAILS.includes(currentUser.email);
                             const hasActivePremiumSetting = data.isPremium === true;
@@ -283,6 +305,43 @@ const App = () => {
             localStorage.setItem('jtg_journal', JSON.stringify(trades));
         }
     }, [trades, user]);
+
+    // SAVE REMINDER SETTINGS & SCHEDULE NOTIFICATION
+    useEffect(() => {
+        localStorage.setItem('jtg_reminders_enabled', remindersEnabled);
+        localStorage.setItem('jtg_reminder_time', reminderTime);
+
+        if (user) {
+            db.collection('user_settings').doc(user.uid).set({
+                remindersEnabled,
+                reminderTime
+            }, { merge: true }).catch(err => {
+                console.error("Error syncing reminder settings to Firestore:", err);
+            });
+        }
+
+        // Schedule next notification trigger if reminders are enabled and permissions are granted
+        if (remindersEnabled && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            const [hours, minutes] = reminderTime.split(':').map(Number);
+            const now = new Date();
+            const target = new Date();
+            target.setHours(hours, minutes, 0, 0);
+
+            // If target time has passed today, schedule for tomorrow
+            if (target.getTime() <= now.getTime()) {
+                target.setDate(target.getDate() + 1);
+            }
+
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'SCHEDULE_LOCAL_NOTIFICATION',
+                    timestamp: target.getTime(),
+                    title: 'Log Your Trades!',
+                    body: 'Keep your journaling streak active. Log your trades in your JTG Journal today!'
+                });
+            }
+        }
+    }, [remindersEnabled, reminderTime, user]);
 
     const addAccount = async (accountData) => {
         if (!user) {
@@ -681,6 +740,11 @@ const App = () => {
                     {/* Removed Global Currency Selector */}
                 </div>
                 <div className="w-full pb-4 mt-8 shrink-0 flex flex-col gap-4 items-center">
+                    <button id="reminders-button" onClick={() => setShowNotificationSettings(true)} className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition" title="Daily Reminders">
+                        <Icons.Clock className="w-5 h-5 text-jtg-green" />
+                        <span className="text-[9px] font-bold tracking-wider">REMINDERS</span>
+                    </button>
+
                     <button id="tour-button" onClick={() => startAppTour()} className="flex flex-col items-center gap-1 text-jtg-green hover:text-white transition mb-4" title="Start Tour">
                         <Icons.Check className="w-5 h-5" />
                         <span className="text-[9px] font-bold tracking-wider">TOUR</span>
@@ -768,6 +832,10 @@ const App = () => {
 
                     <button id="mobile-tour-button" onClick={() => startAppTour()} className="p-2 text-jtg-green hover:text-white transition" title="Start Tour">
                         <Icons.Check className="w-5 h-5" />
+                    </button>
+
+                    <button id="mobile-reminders-button" onClick={() => setShowNotificationSettings(true)} className="p-2 text-slate-400 hover:text-white transition" title="Daily Reminders">
+                        <Icons.Clock className="w-5 h-5 text-jtg-green" />
                     </button>
 
                     {/* Removed Global Currency Selector */}
@@ -868,6 +936,25 @@ const App = () => {
                     onSuccess={(newSettings) => {
                         setIsPremium(newSettings.isPremium);
                     }}
+                />
+            )}
+
+            {/* Daily Reminders In-App Alert Banner */}
+            <InAppReminderBanner 
+                trades={trades} 
+                setPage={setPage} 
+                remindersEnabled={remindersEnabled} 
+            />
+
+            {/* Notification Settings Modal */}
+            {showNotificationSettings && (
+                <NotificationSettingsModal
+                    close={() => setShowNotificationSettings(false)}
+                    remindersEnabled={remindersEnabled}
+                    setRemindersEnabled={setRemindersEnabled}
+                    reminderTime={reminderTime}
+                    setReminderTime={setReminderTime}
+                    user={user}
                 />
             )}
         </div>
