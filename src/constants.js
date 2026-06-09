@@ -30,10 +30,8 @@ export const EXCHANGE_RATE_API = {
     cacheDateKey: 'jtg_exchange_rates_date'
 };
 
-export const PREMIUM_EMAILS = [
-    'nwabuezebosco@gmail.com'
-];
+export const PREMIUM_EMAILS = [];
 
 export const LOGO_URL = "/logo.png";
 
-export const PAYSTACK_PUBLIC_KEY = 'pk_test_79b8c13a103619cfaeb2acdeaf3cc474cdd849f8';
+export const PAYSTACK_PUBLIC_KEY = 'pk_live_1de79d34f7c1f3606601fb2bee5162dd82fec922';
