@@ -262,7 +262,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, triggerUpgrade, close })
                                 className="w-full py-3.5 bg-gradient-to-r from-[#1BA657] to-emerald-400 hover:from-[#158C47] hover:to-emerald-500 active:scale-[0.98] text-black font-extrabold text-xs tracking-wider rounded-xl transition-all duration-200 shadow-lg shadow-[#1BA657]/10 flex items-center justify-center gap-2 uppercase"
                             >
                                 <LockIcon className="w-4 h-4" />
-                                Unlock MT5 Auto-Sync (₦500/mo)
+                                Unlock MT5 Auto-Sync (₦800/mo)
                             </button>
                             <p className="text-[10px] text-slate-500 text-center">
                                 Unlock trial/subscription options starting with a 14-day free trial.

@@ -52,8 +52,10 @@ const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exc
         else if (pair.includes('XAG')) contractSize = 5000;
 
         let lot = 0;
-        if (pair.includes('JPY') && assetClass === 'forex') lot = riskDollars / (dist * 100 * 6.8);
-        else lot = riskDollars / (dist * contractSize);
+        if (pair.includes('JPY') && assetClass === 'forex') {
+            const jpyRate = exchangeRates && exchangeRates['JPY'] ? exchangeRates['JPY'] : 155.0;
+            lot = riskDollars / (dist * (contractSize / jpyRate));
+        } else lot = riskDollars / (dist * contractSize);
 
         let profitInUSD = null; let rr = null;
         if (tp) {
@@ -77,7 +79,7 @@ const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exc
     }, [balance, riskMode, riskValue, entryPrice, stopLoss, takeProfit, pair]);
 
     return (
-        <div id="calculator-container" className="flex flex-col h-full overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
+        <div id="calculator-container" className="flex flex-col p-4 md:p-10 pb-24 md:pb-10">
             {ratesLoading && currency !== 'USD' && (
                 <div className="mb-4 p-3 bg-jtg-blue/20 border border-jtg-blue/40 rounded-lg text-center flex items-center justify-center gap-2">
                     <p className="text-xs text-slate-300">Loading live exchange rates...</p>
@@ -142,4 +144,4 @@ const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exc
     );
 };
 
-export default Calculator;
+export default React.memo(Calculator);

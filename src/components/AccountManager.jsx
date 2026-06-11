@@ -119,7 +119,6 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
 
     const personalAccounts = accounts.filter(a => a.type === 'Personal');
     const propAccounts = accounts.filter(a => a.type === 'Prop Firm');
-    const syntheticAccounts = accounts.filter(a => a.type === 'Synthetic');
 
     const handleAdd = async (e) => {
         e.preventDefault();
@@ -131,7 +130,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         // Final check for limits before proceeding
         if (newAccountType === 'Personal' && personalAccounts.length >= MAX_PERSONAL) {
             if (!isPremium) {
-                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PERSONAL} Personal accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PERSONAL} Personal accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal and 5 Prop Firm accounts?`)) {
                     triggerUpgrade();
                     close();
                 }
@@ -143,24 +142,12 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         }
         if (newAccountType === 'Prop Firm' && propAccounts.length >= MAX_PROP) {
             if (!isPremium) {
-                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PROP} Prop Firm accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PROP} Prop Firm accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal and 5 Prop Firm accounts?`)) {
                     triggerUpgrade();
                     close();
                 }
             } else {
                 alert(`Limit reached: Premium accounts are limited to ${MAX_PROP} Prop Firm accounts.`);
-            }
-            setIsAdding(false);
-            return;
-        }
-        if (newAccountType === 'Synthetic' && syntheticAccounts.length >= MAX_SYNTHETIC) {
-            if (!isPremium) {
-                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_SYNTHETIC} Synthetic accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
-                    triggerUpgrade();
-                    close();
-                }
-            } else {
-                alert(`Limit reached: Premium accounts are limited to ${MAX_SYNTHETIC} Synthetic accounts.`);
             }
             setIsAdding(false);
             return;
@@ -221,11 +208,9 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
 
     const MAX_PERSONAL = isPremium ? 3 : 2;
     const MAX_PROP = isPremium ? 5 : 3;
-    const MAX_SYNTHETIC = isPremium ? 5 : 2;
 
     const canAddPersonal = personalAccounts.length < MAX_PERSONAL;
     const canAddProp = propAccounts.length < MAX_PROP;
-    const canAddSynthetic = syntheticAccounts.length < MAX_SYNTHETIC;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -355,6 +340,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         </div>
                                     </div>
                                 )}
+
                                 <button type="submit" disabled={isSaving} className="w-full py-3 bg-jtg-green text-black font-bold rounded hover:bg-green-400 transition mt-2">
                                     {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
                                 </button>
@@ -387,6 +373,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                                 }}
                                                 className="p-2 text-slate-500 hover:text-jtg-green transition-colors border border-transparent hover:border-slate-600 rounded"
                                                 title="Edit Account"
+                                                aria-label="Edit Account"
                                             >
                                                 <Icons.Edit />
                                             </button>
@@ -397,6 +384,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                                 }}
                                                 className="p-2 text-slate-500 hover:text-white transition-colors border border-transparent hover:border-slate-600 rounded"
                                                 title="Withdraw Funds"
+                                                aria-label="Withdraw Funds"
                                             >
                                                 <Icons.Minus />
                                             </button>
@@ -409,6 +397,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                                     }}
                                                     className="p-2 text-slate-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                                                     title="Delete Account"
+                                                    aria-label="Delete Account"
                                                 >
                                                     <Icons.Trash />
                                                 </button>
@@ -449,6 +438,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                                     }}
                                                     className="p-2 text-slate-500 hover:text-jtg-green transition-colors border border-transparent hover:border-slate-600 rounded"
                                                     title="Edit Account"
+                                                    aria-label="Edit Account"
                                                 >
                                                     <Icons.Edit />
                                                 </button>
@@ -459,6 +449,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                                     }}
                                                     className="p-2 text-slate-500 hover:text-white transition-colors border border-transparent hover:border-slate-600 rounded"
                                                     title="Withdraw Funds"
+                                                    aria-label="Withdraw Funds"
                                                 >
                                                     <Icons.Minus />
                                                 </button>
@@ -471,6 +462,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                                         }}
                                                         className="p-2 text-slate-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                                                         title="Delete Account"
+                                                        aria-label="Delete Account"
                                                     >
                                                         <Icons.Trash />
                                                     </button>
@@ -489,66 +481,6 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         </div>
                                     ))}
                                     {propAccounts.length === 0 && <div className="text-slate-500 text-sm italic p-2 text-center">No prop firm accounts</div>}
-                                </div>
-                            </div>
-
-                            {/* SYNTHETIC ACCOUNTS */}
-                            <div className="mb-6">
-                                <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 flex justify-between">
-                                    Synthetic Accounts <span>{syntheticAccounts.length}/{MAX_SYNTHETIC}</span>
-                                </h3>
-                                <div className="flex flex-col gap-2">
-                                    {syntheticAccounts.map(acc => (
-                                        <div key={acc.id} className="flex flex-col mb-2">
-                                            <div className="flex items-center gap-2 group">
-                                                <button
-                                                    onClick={() => switchAccount(acc.id)}
-                                                    className={`flex-1 flex items-center justify-between p-3 rounded-lg border transition-all ${activeAccountId === acc.id ? 'bg-jtg-green/20 border-jtg-green text-white' : 'bg-jtg-blue/10 border-transparent text-slate-300 hover:bg-jtg-blue/20'}`}
-                                                >
-                                                    <span className="font-semibold">{acc.name}</span>
-                                                    <div className="text-right">
-                                                        <div className="font-mono text-sm opacity-80">
-                                                            {CURRENCIES[acc.currency]?.symbol || '$'}{parseFloat(acc.balance).toLocaleString(undefined, { minimumFractionDigits: acc.currency === 'NGN' ? 0 : 2, maximumFractionDigits: acc.currency === 'NGN' ? 0 : 2 })}
-                                                        </div>
-                                                        <div className="text-[10px] text-jtg-green opacity-70">Weltrade Info Sync</div>
-                                                    </div>
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleEditClick(acc);
-                                                    }}
-                                                    className="p-2 text-slate-500 hover:text-jtg-green transition-colors border border-transparent hover:border-slate-600 rounded"
-                                                    title="Edit Account"
-                                                >
-                                                    <Icons.Edit />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setWithdrawalMode(acc.id);
-                                                    }}
-                                                    className="p-2 text-slate-500 hover:text-white transition-colors border border-transparent hover:border-slate-600 rounded"
-                                                    title="Withdraw Funds"
-                                                >
-                                                    <Icons.Minus />
-                                                </button>
-                                                {canDelete && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            deleteAccount(acc.id);
-                                                        }}
-                                                        className="p-2 text-slate-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                                        title="Delete Account"
-                                                    >
-                                                        <Icons.Trash />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {syntheticAccounts.length === 0 && <div className="text-slate-500 text-sm italic p-2 text-center">No synthetic accounts</div>}
                                 </div>
                             </div>
                         </>
@@ -573,7 +505,6 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                     >
                                         <option value="Personal">Personal</option>
                                         <option value="Prop Firm">Prop Firm</option>
-                                        <option value="Synthetic">Synthetic</option>
                                     </select>
                                     <input
                                         type="text"
@@ -603,16 +534,8 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                     required
                                 />
 
-                                {newAccountType === 'Synthetic' && (
-                                    <div className="bg-jtg-green/5 p-3 rounded border border-jtg-green/20 text-[11px] text-slate-300 mb-2 italic">
-                                        <div className="flex items-center gap-2 text-jtg-green font-bold mb-1 uppercase tracking-wider">
-                                            <Icons.Journal className="w-3 h-3" /> Weltrade Info
-                                        </div>
-                                        Synthetic accounts follow Weltrade synthetic pairs specifications and are restricted to synthetic instruments.
-                                    </div>
-                                )}
 
-                                {(newAccountType === 'Personal' && !canAddPersonal) || (newAccountType === 'Prop Firm' && !canAddProp) || (newAccountType === 'Synthetic' && !canAddSynthetic) ? (
+                                {(newAccountType === 'Personal' && !canAddPersonal) || (newAccountType === 'Prop Firm' && !canAddProp) ? (
                                     <div className="text-center p-3">
                                         <div className="text-red-400 text-xs font-bold mb-2">
                                             {isPremium ? 'Maximum Account Limit Reached' : `Free Plan Limit Reached (${newAccountType === 'Personal' ? MAX_PERSONAL : MAX_PROP}/${newAccountType === 'Personal' ? MAX_PERSONAL : MAX_PROP})`}
@@ -654,4 +577,4 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
     );
 };
 
-export default AccountManager;
+export default React.memo(AccountManager);

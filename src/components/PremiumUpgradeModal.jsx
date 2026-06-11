@@ -68,12 +68,16 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                 return;
             } else if (selectedPlan === 'monthly') {
                 premiumUntil.setMonth(now.getMonth() + 1); // 1 Month
-                planName = "Monthly Plan (₦500)";
-                amountInKobo = 50000; // 500 Naira
+                planName = "Monthly Plan (₦800)";
+                amountInKobo = 80000; // 800 Naira
+            } else if (selectedPlan === 'quarterly') {
+                premiumUntil.setMonth(now.getMonth() + 3); // 3 Months (Quarterly)
+                planName = "Quarterly Plan (₦2,250)";
+                amountInKobo = 225000; // 2,250 Naira
             } else if (selectedPlan === 'annual') {
                 premiumUntil.setFullYear(now.getFullYear() + 1); // 1 Year
-                planName = "Annual Plan (₦5,000)";
-                amountInKobo = 500000; // 5,000 Naira
+                planName = "Annual Plan (₦9,000)";
+                amountInKobo = 900000; // 9,000 Naira
             }
 
             // Launch Paystack Inline Checkout
@@ -119,6 +123,11 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                 amount: amountInKobo,
                 currency: 'NGN',
                 ref: 'JTG_' + Math.floor((Math.random() * 1000000000) + 1),
+                metadata: {
+                    userId: user.uid,
+                    planName: planName,
+                    premiumUntil: premiumUntil.toISOString()
+                },
                 callback: function(response) {
                     handleSuccessfulPayment(response);
                 },
@@ -139,7 +148,7 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
-            <div className="bg-[#0b0f26]/95 border border-[#162C99]/50 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col relative animate-pop backdrop-blur-xl">
+            <div className="bg-[#0b0f26]/95 border border-[#162C99]/50 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col relative animate-pop backdrop-blur-xl">
                 
                 {/* Close Button absolute top-right */}
                 <button 
@@ -180,7 +189,7 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                             </div>
                             <div className="flex items-start gap-2.5 text-slate-200 text-xs">
                                 <CheckCircleIcon className="w-4 h-4 text-[#1BA657] shrink-0 mt-0.5" />
-                                <span><strong>Expanded Limits</strong>: Add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts simultaneously.</span>
+                                <span><strong>Expanded Limits</strong>: Add up to 3 Personal and 5 Prop Firm accounts simultaneously.</span>
                             </div>
                             <div className="flex items-start gap-2.5 text-slate-200 text-xs">
                                 <CheckCircleIcon className="w-4 h-4 text-[#1BA657] shrink-0 mt-0.5" />
@@ -190,7 +199,7 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                     </div>
 
                     {/* Subscription Cards Selection */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         
                         {/* 14-Day Free Trial Card */}
                         <div 
@@ -239,12 +248,38 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                                 <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">Flexible monthly journaling automation.</p>
                             </div>
                             <div className="mt-6 pt-3 border-t border-[#162C99]/25 flex items-baseline gap-1">
-                                <span className="text-white font-extrabold text-2xl">₦500</span>
+                                <span className="text-white font-extrabold text-2xl">₦800</span>
                                 <span className="text-xs text-slate-400 font-medium">/ month</span>
                             </div>
                         </div>
 
-                        {/* Annual subscription Card (Save 17%) */}
+                        {/* Quarterly subscription Card */}
+                        <div 
+                            onClick={() => setSelectedPlan('quarterly')}
+                            className={`cursor-pointer rounded-2xl p-5 border transition-all duration-300 flex flex-col justify-between relative group ${
+                                selectedPlan === 'quarterly' 
+                                    ? 'bg-[#1BA657]/10 border-[#1BA657] shadow-[0_0_15px_rgba(27,166,87,0.1)]' 
+                                    : 'bg-[#0f142b] border-[#162C99]/30 hover:border-[#162C99]/60 hover:bg-[#121835]'
+                            }`}
+                        >
+                            {/* Selected Indicator Checkmark */}
+                            <div className={`absolute top-3 right-3 rounded-full p-0.5 border ${
+                                selectedPlan === 'quarterly' ? 'bg-[#1BA657] border-[#1BA657] text-black' : 'border-slate-700 text-transparent'
+                            }`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold text-[#1BA657] uppercase tracking-widest block mb-1">Popular</span>
+                                <h4 className="text-white font-bold text-base">Quarterly</h4>
+                                <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">Save 6% compared to monthly plan.</p>
+                            </div>
+                            <div className="mt-6 pt-3 border-t border-[#162C99]/25 flex items-baseline gap-1">
+                                <span className="text-white font-extrabold text-2xl">₦2,250</span>
+                                <span className="text-xs text-slate-400 font-medium">/ 3 mos</span>
+                            </div>
+                        </div>
+
+                        {/* Annual subscription Card (Save 6%) */}
                         <div 
                             onClick={() => setSelectedPlan('annual')}
                             className={`cursor-pointer rounded-2xl p-5 border transition-all duration-300 flex flex-col justify-between relative group ${
@@ -254,8 +289,8 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                             }`}
                         >
                             {/* Best Value Badge */}
-                            <div className="absolute -top-2.5 left-5 bg-[#1BA657] text-black text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-md">
-                                Best Value (Save 17%)
+                            <div className="absolute -top-2.5 left-5 bg-[#1BA657] text-black text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-md animate-bounce">
+                                Save 6%
                             </div>
                             {/* Selected Indicator Checkmark */}
                             <div className={`absolute top-3 right-3 rounded-full p-0.5 border ${
@@ -269,7 +304,7 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                                 <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">Full premium privileges all year round.</p>
                             </div>
                             <div className="mt-6 pt-3 border-t border-[#162C99]/25 flex items-baseline gap-1">
-                                <span className="text-white font-extrabold text-2xl">₦5,000</span>
+                                <span className="text-white font-extrabold text-2xl">₦9,000</span>
                                 <span className="text-xs text-slate-400 font-medium">/ year</span>
                             </div>
                         </div>

@@ -69,4 +69,4 @@ const CalendarView = ({ trades, currency = 'USD', currencySymbol = '$', exchange
     );
 };
 
-export default CalendarView;
+export default React.memo(CalendarView);

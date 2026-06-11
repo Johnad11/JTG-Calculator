@@ -99,7 +99,7 @@ export default async function handler(req, res) {
             console.warn(`⛔ Unauthorized Sync Request: User ${userId} does not have active premium privileges.`);
             return res.status(403).json({
                 error: 'Premium Subscription Required',
-                message: 'Auto-Sync is a premium JTG Ecosystem feature. Please unlock the premium tier (14-day free trial, Monthly ₦500, or Annual ₦5,000) inside the JTG Journal Web App to enable automated terminal syncing.'
+                message: 'Auto-Sync is a premium JTG Ecosystem feature. Please unlock the premium tier (14-day free trial, Monthly ₦800, Quarterly ₦2,250, or Annual ₦9,000) inside the JTG Journal Web App to enable automated terminal syncing.'
             });
         }
 

@@ -4,21 +4,16 @@ import JtgPromo from './JtgPromo';
 import { ASSETS } from '../constants';
 
 const Journal = ({ addTrade, accountType = 'Personal' }) => {
-    const isSynthetic = accountType === 'Synthetic';
-
     // Filter pairs based on account type
-    const availablePairs = isSynthetic
-        ? ASSETS.weltrade.pairs
-        : Object.keys(ASSETS)
-            .filter(key => key !== 'weltrade')
-            .reduce((acc, key) => acc.concat(ASSETS[key].pairs), [])
-            .sort();
+    const availablePairs = Object.keys(ASSETS)
+        .reduce((acc, key) => acc.concat(ASSETS[key].pairs), [])
+        .sort();
 
     const [formData, setFormData] = useState({
         openDate: new Date().toISOString().slice(0, 16),
         closeDate: '',
         strategy: '',
-        pair: isSynthetic ? ASSETS.weltrade.pairs[0] : 'US30',
+        pair: 'US30',
         type: 'BUY',
         entry: '',
         sl: '',
@@ -34,9 +29,9 @@ const Journal = ({ addTrade, accountType = 'Personal' }) => {
     React.useEffect(() => {
         setFormData(prev => ({
             ...prev,
-            pair: isSynthetic ? ASSETS.weltrade.pairs[0] : 'US30'
+            pair: 'US30'
         }));
-    }, [accountType, isSynthetic]);
+    }, [accountType]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -64,20 +59,10 @@ const Journal = ({ addTrade, accountType = 'Personal' }) => {
                         <div className="w-10 h-10 rounded-full bg-jtg-blue/20 flex items-center justify-center text-jtg-green"><Icons.Journal /></div>
                         <h2 className="text-2xl font-bold text-white tracking-wide">Log New Trade</h2>
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${isSynthetic ? 'bg-jtg-green/20 text-jtg-green border border-jtg-green/30' : 'bg-jtg-blue/20 text-slate-400 border border-jtg-blue/30'}`}>
+                    <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-jtg-blue/20 text-slate-400 border border-jtg-blue/30">
                         {accountType} Account
                     </div>
                 </div>
-
-                {isSynthetic && (
-                    <div className="mb-6 bg-jtg-green/5 border border-jtg-green/20 rounded-xl p-4 flex gap-4 items-center">
-                        <div className="text-jtg-green"><Icons.Journal /></div>
-                        <div>
-                            <p className="text-xs font-bold text-jtg-green uppercase tracking-wider mb-1">Weltrade Synthetic Mode</p>
-                            <p className="text-[11px] text-slate-400">This account is optimized for Weltrade synthetic indices. Standard forex, metals, and indices are hidden.</p>
-                        </div>
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="grid grid-cols-2 gap-4"><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Open Date</label><input type="datetime-local" value={formData.openDate} onChange={e => setFormData({ ...formData, openDate: e.target.value })} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-3 text-white text-xs outline-none" required /></div><div><label className="text-[10px] font-bold text-jtg-green uppercase mb-1 block">Close Date (Required)</label><input type="datetime-local" value={formData.closeDate} onChange={e => setFormData({ ...formData, closeDate: e.target.value })} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-3 text-white text-xs outline-none" required /></div></div>
@@ -144,4 +129,4 @@ const Journal = ({ addTrade, accountType = 'Personal' }) => {
     );
 };
 
-export default Journal;
+export default React.memo(Journal);

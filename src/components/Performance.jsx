@@ -67,7 +67,7 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
         const avgReturn = total > 0 ? (returns.reduce((a, b) => a + b, 0) / total) : 0;
         const variance = total > 0 ? (returns.reduce((a, b) => a + Math.pow(b - avgReturn, 2), 0) / total) : 0;
         const stdDev = Math.sqrt(variance);
-        const sharpeRatio = (stdDev > 0 && !isNaN(stdDev)) ? (avgReturn / stdDev).toFixed(2) : 0;
+        const sharpeRatio = (stdDev > 0.0001 && !isNaN(stdDev)) ? (avgReturn / stdDev).toFixed(2) : 0;
 
         // League Table (Pairs)
         const pairStats = {};
@@ -361,4 +361,4 @@ const NoData = () => (
     </div>
 );
 
-export default Performance;
+export default React.memo(Performance);

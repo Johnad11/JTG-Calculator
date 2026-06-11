@@ -57,7 +57,7 @@ const tour = driver({
             element: "#account-switcher-button",
             popover: {
                 title: "Multi-Account Manager",
-                description: "Switch between your Personal, Prop Firm, and Synthetic accounts seamlessly.",
+                description: "Switch between your Personal and Prop Firm accounts seamlessly.",
                 side: "bottom",
                 align: "start"
             }

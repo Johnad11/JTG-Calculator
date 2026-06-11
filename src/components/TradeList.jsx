@@ -33,10 +33,17 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                 reader.readAsDataURL(blob)
             }));
 
+        let qrBase64 = '';
         try {
             logoBase64 = await toDataURL(LOGO_URL);
         } catch (e) {
             // console.warn("Could not load logo image for canvas, using fallback.");
+        }
+
+        try {
+            qrBase64 = await toDataURL('https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://jtg-journals.vercel.app');
+        } catch (e) {
+            // console.warn("Could not fetch QR code base64, using fallback text.");
         }
 
         const element = document.createElement('div');
@@ -101,10 +108,17 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                     <p style="margin: 0; font-size: 12px; color: #64748b;">Type</p>
                     <p style="margin: 5px 0 0; font-size: 16px; font-weight: 600; color: ${trade.type === 'BUY' ? '#1BA657' : '#EF4444'};">${trade.type}</p>
                 </div>
-                <div style="text-align: right;">
-                    <p style="margin: 0; font-size: 12px; color: #64748b;">Visit</p>
-                    <p style="margin: 5px 0 0; font-size: 14px; font-weight: 600; opacity: 0.8;">jtg-journals.vercel.app</p>
-                </div>
+                ${qrBase64 ? `
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                        <img src="${qrBase64}" style="width: 50px; height: 50px; border-radius: 6px; border: 1.5px solid #1BA657; background: white; padding: 2px;" />
+                        <span style="font-size: 8px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Scan to Journal</span>
+                    </div>
+                ` : `
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Tracked Via</p>
+                        <p style="margin: 5px 0 0; font-size: 14px; font-weight: 700; color: #1BA657; opacity: 0.9; letter-spacing: 0.5px;">jtg-journals.vercel.app</p>
+                    </div>
+                `}
             </div>
 
         `;
@@ -245,7 +259,7 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                                         {trade.ruleAdherence === 'Yes' ? (
                                             <span className="text-jtg-green scale-75 inline-block"><Icons.Check /></span>
                                         ) : (
-                                            <span className="text-red-500 scale-75 inline-block"><Icons.Trash /></span> // Using Trash as a placeholder for "X" if no X icon
+                                            <span className="text-red-500 scale-75 inline-block"><Icons.X /></span>
                                         )}
                                     </td>
                                     <td className="p-4"><span className={`text-[10px] font-bold px-2 py-1 rounded border ${trade.outcome.includes('WIN') || trade.outcome.includes('TP') ? 'bg-jtg-green/10 text-jtg-green border-jtg-green/30' : trade.outcome.includes('LOSS') || trade.outcome.includes('SL') ? 'bg-red-500/10 text-red-500 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>{trade.outcome}</span></td>
@@ -253,9 +267,9 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                                         {parseFloat(trade.pnl) >= 0 ? '+' : ''}{currencySymbol}{trade.pnlNative ? parseFloat(trade.pnlNative).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 }) : parseFloat(trade.pnl).toLocaleString()}
                                     </td>
                                     <td className="p-4 text-center">
-                                        <button onClick={() => downloadCard(trade)} className="text-slate-500 hover:text-jtg-green transition-colors"><Icons.Share /></button>
+                                        <button onClick={() => downloadCard(trade)} className="text-slate-500 hover:text-jtg-green transition-colors" title="Share Trade Card" aria-label="Share Trade Card"><Icons.Share /></button>
                                     </td>
-                                    <td className="p-4 text-center"><button onClick={() => deleteTrade(trade.id)} className="text-slate-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Icons.Trash /></button></td>
+                                    <td className="p-4 text-center"><button onClick={() => deleteTrade(trade.id)} className="text-slate-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" title="Delete Trade Log" aria-label="Delete Trade Log"><Icons.Trash /></button></td>
                                 </tr>
                             )))}
                         </tbody>
@@ -268,4 +282,4 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
     );
 };
 
-export default TradeList;
+export default React.memo(TradeList);

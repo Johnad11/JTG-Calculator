@@ -14,7 +14,10 @@ service cloud.firestore {
     
     // User settings collection
     match /user_settings/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && (!request.resource.data.keys().hasAny(['isPremium', 'premiumUntil', 'premiumPlan']) || request.resource.data.isPremium == false);
+      allow update: if isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isPremium', 'premiumUntil', 'premiumPlan']);
+      allow delete: if isOwner(userId);
     }
 
     // Users private integration and settings
@@ -49,7 +52,9 @@ service cloud.firestore {
     // Unique Usernames collection
     match /usernames/{username} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && !exists(/databases/$(database)/documents/usernames/$(username));
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && !exists(/databases/$(database)/documents/usernames/$(username));
     }
 
   }

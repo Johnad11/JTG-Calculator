@@ -24,6 +24,111 @@ const PremiumStarIcon = ({ className }) => (
     </svg>
 );
 
+const DEMO_TRADES = [
+    {
+        id: 'demo_1',
+        pair: 'EURUSD',
+        type: 'BUY',
+        lot: 1.0,
+        entry: 1.08500,
+        exit: 1.09200,
+        outcome: 'HIT TP',
+        strategy: 'Trend Continuation',
+        emotion: 'Neutral',
+        setupQuality: 'A+',
+        ruleAdherence: 'Yes',
+        pnl: 700.00,
+        pnlNative: 700.00,
+        openDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+        closeDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+        notes: "Perfect entry at key support level. Target hit on session change."
+    },
+    {
+        id: 'demo_2',
+        pair: 'GBPUSD',
+        type: 'SELL',
+        lot: 1.5,
+        entry: 1.27000,
+        exit: 1.27400,
+        outcome: 'HIT SL',
+        strategy: 'Range Reversal',
+        emotion: 'Anxious',
+        setupQuality: 'B',
+        ruleAdherence: 'Yes',
+        pnl: -600.00,
+        pnlNative: -600.00,
+        openDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        closeDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        notes: "Entered early before full breakout confirmation. Stop loss hit."
+    },
+    {
+        id: 'demo_3',
+        pair: 'USDJPY',
+        type: 'BUY',
+        lot: 2.0,
+        entry: 156.200,
+        exit: 156.800,
+        outcome: 'MANUAL WIN',
+        strategy: 'Breakout',
+        emotion: 'Confident',
+        setupQuality: 'A',
+        ruleAdherence: 'Yes',
+        pnl: 770.00,
+        pnlNative: 770.00,
+        openDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        closeDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        notes: "Rode the JPY momentum after inflation data release."
+    },
+    {
+        id: 'demo_4',
+        pair: 'AUDUSD',
+        type: 'SELL',
+        lot: 1.0,
+        entry: 0.66500,
+        exit: 0.66200,
+        outcome: 'MANUAL WIN',
+        strategy: 'Trend Continuation',
+        emotion: 'Neutral',
+        setupQuality: 'A+',
+        ruleAdherence: 'Yes',
+        pnl: 300.00,
+        pnlNative: 300.00,
+        openDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        closeDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        notes: "Standard pull-back entry. Closed manually ahead of high impact news."
+    },
+    {
+        id: 'demo_5',
+        pair: 'EURUSD',
+        type: 'SELL',
+        lot: 1.0,
+        entry: 1.08900,
+        exit: 1.09050,
+        outcome: 'HIT SL',
+        strategy: 'Breakout',
+        emotion: 'Greedy',
+        setupQuality: 'C',
+        ruleAdherence: 'No',
+        pnl: -150.00,
+        pnlNative: -150.00,
+        openDate: new Date().toISOString(),
+        closeDate: new Date().toISOString(),
+        notes: "Chased the price at resistance. Violated standard risk parameters."
+    }
+];
+
+const DEMO_WITHDRAWALS = [
+    {
+        id: 'demo_w1',
+        amount: 200,
+        displayAmount: 200,
+        currency: 'USD',
+        note: 'Demo Profit Withdrawal',
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        type: 'WITHDRAWAL'
+    }
+];
+
 const App = () => {
     const [page, setPage] = useState('calc');
     const [user, setUser] = useState(null);
@@ -75,6 +180,10 @@ const App = () => {
             return saved ? JSON.parse(saved) : [];
         } catch (e) { return []; }
     });
+
+    const [isDemoMode, setIsDemoMode] = useState(false);
+    const displayTrades = isDemoMode ? DEMO_TRADES : trades;
+    const displayWithdrawals = isDemoMode ? DEMO_WITHDRAWALS : withdrawals;
 
     // Update Balance Handler
     const updateGlobalBalance = async (newBal) => {
@@ -352,15 +461,13 @@ const App = () => {
 
         const personalAccounts = accounts.filter(a => a.type === 'Personal');
         const propAccounts = accounts.filter(a => a.type === 'Prop Firm');
-        const syntheticAccounts = accounts.filter(a => a.type === 'Synthetic');
 
         const MAX_PERSONAL = isPremium ? 3 : 2;
         const MAX_PROP = isPremium ? 5 : 3;
-        const MAX_SYNTHETIC = isPremium ? 5 : 2;
 
         if (accountData.type === 'Personal' && personalAccounts.length >= MAX_PERSONAL) {
             if (!isPremium) {
-                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PERSONAL} Personal accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PERSONAL} Personal accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal and 5 Prop Firm accounts?`)) {
                     setShowPremiumUpgradeModal(true);
                 }
             } else {
@@ -370,21 +477,11 @@ const App = () => {
         }
         if (accountData.type === 'Prop Firm' && propAccounts.length >= MAX_PROP) {
             if (!isPremium) {
-                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PROP} Prop Firm accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PROP} Prop Firm accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal and 5 Prop Firm accounts?`)) {
                     setShowPremiumUpgradeModal(true);
                 }
             } else {
                 alert(`Limit reached: Premium accounts are limited to ${MAX_PROP} Prop Firm accounts.`);
-            }
-            return false;
-        }
-        if (accountData.type === 'Synthetic' && syntheticAccounts.length >= MAX_SYNTHETIC) {
-            if (!isPremium) {
-                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_SYNTHETIC} Synthetic accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal, 5 Prop Firm, and 5 Synthetic accounts?`)) {
-                    setShowPremiumUpgradeModal(true);
-                }
-            } else {
-                alert(`Limit reached: Premium accounts are limited to ${MAX_SYNTHETIC} Synthetic accounts.`);
             }
             return false;
         }
@@ -600,8 +697,10 @@ const App = () => {
         let pnl = '0.00';
         if (x) {
             const diff = formData.type === 'BUY' ? (x - e) : (e - x);
-            if (formData.pair.includes('JPY')) pnl = ((diff * 100 * 6.8) * formData.lot).toFixed(2);
-            else pnl = (diff * formData.lot * contract).toFixed(2);
+            if (formData.pair.includes('JPY')) {
+                const jpyRate = exchangeRates && exchangeRates['JPY'] ? exchangeRates['JPY'] : 155.0;
+                pnl = (diff * formData.lot * (contract / jpyRate)).toFixed(2);
+            } else pnl = (diff * formData.lot * contract).toFixed(2);
         }
 
         // PnL calculated above is already in USD (standardized market value)
@@ -659,6 +758,9 @@ const App = () => {
     };
 
     const deleteTrade = async (id) => {
+        if (!window.confirm("Are you sure you want to permanently delete this trade from your history log?")) {
+            return;
+        }
         if (user) {
             try {
                 const tradeToDelete = trades.find(t => t.id === id);
@@ -819,6 +921,16 @@ const App = () => {
                         </div>
                     )}
 
+                    {(trades.length === 0 || isDemoMode) && (
+                        <button 
+                            onClick={() => setIsDemoMode(!isDemoMode)} 
+                            className={`text-[10px] px-3 py-1.5 rounded border font-bold transition-all ${isDemoMode ? 'bg-[#1BA657] text-black border-[#1BA657]' : 'bg-jtg-blue/20 text-slate-300 border-[#162C99]/50 hover:bg-jtg-blue/30'}`}
+                            title={isDemoMode ? "Exit Demo Mode" : "Visualize Demo Data"}
+                        >
+                            {isDemoMode ? "EXIT DEMO" : "VIEW DEMO DATA"}
+                        </button>
+                    )}
+
                     {user ? (
                         <div className="flex items-center gap-1.5">
                             {isPremium && (
@@ -864,11 +976,16 @@ const App = () => {
 
                     {/* Scrollable Container */}
                     <div className="w-full h-full overflow-y-auto custom-scroll pt-20 pb-24 md:pt-0 md:pb-0">
-                        {page === 'calc' && <Calculator globalBalance={globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} activeAccount={activeAccount} />}
+                        {isDemoMode && (
+                            <div className="bg-[#1BA657]/20 border-b border-[#1BA657]/30 py-3 px-4 text-center text-xs text-[#1BA657] font-bold tracking-wide animate-pulse flex items-center justify-center gap-2 z-10 relative">
+                                <span>📢 DEMO MODE ACTIVE: Viewing sample Forex trade logs. Click "EXIT DEMO" at the top to clear.</span>
+                            </div>
+                        )}
+                        {page === 'calc' && <Calculator globalBalance={isDemoMode ? '11020' : globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} activeAccount={activeAccount} />}
                         {page === 'journal' && <Journal addTrade={addTrade} accountType={activeAccount?.type} />}
                         {page === 'trades' && (
                             <TradeList
-                                trades={trades}
+                                trades={displayTrades}
                                 deleteTrade={deleteTrade}
                                 isPremium={isPremium}
                                 triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
@@ -882,8 +999,8 @@ const App = () => {
                             />
                         )}
 
-                        {page === 'calendar' && <CalendarView trades={trades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
-                        {page === 'perf' && <Performance trades={trades} withdrawals={withdrawals} globalInitialBalance={activeAccount?.initialBalance} globalBalance={globalBalance} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
+                        {page === 'calendar' && <CalendarView trades={displayTrades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
+                        {page === 'perf' && <Performance trades={displayTrades} withdrawals={displayWithdrawals} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : globalBalance} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
                     </div>
                 </div>
             </main>
