@@ -5,6 +5,94 @@ import JtgPromo from './JtgPromo';
 import { LOGO_URL } from '../constants';
 import { convertForDisplay } from '../utils/currencyConverter';
 
+const TradeCard = ({ trade, currencySymbol, currency, getEmotionColor, downloadCard, deleteTrade }) => {
+    const [expanded, setExpanded] = React.useState(false);
+    const isWin = parseFloat(trade.pnl) >= 0;
+    
+    return (
+        <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 flex flex-col gap-3 shadow-md hover:border-jtg-blue/40 transition">
+            {/* Top row */}
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-extrabold text-white tracking-wide">{trade.pair}</span>
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${trade.type === 'BUY' ? 'bg-jtg-green/20 text-jtg-green' : 'bg-red-500/20 text-red-500'}`}>{trade.type}</span>
+                </div>
+                <span className="text-[10px] text-slate-500 font-mono">{trade.openDate.split('T')[0]}</span>
+            </div>
+
+            {/* Middle row */}
+            <div className="flex justify-between items-end">
+                <div className="flex flex-col gap-1.5 items-start">
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${trade.outcome.includes('WIN') || trade.outcome.includes('TP') ? 'bg-jtg-green/10 text-jtg-green border-jtg-green/30' : trade.outcome.includes('LOSS') || trade.outcome.includes('SL') ? 'bg-red-500/10 text-red-500 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>
+                        {trade.outcome}
+                    </span>
+                    <span className="text-[10px] text-slate-400">Lot: <span className="font-mono font-bold text-white">{trade.lot}</span></span>
+                </div>
+                <div className="text-right">
+                    <div className={`text-base font-black font-mono ${isWin ? 'text-jtg-green' : 'text-red-500'}`}>
+                        {isWin ? '+' : ''}{currencySymbol}{trade.pnlNative ? parseFloat(trade.pnlNative).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 }) : parseFloat(trade.pnl).toLocaleString()}
+                    </div>
+                </div>
+            </div>
+
+            {/* Expandable Details */}
+            {expanded && (
+                <div className="grid grid-cols-2 gap-y-3 gap-x-4 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
+                    <div>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Closed Date</p>
+                        <p className="font-mono text-white mt-0.5">{trade.closeDate ? trade.closeDate.split('T')[0] : '-'}</p>
+                    </div>
+                    <div>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Strategy</p>
+                        <p className="text-white mt-0.5 truncate">{trade.strategy || 'Standard'}</p>
+                    </div>
+                    <div>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Dominant Emotion</p>
+                        <p className={`font-bold mt-0.5 ${getEmotionColor(trade.emotion)}`}>{trade.emotion || '-'}</p>
+                    </div>
+                    <div>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Setup & Rules</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <span className="font-mono font-bold text-yellow-500 bg-yellow-500/10 px-1.5 py-0.2 rounded text-[10px]">
+                                {trade.setupQuality || 'A'}
+                            </span>
+                            <span className="text-[10px]">
+                                {trade.ruleAdherence === 'Yes' ? '✅ Rules' : '❌ Rules'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bottom Actions Row */}
+            <div className="flex justify-between items-center border-t border-slate-800/50 pt-2 mt-1">
+                <button 
+                    onClick={() => setExpanded(!expanded)} 
+                    className="text-[10px] font-bold text-slate-400 hover:text-white transition flex items-center gap-1 py-1"
+                >
+                    {expanded ? 'Hide Details ▲' : 'Show Details ▼'}
+                </button>
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => downloadCard(trade)} 
+                        className="p-1.5 bg-jtg-blue/20 hover:bg-jtg-blue/30 text-jtg-green rounded-lg transition"
+                        title="Share Trade Card"
+                    >
+                        <Icons.Share className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                        onClick={() => deleteTrade(trade.id)} 
+                        className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition"
+                        title="Delete Trade Log"
+                    >
+                        <Icons.Trash className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, incrementExportCount, currencySymbol = '$', currency = 'USD', exchangeRates, username, activeAccountId, activeAccount, triggerUpgrade }) => {
     const captureRef = useRef(null);
 
@@ -221,7 +309,8 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                         <span className="text-white font-bold font-mono">{trades.length}</span> <span className="text-slate-400 text-xs uppercase">Records</span>
                     </div>
                 </div>
-                <div className="flex-1 overflow-auto custom-scroll">
+                {/* Desktop View */}
+                <div className="hidden md:block flex-1 overflow-auto custom-scroll">
                     <table className="w-full text-left border-collapse min-w-[1200px]">
                         <thead className="sticky top-0 bg-jtg-card z-10 shadow-lg">
                             <tr>
@@ -274,6 +363,25 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                             )))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile View */}
+                <div className="block md:hidden flex-1 overflow-y-auto custom-scroll space-y-4 pr-1">
+                    {trades.length === 0 ? (
+                        <div className="p-12 text-center text-slate-500 italic">No trade history found. Go to Journal to add entries.</div>
+                    ) : (
+                        [...trades].reverse().map(trade => (
+                            <TradeCard 
+                                key={trade.id} 
+                                trade={trade} 
+                                currencySymbol={currencySymbol} 
+                                currency={currency} 
+                                getEmotionColor={getEmotionColor} 
+                                downloadCard={downloadCard} 
+                                deleteTrade={deleteTrade} 
+                            />
+                        ))
+                    )}
                 </div>
             </div>
             <JtgPromo />

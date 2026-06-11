@@ -133,6 +133,7 @@ const App = () => {
     const [page, setPage] = useState('calc');
     const [user, setUser] = useState(null);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [showMobileDrawer, setShowMobileDrawer] = useState(false);
 
     // ACCOUNTS STATE
     const [accounts, setAccounts] = useState([]);
@@ -899,68 +900,22 @@ const App = () => {
             <div className="md:hidden fixed top-0 w-full bg-jtg-dark/95 backdrop-blur z-30 border-b border-jtg-blue/30 p-4 flex justify-between items-center h-16">
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8"><img src={LOGO_URL} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} /></div>
-                    <span className="text-sm font-bold text-white tracking-wide hidden sm:block">JTG <span className="text-jtg-green">JOURNAL</span></span>
+                    <span className="text-sm font-bold text-white tracking-wide">JTG <span className="text-jtg-green">JOURNAL</span></span>
                 </div>
 
-                {/* Mobile Account Switcher & Auth */}
                 <div className="flex items-center gap-2">
-                    {user && (
-                        <div className="flex gap-1.5">
-                            <button
-                                onClick={() => setShowAccountManager(true)}
-                                className="bg-jtg-green/10 border border-jtg-green/30 rounded-lg p-1.5 flex items-center gap-2 hover:bg-jtg-green/20 transition"
-                            >
-                                <span className="text-jtg-green scale-75"><Icons.User /></span>
-                                <span className="text-[10px] font-bold text-white max-w-[80px] truncate">
-                                    {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
-                                </span>
-                            </button>
-                            <button
-                                onClick={() => setShowSyncModal(true)}
-                                className="bg-jtg-blue/10 border border-jtg-blue/30 rounded-lg p-1.5 flex items-center gap-2 hover:bg-jtg-blue/20 transition"
-                                title="MT5 Auto-Sync"
-                            >
-                                <span className="text-jtg-green scale-75"><Icons.Key /></span>
-                                <span className="text-[10px] font-bold text-white">
-                                    Sync
-                                </span>
-                            </button>
-                        </div>
+                    {isDemoMode && (
+                        <span className="text-[9px] bg-jtg-green/20 text-jtg-green px-2 py-0.5 rounded font-extrabold border border-jtg-green/30 animate-pulse uppercase tracking-wide">Demo</span>
                     )}
-
-                    {(trades.length === 0 || isDemoMode) && (
-                        <button 
-                            onClick={() => setIsDemoMode(!isDemoMode)} 
-                            className={`text-[10px] px-3 py-1.5 rounded border font-bold transition-all ${isDemoMode ? 'bg-[#1BA657] text-black border-[#1BA657]' : 'bg-jtg-blue/20 text-slate-300 border-[#162C99]/50 hover:bg-jtg-blue/30'}`}
-                            title={isDemoMode ? "Exit Demo Mode" : "Visualize Demo Data"}
-                        >
-                            {isDemoMode ? "EXIT DEMO" : "VIEW DEMO DATA"}
-                        </button>
+                    {isPremium && user && (
+                        <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[8px] font-extrabold px-1.5 py-0.5 rounded shadow-[0_0_5px_rgba(27,166,87,0.3)] tracking-wider">PRO</span>
                     )}
-
-                    {user ? (
-                        <div className="flex items-center gap-1.5">
-                            {isPremium && (
-                                <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[8px] font-extrabold px-1.5 py-0.5 rounded shadow-[0_0_5px_rgba(27,166,87,0.3)] tracking-wider">PRO</span>
-                            )}
-                            <button onClick={logout} className="text-[10px] bg-red-500/20 text-red-500 px-2 py-1.5 rounded border border-red-500/50">LOGOUT</button>
-                        </div>
-                    ) : (
-                        <button onClick={login} className="text-[10px] bg-jtg-green/20 text-jtg-green px-3 py-1.5 rounded border border-jtg-green/50">{isLoggingIn ? '...' : 'LOGIN'}</button>
-                    )}
-
-                    <button id="mobile-tour-button" onClick={() => startAppTour()} className="p-2 text-jtg-green hover:text-white transition" title="Start Tour">
-                        <Icons.Check className="w-5 h-5" />
-                    </button>
-
-                    <button id="mobile-reminders-button" onClick={() => setShowNotificationSettings(true)} className="p-2 text-slate-400 hover:text-white transition" title="Daily Reminders">
-                        <Icons.Clock className="w-5 h-5 text-jtg-green" />
-                    </button>
-
-                    {/* Removed Global Currency Selector */}
-
-                    <button onClick={() => window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank')} className="p-2 text-slate-400 hover:text-white transition">
-                        <Icons.Support />
+                    <button
+                        onClick={() => setShowMobileDrawer(true)}
+                        className="p-2 text-slate-300 hover:text-white transition-colors bg-jtg-blue/10 border border-jtg-blue/30 rounded-lg flex items-center justify-center active:scale-95"
+                        aria-label="Open Menu"
+                    >
+                        <Icons.Menu />
                     </button>
                 </div>
             </div>
@@ -1080,6 +1035,201 @@ const App = () => {
                     setReminderTime={setReminderTime}
                     user={user}
                 />
+            )}
+
+            {/* MOBILE DRAWER */}
+            {showMobileDrawer && (
+                <div className="md:hidden fixed inset-0 z-50 flex justify-end">
+                    {/* Backdrop */}
+                    <div 
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-fade-in"
+                        onClick={() => setShowMobileDrawer(false)}
+                    ></div>
+
+                    {/* Drawer Content */}
+                    <div className="relative w-80 max-w-[85vw] h-full bg-jtg-dark border-l border-jtg-blue/30 p-6 flex flex-col justify-between shadow-2xl overflow-y-auto custom-scroll animate-slide-in">
+                        {/* Drawer Header */}
+                        <div>
+                            <div className="flex justify-between items-center mb-8 pb-4 border-b border-jtg-blue/20">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6"><img src={LOGO_URL} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} /></div>
+                                    <span className="text-sm font-bold text-white tracking-wide">JTG <span className="text-jtg-green">JOURNAL</span></span>
+                                </div>
+                                <button 
+                                    onClick={() => setShowMobileDrawer(false)} 
+                                    className="p-1 text-slate-400 hover:text-white transition"
+                                >
+                                    <Icons.X />
+                                </button>
+                            </div>
+
+                            {/* User Profile Info */}
+                            <div className="mb-8 p-4 bg-jtg-blue/10 border border-jtg-blue/20 rounded-xl flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-jtg-green text-black flex items-center justify-center font-bold text-sm shrink-0">
+                                    {user ? user.email[0].toUpperCase() : 'G'}
+                                </div>
+                                <div className="overflow-hidden">
+                                    <p className="text-xs font-bold text-white truncate">{user ? user.email : 'Guest Mode'}</p>
+                                    <div className="flex gap-1.5 items-center mt-1">
+                                        {isPremium && user ? (
+                                            <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">PRO</span>
+                                        ) : (
+                                            <span className="bg-slate-800 text-slate-400 text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">FREE</span>
+                                        )}
+                                        {isDemoMode && (
+                                            <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">DEMO DATA</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Section: Account Switcher & Sync */}
+                            {user && (
+                                <div className="space-y-3 mb-6">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Trading Accounts</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            onClick={() => {
+                                                setShowMobileDrawer(false);
+                                                setShowAccountManager(true);
+                                            }}
+                                            className="bg-jtg-green/10 border border-jtg-green/30 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:bg-jtg-green/20 transition active:scale-95"
+                                        >
+                                            <span className="text-jtg-green"><Icons.User /></span>
+                                            <span className="text-[10px] font-bold text-white max-w-full truncate">
+                                                {accounts.find(a => a.id === activeAccountId)?.name || 'Accounts'}
+                                            </span>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowMobileDrawer(false);
+                                                setShowSyncModal(true);
+                                            }}
+                                            className="bg-jtg-blue/10 border border-jtg-blue/30 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:bg-jtg-blue/20 transition active:scale-95"
+                                        >
+                                            <span className="text-jtg-green"><Icons.Key /></span>
+                                            <span className="text-[10px] font-bold text-white max-w-full truncate">
+                                                MT5 Sync
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Section: App Settings & Tools */}
+                            <div className="space-y-2 mb-6">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Options & Utilities</p>
+                                
+                                {/* Reminders Button */}
+                                <button 
+                                    onClick={() => {
+                                        setShowMobileDrawer(false);
+                                        setShowNotificationSettings(true);
+                                    }} 
+                                    className="w-full bg-jtg-input border border-jtg-blue/30 hover:border-jtg-blue/50 rounded-xl p-3 flex items-center justify-between transition group active:scale-[0.98]"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Icons.Clock className="w-5 h-5 text-jtg-green" />
+                                        <span className="text-xs font-bold text-white">Daily Reminders</span>
+                                    </div>
+                                    <Icons.ChevronRight />
+                                </button>
+
+                                {/* Interactive Tour Button */}
+                                <button 
+                                    onClick={() => {
+                                        setShowMobileDrawer(false);
+                                        startAppTour();
+                                    }} 
+                                    className="w-full bg-jtg-input border border-jtg-blue/30 hover:border-jtg-blue/50 rounded-xl p-3 flex items-center justify-between transition group active:scale-[0.98]"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Icons.Check className="w-5 h-5 text-jtg-green" />
+                                        <span className="text-xs font-bold text-white">Take Platform Tour</span>
+                                    </div>
+                                    <Icons.ChevronRight />
+                                </button>
+
+                                {/* Support Link */}
+                                <button 
+                                    onClick={() => {
+                                        setShowMobileDrawer(false);
+                                        window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank');
+                                    }} 
+                                    className="w-full bg-jtg-input border border-jtg-blue/30 hover:border-jtg-blue/50 rounded-xl p-3 flex items-center justify-between transition group active:scale-[0.98]"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-slate-400 group-hover:text-white"><Icons.Support /></span>
+                                        <span className="text-xs font-bold text-white font-medium">WhatsApp Support</span>
+                                    </div>
+                                    <Icons.ChevronRight />
+                                </button>
+
+                                {/* Demo Mode Toggle */}
+                                {(trades.length === 0 || isDemoMode) && (
+                                    <button 
+                                        onClick={() => {
+                                            setIsDemoMode(!isDemoMode);
+                                            setShowMobileDrawer(false);
+                                        }} 
+                                        className={`w-full border rounded-xl p-3 flex items-center justify-between transition active:scale-[0.98] ${isDemoMode ? 'bg-[#1BA657]/10 border-[#1BA657] text-[#1BA657]' : 'bg-jtg-blue/10 border-jtg-blue/30 text-slate-300'}`}
+                                    >
+                                        <span className="text-xs font-bold">{isDemoMode ? "Exit Demo Mode" : "View Demo Data"}</span>
+                                        <span className="text-xs">⚡</span>
+                                    </button>
+                                )}
+
+                                {/* Go Premium Upgrade Button */}
+                                {!isPremium && user && (
+                                    <button 
+                                        onClick={() => {
+                                            setShowMobileDrawer(false);
+                                            setShowPremiumUpgradeModal(true);
+                                        }} 
+                                        className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-extrabold text-xs uppercase tracking-wider p-3 rounded-xl shadow-lg transition hover:brightness-110 active:scale-95 mt-4"
+                                    >
+                                        ★ Upgrade to Pro
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Drawer Footer */}
+                        <div className="border-t border-jtg-blue/20 pt-4 flex flex-col gap-3">
+                            {user ? (
+                                <button 
+                                    onClick={() => {
+                                        setShowMobileDrawer(false);
+                                        logout();
+                                    }} 
+                                    className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 rounded-xl py-3 text-xs font-bold transition active:scale-95"
+                                >
+                                    Logout Account
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={() => {
+                                        setShowMobileDrawer(false);
+                                        login();
+                                    }} 
+                                    className="w-full bg-jtg-green text-black rounded-xl py-3 text-xs font-bold transition hover:bg-emerald-400 active:scale-95"
+                                >
+                                    Login with Google
+                                </button>
+                            )}
+                            
+                            <button 
+                                onClick={() => {
+                                    setShowMobileDrawer(false);
+                                    window.open('https://jtg-ecosystem.vercel.app/', '_blank');
+                                }} 
+                                className="w-full py-2 text-[10px] text-slate-500 font-bold hover:text-white transition flex items-center justify-center gap-1.5"
+                            >
+                                <Icons.Home /> Back to Ecosystem
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
 
