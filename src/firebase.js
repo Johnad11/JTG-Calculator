@@ -18,7 +18,8 @@ import {
     addDoc, 
     query, 
     where, 
-    writeBatch 
+    writeBatch,
+    onSnapshot
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -74,6 +75,11 @@ class DocRefCompat {
     async delete() {
         return await deleteDoc(this._ref);
     }
+    onSnapshot(callback) {
+        return onSnapshot(this._ref, (snap) => {
+            callback(new DocSnapshotCompat(snap));
+        });
+    }
 }
 
 // Collection / Query compat wrapper
@@ -103,6 +109,11 @@ class CollectionCompat {
     async get() {
         const snap = await getDocs(this._refOrQuery);
         return new QuerySnapshotCompat(snap);
+    }
+    onSnapshot(callback) {
+        return onSnapshot(this._refOrQuery, (snap) => {
+            callback(new QuerySnapshotCompat(snap));
+        });
     }
 }
 

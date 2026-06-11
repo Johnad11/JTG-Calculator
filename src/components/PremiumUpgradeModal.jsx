@@ -43,24 +43,30 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
             let amountInKobo = 0;
 
             if (selectedPlan === 'trial') {
-                premiumUntil.setDate(now.getDate() + 14); // 2 Weeks (14 Days) Trial
                 planName = "14-Day Free Trial";
                 
-                // Cardless trial activation
-                await db.collection('user_settings').doc(user.uid).set({
-                    isPremium: true,
-                    premiumPlan: planName,
-                    premiumUntil: premiumUntil.toISOString(),
-                    subscribedAt: now.toISOString()
-                }, { merge: true });
+                // Cardless trial activation via secure backend function
+                const idToken = await user.getIdToken();
+                const res = await fetch('/api/activate-trial', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + idToken
+                    }
+                });
 
-                alert(`🎉 Success! Your 14-Day Free Trial has been activated. Your JTG Premium access is now fully unlocked until ${premiumUntil.toLocaleDateString()}.`);
+                const responseData = await res.json();
+                if (!res.ok) {
+                    throw new Error(responseData.error || 'Failed to activate trial.');
+                }
+
+                alert(`🎉 Success! Your 14-Day Free Trial has been activated. Your JTG Premium access is now fully unlocked until ${new Date(responseData.premiumUntil).toLocaleDateString()}.`);
                 
                 if (onSuccess) {
                     onSuccess({
                         isPremium: true,
-                        premiumPlan: planName,
-                        premiumUntil: premiumUntil.toISOString()
+                        premiumPlan: responseData.premiumPlan,
+                        premiumUntil: responseData.premiumUntil
                     });
                 }
                 close();
@@ -72,12 +78,12 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                 amountInKobo = 80000; // 800 Naira
             } else if (selectedPlan === 'quarterly') {
                 premiumUntil.setMonth(now.getMonth() + 3); // 3 Months (Quarterly)
-                planName = "Quarterly Plan (₦2,250)";
-                amountInKobo = 225000; // 2,250 Naira
+                planName = "Quarterly Plan (₦2,100)";
+                amountInKobo = 210000; // 2,100 Naira
             } else if (selectedPlan === 'annual') {
                 premiumUntil.setFullYear(now.getFullYear() + 1); // 1 Year
-                planName = "Annual Plan (₦9,000)";
-                amountInKobo = 900000; // 9,000 Naira
+                planName = "Annual Plan (₦8,000)";
+                amountInKobo = 800000; // 8,000 Naira
             }
 
             // Launch Paystack Inline Checkout
@@ -89,17 +95,9 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
             const handleSuccessfulPayment = async (response) => {
                 try {
                     setSubmitting(true);
-                    // Save transaction details and premium state directly to Firestore
-                    await db.collection('user_settings').doc(user.uid).set({
-                        isPremium: true,
-                        premiumPlan: planName,
-                        premiumUntil: premiumUntil.toISOString(),
-                        subscribedAt: now.toISOString(),
-                        paystackPaymentReference: response.reference,
-                        paystackPaymentStatus: 'SUCCESS'
-                    }, { merge: true });
-
-                    alert(`🎉 Thank you! Your payment of ₦${amountInKobo / 100} was successful (Ref: ${response.reference}). Your JTG Premium access is now fully unlocked until ${premiumUntil.toLocaleDateString()}!`);
+                    // Decoupled: direct firestore write removed to satisfy security rules.
+                    // Webhook api/paystack-webhook.js handles firestore write.
+                    alert(`🎉 Thank you! Your payment of ₦${amountInKobo / 100} was successful (Ref: ${response.reference}). Your JTG Premium access is now active!`);
                     
                     if (onSuccess) {
                         onSuccess({
@@ -110,8 +108,7 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                     }
                     close();
                 } catch (dbErr) {
-                    console.error("Error writing premium status:", dbErr);
-                    alert("Payment succeeded on Paystack, but failed to update your account database: " + dbErr.message + ". Please contact support with reference: " + response.reference);
+                    console.error("Error setting premium status:", dbErr);
                 } finally {
                     setSubmitting(false);
                 }
@@ -271,10 +268,10 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                             <div>
                                 <span className="text-[10px] font-bold text-[#1BA657] uppercase tracking-widest block mb-1">Popular</span>
                                 <h4 className="text-white font-bold text-base">Quarterly</h4>
-                                <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">Save 6% compared to monthly plan.</p>
+                                <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">Save 12.5% compared to monthly plan.</p>
                             </div>
                             <div className="mt-6 pt-3 border-t border-[#162C99]/25 flex items-baseline gap-1">
-                                <span className="text-white font-extrabold text-2xl">₦2,250</span>
+                                <span className="text-white font-extrabold text-2xl">₦2,100</span>
                                 <span className="text-xs text-slate-400 font-medium">/ 3 mos</span>
                             </div>
                         </div>
@@ -290,7 +287,7 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                         >
                             {/* Best Value Badge */}
                             <div className="absolute -top-2.5 left-5 bg-[#1BA657] text-black text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-md animate-bounce">
-                                Save 6%
+                                Save 17%
                             </div>
                             {/* Selected Indicator Checkmark */}
                             <div className={`absolute top-3 right-3 rounded-full p-0.5 border ${
@@ -304,7 +301,7 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                                 <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">Full premium privileges all year round.</p>
                             </div>
                             <div className="mt-6 pt-3 border-t border-[#162C99]/25 flex items-baseline gap-1">
-                                <span className="text-white font-extrabold text-2xl">₦9,000</span>
+                                <span className="text-white font-extrabold text-2xl">₦8,000</span>
                                 <span className="text-xs text-slate-400 font-medium">/ year</span>
                             </div>
                         </div>

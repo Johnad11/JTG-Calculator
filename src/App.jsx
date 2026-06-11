@@ -249,8 +249,14 @@ const App = () => {
 
     // AUTH & DATA LOADING
     useEffect(() => {
+        let unsubscribeSettings = null;
         if (auth) {
             const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+                if (unsubscribeSettings) {
+                    unsubscribeSettings();
+                    unsubscribeSettings = null;
+                }
+
                 setUser(currentUser);
                 if (currentUser) {
                     try {
@@ -297,56 +303,52 @@ const App = () => {
                         setActiveAccountId(active ? active.id : null);
                         if (active) setGlobalBalance(active.balance);
 
-                        // 2. Load User Settings (Export Count & Username)
-                        const settingsDoc = await db.collection('user_settings').doc(currentUser.uid).get();
-                        let userIsPremium = false;
-                        
-                        if (settingsDoc.exists) {
-                            const data = settingsDoc.data();
-                            setExportCount(data.exportCount || 0);
-                            
-                            if (data.remindersEnabled !== undefined) {
-                                setRemindersEnabled(data.remindersEnabled);
-                                localStorage.setItem('jtg_reminders_enabled', data.remindersEnabled);
-                            }
-                            if (data.reminderTime) {
-                                setReminderTime(data.reminderTime);
-                                localStorage.setItem('jtg_reminder_time', data.reminderTime);
-                            }
-                            
-                            // Check Premium Status
-                            const isEmailPremium = PREMIUM_EMAILS.includes(currentUser.email);
-                            const hasActivePremiumSetting = data.isPremium === true;
-                            let isSubscriptionValid = false;
-                            
-                            if (hasActivePremiumSetting) {
-                                if (data.premiumUntil) {
-                                    const premiumUntilDate = new Date(data.premiumUntil);
-                                    isSubscriptionValid = premiumUntilDate > new Date();
-                                } else {
-                                    isSubscriptionValid = true; // Fallback if no date is stored
+                        // 2. Setup Real-time listener for User Settings
+                        const settingsRef = db.collection('user_settings').doc(currentUser.uid);
+                        unsubscribeSettings = settingsRef.onSnapshot(async (docSnap) => {
+                            let userIsPremium = false;
+
+                            if (docSnap.exists) {
+                                const data = docSnap.data();
+                                setExportCount(data.exportCount || 0);
+
+                                if (data.remindersEnabled !== undefined) {
+                                    setRemindersEnabled(data.remindersEnabled);
+                                    localStorage.setItem('jtg_reminders_enabled', data.remindersEnabled);
                                 }
-                            }
-                            
-                            userIsPremium = isEmailPremium || isSubscriptionValid;
-                            setIsPremium(userIsPremium);
-                            
-                            if (data.username) {
-                                setUsername(data.username);
-                                setShowUsernameModal(false);
+                                if (data.reminderTime) {
+                                    setReminderTime(data.reminderTime);
+                                    localStorage.setItem('jtg_reminder_time', data.reminderTime);
+                                }
+
+                                // Check Premium Status
+                                const isEmailPremium = PREMIUM_EMAILS.includes(currentUser.email);
+                                const hasActivePremiumSetting = data.isPremium === true;
+                                let isSubscriptionValid = false;
+
+                                if (hasActivePremiumSetting) {
+                                    if (data.premiumUntil) {
+                                        const premiumUntilDate = new Date(data.premiumUntil);
+                                        isSubscriptionValid = premiumUntilDate > new Date();
+                                    } else {
+                                        isSubscriptionValid = true; // Fallback if no date is stored
+                                    }
+                                }
+
+                                userIsPremium = isEmailPremium || isSubscriptionValid;
+                                setIsPremium(userIsPremium);
+
+                                if (data.username) {
+                                    setUsername(data.username);
+                                    setShowUsernameModal(false);
+                                } else {
+                                    setShowUsernameModal(true);
+                                }
                             } else {
-                                setShowUsernameModal(true);
+                                // Document does not exist, initialize it
+                                await db.collection('user_settings').doc(currentUser.uid).set({ exportCount: 0 }, { merge: true });
                             }
-                        } else {
-                            await db.collection('user_settings').doc(currentUser.uid).set({ exportCount: 0 }, { merge: true });
-                            setExportCount(0);
-                            const isEmailPremium = PREMIUM_EMAILS.includes(currentUser.email);
-                            setIsPremium(isEmailPremium);
-                            setShowUsernameModal(true);
-                        }
-
-
-                        // No longer loading global currency from settings
+                        });
 
                     } catch (e) {
                         console.error("Error loading user data:", e);
@@ -360,7 +362,12 @@ const App = () => {
                     setIsPremium(false);
                 }
             });
-            return () => unsubscribe();
+            return () => {
+                unsubscribe();
+                if (unsubscribeSettings) {
+                    unsubscribeSettings();
+                }
+            };
         }
     }, []);
 

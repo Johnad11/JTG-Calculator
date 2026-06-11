@@ -15,8 +15,24 @@ service cloud.firestore {
     // User settings collection
     match /user_settings/{userId} {
       allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && (!request.resource.data.keys().hasAny(['isPremium', 'premiumUntil', 'premiumPlan']) || request.resource.data.isPremium == false);
-      allow update: if isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isPremium', 'premiumUntil', 'premiumPlan']);
+      allow create: if isOwner(userId) 
+        && (!request.resource.data.keys().hasAny(['isPremium', 'premiumUntil', 'premiumPlan']) || request.resource.data.isPremium == false)
+        && (
+          !request.resource.data.keys().hasAny(['username'])
+          || (
+            request.resource.data.username == null 
+            || get(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == userId
+          )
+        );
+      allow update: if isOwner(userId) 
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isPremium', 'premiumUntil', 'premiumPlan'])
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['username'])
+          || (
+            request.resource.data.username == null 
+            || get(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == userId
+          )
+        );
       allow delete: if isOwner(userId);
     }
 

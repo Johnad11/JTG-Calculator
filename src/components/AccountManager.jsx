@@ -511,6 +511,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         placeholder="Account Name"
                                         value={newAccountName}
                                         onChange={(e) => setNewAccountName(e.target.value)}
+                                        className="flex-1 bg-black/40 border border-slate-700 rounded p-2 text-white text-sm focus:border-jtg-green outline-none"
                                         required
                                     />
                                     <select
