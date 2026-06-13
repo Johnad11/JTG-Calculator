@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Icons } from './Icons';
-import JtgPromo from './JtgPromo';
 import { convertForDisplay } from '../utils/currencyConverter';
 
 const CalendarView = ({ trades, currency = 'USD', currencySymbol = '$', exchangeRates }) => {
@@ -33,7 +32,7 @@ const CalendarView = ({ trades, currency = 'USD', currencySymbol = '$', exchange
 
     return (
         <div className="flex flex-col h-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
-            <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-4 md:p-6 shadow-xl flex-1 flex flex-col mb-8 overflow-hidden min-h-[450px] md:min-h-[600px]">
+            <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-4 md:p-6 shadow-xl flex flex-col mb-8 min-h-[450px] md:min-h-[600px]">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                     <h2 className="text-2xl font-bold text-white tracking-wide flex items-center gap-3"><span className="text-jtg-green"><Icons.Calendar /></span> Performance Calendar</h2>
                     <div className="flex items-center gap-4 bg-jtg-input rounded-lg p-1 border border-jtg-blue/30">
@@ -42,7 +41,7 @@ const CalendarView = ({ trades, currency = 'USD', currencySymbol = '$', exchange
                         <button onClick={nextMonth} className="p-2 hover:text-white text-slate-400"><Icons.ChevronRight /></button>
                     </div>
                 </div>
-                <div className="flex-1 overflow-auto custom-scroll">
+                <div>
                     <div className="grid grid-cols-7 gap-px bg-jtg-blue/20 border border-jtg-blue/30 rounded-t-xl overflow-hidden text-center text-[10px] md:text-xs font-bold text-slate-400 uppercase py-2"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
                     <div className="grid grid-cols-7 gap-1 md:gap-2 mt-2 h-[320px] sm:h-[450px] md:h-[600px] auto-rows-fr">
                         {days.map((day, idx) => {
@@ -64,7 +63,6 @@ const CalendarView = ({ trades, currency = 'USD', currencySymbol = '$', exchange
                     </div>
                 </div>
             </div>
-            <JtgPromo />
         </div>
     );
 };

@@ -1,94 +1,113 @@
 import React, { useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { Icons } from './Icons';
-import JtgPromo from './JtgPromo';
 import { LOGO_URL } from '../constants';
 import { convertForDisplay } from '../utils/currencyConverter';
 
-const TradeCard = ({ trade, currencySymbol, currency, getEmotionColor, downloadCard, deleteTrade }) => {
+const TradeRow = ({ trade, currencySymbol, currency, getEmotionColor, downloadCard, deleteTrade }) => {
     const [expanded, setExpanded] = React.useState(false);
     const isWin = parseFloat(trade.pnl) >= 0;
-    
+
     return (
-        <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 flex flex-col gap-3 shadow-md hover:border-jtg-blue/40 transition">
-            {/* Top row */}
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <span className="text-sm font-extrabold text-white tracking-wide">{trade.pair}</span>
-                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${trade.type === 'BUY' ? 'bg-jtg-green/20 text-jtg-green' : 'bg-red-500/20 text-red-500'}`}>{trade.type}</span>
+        <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 shadow-md hover:border-jtg-blue/40 transition duration-300">
+            {/* Clickable Header Bar */}
+            <div 
+                onClick={() => setExpanded(!expanded)} 
+                className="flex items-center justify-between cursor-pointer"
+            >
+                {/* Left: Pair + Direction Arrow */}
+                <div className="flex items-center gap-2 min-w-[100px]">
+                    <span className="text-sm md:text-base font-black text-white tracking-wide uppercase">{trade.pair}</span>
+                    {trade.type === 'BUY' ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-jtg-green shrink-0"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                    ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-red-500 shrink-0"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                    )}
                 </div>
-                <span className="text-[10px] text-slate-500 font-mono">{trade.openDate.split('T')[0]}</span>
-            </div>
 
-            {/* Middle row */}
-            <div className="flex justify-between items-end">
-                <div className="flex flex-col gap-1.5 items-start">
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${trade.outcome.includes('WIN') || trade.outcome.includes('TP') ? 'bg-jtg-green/10 text-jtg-green border-jtg-green/30' : trade.outcome.includes('LOSS') || trade.outcome.includes('SL') ? 'bg-red-500/10 text-red-500 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>
-                        {trade.outcome}
+                {/* Center: Date */}
+                <div className="text-center flex-1">
+                    <span className="text-xs md:text-sm text-slate-300 font-mono font-bold">
+                        {trade.openDate.split('T')[0]}
                     </span>
-                    <span className="text-[10px] text-slate-400">Lot: <span className="font-mono font-bold text-white">{trade.lot}</span></span>
                 </div>
-                <div className="text-right">
-                    <div className={`text-base font-black font-mono ${isWin ? 'text-jtg-green' : 'text-red-500'}`}>
+
+                {/* Right: PnL + Caret */}
+                <div className="flex items-center gap-3">
+                    <span className={`text-xs md:text-sm font-mono font-black ${isWin ? 'text-jtg-green' : 'text-red-500'}`}>
                         {isWin ? '+' : ''}{currencySymbol}{trade.pnlNative ? parseFloat(trade.pnlNative).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 }) : parseFloat(trade.pnl).toLocaleString()}
-                    </div>
+                    </span>
+                    <span className="text-slate-400 hover:text-white transition-transform duration-200 text-xs" style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                        ▼
+                    </span>
                 </div>
             </div>
 
-            {/* Expandable Details */}
+            {/* Expanded Content */}
             {expanded && (
-                <div className="grid grid-cols-2 gap-y-3 gap-x-4 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
+                <div className="mt-4 pt-4 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-4 text-slate-400 text-xs animate-fade-in">
                     <div>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Closed Date</p>
-                        <p className="font-mono text-white mt-0.5">{trade.closeDate ? trade.closeDate.split('T')[0] : '-'}</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Closed Date</p>
+                        <p className="font-mono text-white text-sm font-semibold">{trade.closeDate ? trade.closeDate.split('T')[0] : '-'}</p>
                     </div>
                     <div>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Strategy</p>
-                        <p className="text-white mt-0.5 truncate">{trade.strategy || 'Standard'}</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Strategy Used</p>
+                        <p className="text-white text-sm font-semibold">{trade.strategy || 'Standard'}</p>
                     </div>
                     <div>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Dominant Emotion</p>
-                        <p className={`font-bold mt-0.5 ${getEmotionColor(trade.emotion)}`}>{trade.emotion || '-'}</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Lot Size</p>
+                        <p className="font-mono text-white text-sm font-bold">{trade.lot}</p>
                     </div>
                     <div>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Setup & Rules</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                            <span className="font-mono font-bold text-yellow-500 bg-yellow-500/10 px-1.5 py-0.2 rounded text-[10px]">
-                                {trade.setupQuality || 'A'}
-                            </span>
-                            <span className="text-[10px]">
-                                {trade.ruleAdherence === 'Yes' ? '✅ Rules' : '❌ Rules'}
-                            </span>
-                        </div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Dominant Emotion</p>
+                        <p className={`text-sm font-bold ${getEmotionColor(trade.emotion)}`}>{trade.emotion || '-'}</p>
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Setup Quality</p>
+                        <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded inline-block mt-0.5 ${trade.setupQuality === 'A+' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' : 'bg-slate-700 text-slate-300'}`}>
+                            {trade.setupQuality || '-'}
+                        </span>
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Rule Adherence</p>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded inline-block mt-0.5 ${trade.ruleAdherence === 'Yes' ? 'bg-jtg-green/20 text-jtg-green' : 'bg-red-500/20 text-red-500'}`}>
+                            {trade.ruleAdherence === 'Yes' ? '✅ Followed Rules' : '❌ Broke Rules'}
+                        </span>
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Trade Outcome</p>
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded inline-block mt-0.5 border ${trade.outcome.includes('WIN') || trade.outcome.includes('TP') ? 'bg-jtg-green/10 text-jtg-green border-jtg-green/30' : trade.outcome.includes('LOSS') || trade.outcome.includes('SL') ? 'bg-red-500/10 text-red-500 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>
+                            {trade.outcome}
+                        </span>
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total PnL</p>
+                        <span className={`text-sm md:text-base font-mono font-black ${isWin ? 'text-jtg-green' : 'text-red-500'}`}>
+                            {isWin ? '+' : ''}{currencySymbol}{trade.pnlNative ? parseFloat(trade.pnlNative).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 }) : parseFloat(trade.pnl).toLocaleString()}
+                        </span>
+                    </div>
+                    
+                    {/* Actions Row */}
+                    <div className="col-span-2 md:col-span-4 flex justify-end gap-3 pt-4 border-t border-slate-800/50">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); downloadCard(trade); }} 
+                            className="px-4 py-2 bg-jtg-blue/10 hover:bg-jtg-blue/20 border border-jtg-blue/30 text-jtg-green hover:text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 active:scale-95"
+                            title="Share Trade Card"
+                        >
+                            <Icons.Share className="w-4 h-4" />
+                            <span>Share Card</span>
+                        </button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); deleteTrade(trade.id); }} 
+                            className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-500 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 active:scale-95"
+                            title="Delete Trade Log"
+                        >
+                            <Icons.Trash className="w-4 h-4" />
+                            <span>Delete Log</span>
+                        </button>
                     </div>
                 </div>
             )}
-
-            {/* Bottom Actions Row */}
-            <div className="flex justify-between items-center border-t border-slate-800/50 pt-2 mt-1">
-                <button 
-                    onClick={() => setExpanded(!expanded)} 
-                    className="text-[10px] font-bold text-slate-400 hover:text-white transition flex items-center gap-1 py-1"
-                >
-                    {expanded ? 'Hide Details ▲' : 'Show Details ▼'}
-                </button>
-                <div className="flex items-center gap-3">
-                    <button 
-                        onClick={() => downloadCard(trade)} 
-                        className="p-1.5 bg-jtg-blue/20 hover:bg-jtg-blue/30 text-jtg-green rounded-lg transition"
-                        title="Share Trade Card"
-                    >
-                        <Icons.Share className="w-3.5 h-3.5" />
-                    </button>
-                    <button 
-                        onClick={() => deleteTrade(trade.id)} 
-                        className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition"
-                        title="Delete Trade Log"
-                    >
-                        <Icons.Trash className="w-3.5 h-3.5" />
-                    </button>
-                </div>
-            </div>
         </div>
     );
 };
@@ -283,7 +302,7 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
 
     return (
         <div className="flex flex-col h-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
-            <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex-1 flex flex-col mb-8 overflow-hidden min-h-[500px]">
+            <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex flex-col mb-8 min-h-[500px]">
                 <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center gap-6">
                         <h2 className="text-2xl font-bold text-white tracking-wide flex items-center gap-3">
@@ -309,69 +328,12 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                         <span className="text-white font-bold font-mono">{trades.length}</span> <span className="text-slate-400 text-xs uppercase">Records</span>
                     </div>
                 </div>
-                {/* Desktop View */}
-                <div className="hidden md:block flex-1 overflow-auto custom-scroll">
-                    <table className="w-full text-left border-collapse min-w-[1200px]">
-                        <thead className="sticky top-0 bg-jtg-card z-10 shadow-lg">
-                            <tr>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Opened</th>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Closed</th>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Pair</th>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Type</th>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Lot</th>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Emotion</th>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Setup</th>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Rules</th>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700">Outcome</th>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-right">PnL</th>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Share</th>
-                                <th className="p-4 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700 text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {trades.length === 0 ? (<tr><td colSpan="12" className="p-12 text-center text-slate-500 italic">No trade history found. Go to Journal to add entries.</td></tr>) : ([...trades].reverse().map(trade => (
-                                <tr key={trade.id} className="border-b border-slate-800 hover:bg-slate-800/30 transition-colors group">
-                                    <td className="p-4 text-xs text-white font-mono">{trade.openDate.split('T')[0]}</td>
-                                    <td className="p-4 text-xs text-slate-400 font-mono">{trade.closeDate ? trade.closeDate.split('T')[0] : '-'}</td>
-                                    <td className="p-4 text-sm font-bold text-white">{trade.pair}</td>
-                                    <td className={`p-4 text-xs font-bold ${trade.type === 'BUY' ? 'text-jtg-green' : 'text-red-500'}`}>{trade.type}</td>
-                                    <td className="p-4 text-xs text-slate-300 font-mono">{trade.lot}</td>
-                                    <td className="p-4 text-center">
-                                        <span className={`text-[10px] font-bold ${getEmotionColor(trade.emotion)}`}>{trade.emotion || '-'}</span>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${trade.setupQuality === 'A+' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-slate-700 text-slate-300'}`}>
-                                            {trade.setupQuality || '-'}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        {trade.ruleAdherence === 'Yes' ? (
-                                            <span className="text-jtg-green scale-75 inline-block"><Icons.Check /></span>
-                                        ) : (
-                                            <span className="text-red-500 scale-75 inline-block"><Icons.X /></span>
-                                        )}
-                                    </td>
-                                    <td className="p-4"><span className={`text-[10px] font-bold px-2 py-1 rounded border ${trade.outcome.includes('WIN') || trade.outcome.includes('TP') ? 'bg-jtg-green/10 text-jtg-green border-jtg-green/30' : trade.outcome.includes('LOSS') || trade.outcome.includes('SL') ? 'bg-red-500/10 text-red-500 border-red-500/30' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>{trade.outcome}</span></td>
-                                    <td className={`p-4 text-sm font-mono font-bold text-right ${parseFloat(trade.pnl) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>
-                                        {parseFloat(trade.pnl) >= 0 ? '+' : ''}{currencySymbol}{trade.pnlNative ? parseFloat(trade.pnlNative).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 }) : parseFloat(trade.pnl).toLocaleString()}
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <button onClick={() => downloadCard(trade)} className="text-slate-500 hover:text-jtg-green transition-colors" title="Share Trade Card" aria-label="Share Trade Card"><Icons.Share /></button>
-                                    </td>
-                                    <td className="p-4 text-center"><button onClick={() => deleteTrade(trade.id)} className="text-slate-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" title="Delete Trade Log" aria-label="Delete Trade Log"><Icons.Trash /></button></td>
-                                </tr>
-                            )))}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Mobile View */}
-                <div className="block md:hidden flex-1 overflow-y-auto custom-scroll space-y-4 pr-1">
+                <div className="flex-1 space-y-4">
                     {trades.length === 0 ? (
                         <div className="p-12 text-center text-slate-500 italic">No trade history found. Go to Journal to add entries.</div>
                     ) : (
                         [...trades].reverse().map(trade => (
-                            <TradeCard 
+                            <TradeRow 
                                 key={trade.id} 
                                 trade={trade} 
                                 currencySymbol={currencySymbol} 
@@ -384,8 +346,6 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                     )}
                 </div>
             </div>
-            <JtgPromo />
-
         </div>
     );
 };

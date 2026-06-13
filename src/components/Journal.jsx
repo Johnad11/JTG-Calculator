@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Icons } from './Icons';
-import JtgPromo from './JtgPromo';
 import { ASSETS } from '../constants';
 
 const Journal = ({ addTrade, accountType = 'Personal' }) => {
@@ -52,7 +51,7 @@ const Journal = ({ addTrade, accountType = 'Personal' }) => {
     };
 
     return (
-        <div className="flex flex-col items-center min-h-full w-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
+        <div className="flex flex-col items-center h-full w-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
             <div id="journal-form-container" className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-8 shadow-xl w-full max-w-2xl mb-8 shrink-0">
                 <div className="flex items-center justify-between mb-6 border-b border-jtg-blue/20 pb-4">
                     <div className="flex items-center gap-3">
@@ -124,7 +123,6 @@ const Journal = ({ addTrade, accountType = 'Personal' }) => {
                     <button type="submit" className="w-full bg-jtg-green hover:bg-emerald-600 text-white font-bold py-4 rounded-lg mt-6 transition-colors flex items-center justify-center gap-2 shadow-lg"><Icons.Plus /> ADD ENTRY TO LOGS</button>
                 </form>
             </div>
-            <JtgPromo />
         </div>
     );
 };

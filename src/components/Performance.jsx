@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Icons } from './Icons';
-import JtgPromo from './JtgPromo';
 import StatCard from './StatCard';
 import EquityChart from './EquityChart';
 import { convertForDisplay } from '../utils/currencyConverter';
@@ -17,7 +16,6 @@ import {
 
 const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBalance, updateGlobalBalance, updateInitialBalance, currencySymbol = '$', currency = 'USD', exchangeRates, activeAccount }) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [useUTC, setUseUTC] = useState(false);
     const [tempBalance, setTempBalance] = useState(() => {
         const bal = globalInitialBalance || globalBalance || '';
         return bal;
@@ -131,14 +129,8 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
                 const pnlVal = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates && exchangeRates[currency] ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl || 0));
                 if (isNaN(pnlVal)) return;
                 
-                let dayIndex, hourIndex;
-                if (useUTC) {
-                    dayIndex = date.getUTCDay();
-                    hourIndex = date.getUTCHours();
-                } else {
-                    dayIndex = date.getDay();
-                    hourIndex = date.getHours();
-                }
+                const dayIndex = date.getDay();
+                const hourIndex = date.getHours();
 
                 if (dayStats[dayIndex]) dayStats[dayIndex].pnl += pnlVal;
                 if (hourStats[hourIndex]) hourStats[hourIndex].pnl += pnlVal;
@@ -146,7 +138,7 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
         }
 
         return { dayStats, hourStats };
-    }, [trades, useUTC, currency, exchangeRates]);
+    }, [trades, currency, exchangeRates]);
 
     const chartData = useMemo(() => {
         if (!trades) return [];
@@ -188,20 +180,6 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
             <div className="mb-auto">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-3xl font-bold text-white tracking-wide">Evolution Analytics</h2>
-                    <div className="flex gap-2 bg-jtg-card p-1 rounded-lg border border-jtg-blue/30">
-                        <button 
-                            onClick={() => setUseUTC(false)} 
-                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition ${!useUTC ? 'bg-jtg-green text-black' : 'text-slate-500 hover:text-white'}`}
-                        >
-                            LOCAL
-                        </button>
-                        <button 
-                            onClick={() => setUseUTC(true)} 
-                            className={`px-3 py-1 rounded-md text-[10px] font-bold transition ${useUTC ? 'bg-jtg-green text-black' : 'text-slate-500 hover:text-white'}`}
-                        >
-                            UTC
-                        </button>
-                    </div>
                 </div>
 
                 {/* ACCOUNT HEALTH */}
@@ -289,7 +267,7 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
                     {/* HOUR OF DAY HEATMAP */}
                     <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Icons.Clock /> Performance by Hour ({useUTC ? 'UTC' : 'Local'})</h3>
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Icons.Clock /> Performance by Hour</h3>
                         <div className="flex-1 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={heatmapData.hourStats}>
@@ -348,7 +326,6 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
                     </div>
                 </div>
             </div>
-            <JtgPromo />
         </div>
     );
 };

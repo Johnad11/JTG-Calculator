@@ -63,17 +63,14 @@ const UsernameModal = ({ user, onUsernameSet }) => {
 
         setStatus('saving');
         try {
-            const batch = db.batch();
-
-            // 1. Create entry in usernames collection for uniqueness
+            // 1. Create entry in usernames collection first
             const usernameRef = db.collection('usernames').doc(username);
-            batch.set(usernameRef, { uid: user.uid });
+            await usernameRef.set({ uid: user.uid });
 
             // 2. Update user_settings with the username
             const settingsRef = db.collection('user_settings').doc(user.uid);
-            batch.set(settingsRef, { username: username }, { merge: true });
+            await settingsRef.set({ username: username }, { merge: true });
 
-            await batch.commit();
             onUsernameSet(username);
         } catch (err) {
             console.error(err);

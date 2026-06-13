@@ -71,6 +71,7 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid
         && !exists(/databases/$(database)/documents/usernames/$(username));
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
     }
 
   }

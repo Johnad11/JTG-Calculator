@@ -10,8 +10,8 @@ import AccountManager from './components/AccountManager';
 import UsernameModal from './components/UsernameModal';
 import Mt5IntegrationModal from './components/Mt5IntegrationModal';
 import PremiumUpgradeModal from './components/PremiumUpgradeModal';
-import NotificationSettingsModal from './components/NotificationSettingsModal';
-import InAppReminderBanner from './components/InAppReminderBanner';
+import SettingsModal from './components/SettingsModal';
+import OnboardingTourPopup from './components/OnboardingTourPopup';
 import { LOGO_URL, CURRENCIES, ASSETS, PREMIUM_EMAILS } from './constants';
 
 import { fetchExchangeRates } from './utils/exchangeRate';
@@ -145,7 +145,9 @@ const App = () => {
     const [exportCount, setExportCount] = useState(0);
     const [isPremium, setIsPremium] = useState(false);
     const [showPremiumUpgradeModal, setShowPremiumUpgradeModal] = useState(false);
-    const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+    const [isAuthLoading, setIsAuthLoading] = useState(true);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
+    const [showTourPrompt, setShowTourPrompt] = useState(false);
     const [remindersEnabled, setRemindersEnabled] = useState(() => {
         try {
             return localStorage.getItem('jtg_reminders_enabled') === 'true';
@@ -259,6 +261,8 @@ const App = () => {
                 }
 
                 setUser(currentUser);
+                setIsAuthLoading(false); // Resolve loading screen immediately!
+
                 if (currentUser) {
                     try {
                         // 1. Load Accounts
@@ -306,9 +310,31 @@ const App = () => {
 
                         // 2. Setup Real-time listener for User Settings
                         const settingsRef = db.collection('user_settings').doc(currentUser.uid);
-                        unsubscribeSettings = settingsRef.onSnapshot(async (docSnap) => {
-                            let userIsPremium = false;
+                        
+                        // Fix username flashing: Fetch once initially to set modal state and confirm loaded settings
+                        const initialDoc = await settingsRef.get();
+                        let initialUsername = '';
+                        let tourCompleted = false;
 
+                        if (initialDoc.exists) {
+                            const data = initialDoc.data();
+                            initialUsername = data.username || '';
+                            tourCompleted = data.hasCompletedTour === true;
+                            if (initialUsername) {
+                                setUsername(initialUsername);
+                                setShowUsernameModal(false);
+                                if (!tourCompleted) {
+                                    setShowTourPrompt(true);
+                                }
+                            } else {
+                                setShowUsernameModal(true);
+                            }
+                        } else {
+                            await settingsRef.set({ exportCount: 0 }, { merge: true });
+                            setShowUsernameModal(true);
+                        }
+
+                        unsubscribeSettings = settingsRef.onSnapshot((docSnap) => {
                             if (docSnap.exists) {
                                 const data = docSnap.data();
                                 setExportCount(data.exportCount || 0);
@@ -336,24 +362,18 @@ const App = () => {
                                     }
                                 }
 
-                                userIsPremium = isEmailPremium || isSubscriptionValid;
+                                const userIsPremium = isEmailPremium || isSubscriptionValid;
                                 setIsPremium(userIsPremium);
 
                                 if (data.username) {
                                     setUsername(data.username);
                                     setShowUsernameModal(false);
-                                } else {
-                                    setShowUsernameModal(true);
                                 }
-                            } else {
-                                // Document does not exist, initialize it
-                                await db.collection('user_settings').doc(currentUser.uid).set({ exportCount: 0 }, { merge: true });
                             }
                         });
 
                     } catch (e) {
                         console.error("Error loading user data:", e);
-                        // Fallback (e.g. offline)
                     }
                 } else {
                     setAccounts([]);
@@ -369,6 +389,8 @@ const App = () => {
                     unsubscribeSettings();
                 }
             };
+        } else {
+            setIsAuthLoading(false);
         }
     }, []);
 
@@ -804,12 +826,89 @@ const App = () => {
         </button>
     );
 
+    if (isAuthLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center w-screen h-screen bg-[#0a0e1a]">
+                <div className="relative w-20 h-20 flex items-center justify-center mb-6">
+                    <div className="absolute inset-0 border-4 border-[#1BA657]/20 rounded-full"></div>
+                    <div className="absolute inset-0 border-4 border-t-[#1BA657] rounded-full animate-spin"></div>
+                    <img src={LOGO_URL} className="w-10 h-10 object-contain animate-pulse" />
+                </div>
+                <h2 className="text-lg font-bold text-white tracking-widest uppercase mb-1">JTG JOURNAL</h2>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Establishing secure connection...</p>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="relative flex flex-col items-center justify-center w-screen h-screen bg-[#0a0e1a] overflow-hidden p-6">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#162C99]/15 rounded-full blur-[120px] pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#1BA657]/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+                <div className="relative z-10 w-full max-w-md bg-jtg-card border border-jtg-blue/30 rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center animate-pop">
+                    <button
+                        onClick={() => window.open('https://jtg-ecosystem.vercel.app/', '_blank')}
+                        className="absolute top-6 left-6 text-slate-400 hover:text-white transition flex items-center gap-1.5 text-xs font-bold"
+                    >
+                        <Icons.ArrowLeft className="w-3.5 h-3.5" />
+                        <span>Go Back</span>
+                    </button>
+
+                    <div className="w-20 h-20 mb-6 flex items-center justify-center bg-gradient-to-tr from-[#162C99] to-[#1BA657] p-3 rounded-2xl shadow-lg mt-4">
+                        <img src={LOGO_URL} className="w-full h-full object-contain" />
+                    </div>
+
+                    <h1 className="text-2xl font-black text-white tracking-tight leading-none mb-1">JTG JOURNAL</h1>
+                    <p className="text-[#1BA657] text-[10px] font-black uppercase tracking-[0.2em] mb-6">Stop Gambling. Start Journaling.</p>
+                    
+                    <p className="text-slate-400 text-sm leading-relaxed mb-8">
+                        The ultimate position calculator and analytical trade journal for disciplined traders. Elevate your performance, manage your risk, and pass challenges consistently.
+                    </p>
+
+                    <button
+                        onClick={login}
+                        disabled={isLoggingIn}
+                        className="w-full py-4 bg-gradient-to-r from-jtg-green to-emerald-500 text-black font-black text-sm tracking-widest rounded-xl transition-all shadow-xl hover:shadow-jtg-green/20 flex items-center justify-center gap-3 hover:scale-[1.02]"
+                    >
+                        {isLoggingIn ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                SECURING ACCESS...
+                            </>
+                        ) : (
+                            <>
+                                <Icons.Google />
+                                SIGN IN WITH GOOGLE
+                            </>
+                        )}
+                    </button>
+
+                    <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mt-8">
+                        Authorized Access Only • Secured by Firebase
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex w-full h-full bg-jtg-dark">
             {/* SIDEBAR */}
-            <div className="hidden md:flex w-24 bg-jtg-dark border-r border-jtg-blue/30 flex-col items-center py-8 z-20 shadow-2xl shrink-0 h-full overflow-y-auto custom-scroll justify-between">
+            <div className="hidden md:flex w-24 bg-jtg-dark border-r border-jtg-blue/30 flex-col items-center py-6 z-20 shadow-2xl shrink-0 h-full overflow-y-auto custom-scroll justify-between">
                 <div className="w-full flex flex-col items-center">
-                    <div className="w-16 h-16 mb-10 flex items-center justify-center transition-transform hover:scale-110 mx-auto shrink-0">
+                    
+                    {/* BACK TO ECOSYSTEM LINK */}
+                    <button 
+                        onClick={() => window.open('https://jtg-ecosystem.vercel.app/', '_blank')}
+                        className="mb-4 text-slate-500 hover:text-white transition flex items-center gap-1 bg-jtg-blue/10 border border-jtg-blue/20 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wider hover:bg-jtg-blue/20 active:scale-95"
+                        title="Back to Ecosystem"
+                    >
+                        <Icons.ArrowLeft className="w-2.5 h-2.5" />
+                        <span>WEB</span>
+                    </button>
+
+                    <div className="w-12 h-12 mb-8 flex items-center justify-center mx-auto shrink-0 transition-transform hover:scale-105">
                         <img src={LOGO_URL} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
                     </div>
 
@@ -846,68 +945,62 @@ const App = () => {
                         <NavBtn id="calendar" icon={<Icons.Calendar />} label="CALENDAR" />
                         <NavBtn id="perf" icon={<Icons.Chart />} label="DATA" />
                     </div>
-
-                    {/* Removed Global Currency Selector */}
                 </div>
+
                 <div className="w-full pb-4 mt-8 shrink-0 flex flex-col gap-4 items-center">
-                    <button id="reminders-button" onClick={() => setShowNotificationSettings(true)} className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition" title="Daily Reminders">
-                        <Icons.Clock className="w-5 h-5 text-jtg-green" />
-                        <span className="text-[9px] font-bold tracking-wider">REMINDERS</span>
+                    
+                    {/* SETTINGS BUTTON */}
+                    <button 
+                        id="settings-button" 
+                        onClick={() => setShowSettingsModal(true)} 
+                        className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition" 
+                        title="Platform Settings"
+                    >
+                        <Icons.Settings className="w-5 h-5 text-jtg-green" />
+                        <span className="text-[9px] font-bold tracking-wider">SETTINGS</span>
                     </button>
 
-                    <button id="tour-button" onClick={() => startAppTour()} className="flex flex-col items-center gap-1 text-jtg-green hover:text-white transition mb-4" title="Start Tour">
-                        <Icons.Check className="w-5 h-5" />
-                        <span className="text-[9px] font-bold tracking-wider">TOUR</span>
-                    </button>
-
-                    {/* SUPPORT BUTTON */}
-                    <button onClick={() => window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank')} className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition" title="Support">
-                        <Icons.Support />
-                        <span className="text-[9px] font-bold tracking-wider">SUPPORT</span>
-                    </button>
-
-                    {/* LOGIN/LOGOUT BUTTON */}
-                    {user ? (
-                        <div className="flex flex-col items-center gap-2 mb-2">
-                            {isPremium && (
-                                <div className="bg-[#1BA657]/20 border border-[#1BA657]/50 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-[0_0_10px_rgba(27,166,87,0.3)] animate-pulse mb-1">
-                                    <PremiumStarIcon className="w-2.5 h-2.5 text-[#1BA657]" />
-                                    <span className="text-[8px] font-extrabold text-[#1BA657] tracking-wider uppercase">PRO</span>
-                                </div>
-                            )}
-                            <button onClick={logout} className="flex flex-col items-center gap-1 text-slate-500 hover:text-red-500 transition" title="Logout">
-                                <div className="w-8 h-8 rounded-full bg-jtg-green text-black flex items-center justify-center font-bold text-xs relative">
-                                    {user.email[0].toUpperCase()}
-                                    {isPremium && <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center border border-jtg-dark font-extrabold" title="Premium Access">★</span>}
-                                </div>
-                                <span className="text-[9px] font-bold tracking-wider">LOGOUT</span>
-                            </button>
-                        </div>
-                    ) : (
-                        <button onClick={login} className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition" title="Login to Sync">
-                            {isLoggingIn ? <span className="animate-spin">...</span> : <Icons.Google />}
-                            <span className="text-[9px] font-bold tracking-wider">{isLoggingIn ? '...' : 'LOGIN'}</span>
+                    {/* USER PROFILE & LOGOUT */}
+                    <div className="flex flex-col items-center gap-2 mb-2 pt-4 border-t border-jtg-blue/20 w-full">
+                        {isPremium && (
+                            <div className="bg-[#1BA657]/20 border border-[#1BA657]/50 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-[0_0_10px_rgba(27,166,87,0.3)] animate-pulse mb-1">
+                                <PremiumStarIcon className="w-2.5 h-2.5 text-[#1BA657]" />
+                                <span className="text-[8px] font-extrabold text-[#1BA657] tracking-wider uppercase">PRO</span>
+                            </div>
+                        )}
+                        <button onClick={logout} className="flex flex-col items-center gap-1 text-slate-500 hover:text-red-500 transition" title="Logout">
+                            <div className="w-8 h-8 rounded-full bg-jtg-green text-black flex items-center justify-center font-bold text-xs relative">
+                                {user.email[0].toUpperCase()}
+                                {isPremium && <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center border border-jtg-dark font-extrabold" title="Premium Access">★</span>}
+                            </div>
+                            <span className="text-[9px] font-bold tracking-wider">LOGOUT</span>
                         </button>
-                    )}
-
-                    <button onClick={() => window.open('https://jtg-ecosystem.vercel.app/', '_blank')} className="flex flex-col items-center gap-1 text-slate-500 w-full py-4 hover:text-white transition border-t border-jtg-blue/20 pt-6">
-                        <Icons.Home /><span className="text-[10px] font-bold tracking-wider">HOME</span>
-                    </button>
+                    </div>
                 </div>
             </div>
 
             {/* MOBILE HEADER */}
             <div className="md:hidden fixed top-0 w-full bg-jtg-dark/95 backdrop-blur z-30 border-b border-jtg-blue/30 p-4 flex justify-between items-center h-16">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8"><img src={LOGO_URL} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} /></div>
-                    <span className="text-sm font-bold text-white tracking-wide">JTG <span className="text-jtg-green">JOURNAL</span></span>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => window.open('https://jtg-ecosystem.vercel.app/', '_blank')}
+                        className="text-slate-400 hover:text-white p-1 hover:bg-jtg-blue/10 rounded-lg transition active:scale-90"
+                        title="Back to Ecosystem"
+                        aria-label="Back to Ecosystem"
+                    >
+                        <Icons.ArrowLeft className="w-4 h-4" />
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6"><img src={LOGO_URL} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} /></div>
+                        <span className="text-sm font-bold text-white tracking-wide">JTG <span className="text-jtg-green">JOURNAL</span></span>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     {isDemoMode && (
                         <span className="text-[9px] bg-jtg-green/20 text-jtg-green px-2 py-0.5 rounded font-extrabold border border-jtg-green/30 animate-pulse uppercase tracking-wide">Demo</span>
                     )}
-                    {isPremium && user && (
+                    {isPremium && (
                         <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[8px] font-extrabold px-1.5 py-0.5 rounded shadow-[0_0_5px_rgba(27,166,87,0.3)] tracking-wider">PRO</span>
                     )}
                     <button
@@ -937,7 +1030,7 @@ const App = () => {
                     <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-jtg-green/5 rounded-full blur-[100px] pointer-events-none"></div>
 
                     {/* Scrollable Container */}
-                    <div className="w-full h-full overflow-y-auto custom-scroll pt-20 pb-24 md:pt-0 md:pb-0">
+                    <div className="w-full h-full overflow-hidden pt-20 pb-24 md:pt-0 md:pb-0">
                         {isDemoMode && (
                             <div className="bg-[#1BA657]/20 border-b border-[#1BA657]/30 py-3 px-4 text-center text-xs text-[#1BA657] font-bold tracking-wide animate-pulse flex items-center justify-center gap-2 z-10 relative">
                                 <span>📢 DEMO MODE ACTIVE: Viewing sample Forex trade logs. Click "EXIT DEMO" at the top to clear.</span>
@@ -958,6 +1051,7 @@ const App = () => {
                                 exchangeRates={exchangeRates}
                                 ratesLoading={ratesLoading}
                                 activeAccount={activeAccount}
+                                username={username}
                             />
                         )}
 
@@ -993,8 +1087,8 @@ const App = () => {
                     onUsernameSet={(name) => {
                         setUsername(name);
                         setShowUsernameModal(false);
-                        // Trigger tour for new users immediately after they set identity
-                        setTimeout(() => startAppTour(), 500);
+                        // Trigger onboarding tour popup modal for new users
+                        setTimeout(() => setShowTourPrompt(true), 500);
                     }}
                 />
             )}
@@ -1018,22 +1112,31 @@ const App = () => {
                 />
             )}
 
-            {/* Daily Reminders In-App Alert Banner */}
-            <InAppReminderBanner 
-                trades={trades} 
-                setPage={setPage} 
-                remindersEnabled={remindersEnabled} 
-            />
 
-            {/* Notification Settings Modal */}
-            {showNotificationSettings && (
-                <NotificationSettingsModal
-                    close={() => setShowNotificationSettings(false)}
+
+            {/* Unified Settings Modal */}
+            {showSettingsModal && (
+                <SettingsModal
+                    user={user}
+                    username={username}
+                    setUsername={setUsername}
+                    isPremium={isPremium}
+                    close={() => setShowSettingsModal(false)}
+                    logout={logout}
                     remindersEnabled={remindersEnabled}
                     setRemindersEnabled={setRemindersEnabled}
                     reminderTime={reminderTime}
                     setReminderTime={setReminderTime}
+                    startTour={() => startAppTour()}
+                />
+            )}
+
+            {/* Onboarding Tour Prompt */}
+            {showTourPrompt && user && (
+                <OnboardingTourPopup
                     user={user}
+                    startTour={() => startAppTour()}
+                    close={() => setShowTourPrompt(false)}
                 />
             )}
 
@@ -1066,12 +1169,13 @@ const App = () => {
                             {/* User Profile Info */}
                             <div className="mb-8 p-4 bg-jtg-blue/10 border border-jtg-blue/20 rounded-xl flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-jtg-green text-black flex items-center justify-center font-bold text-sm shrink-0">
-                                    {user ? user.email[0].toUpperCase() : 'G'}
+                                    {username ? username[0].toUpperCase() : (user ? user.email[0].toUpperCase() : 'G')}
                                 </div>
                                 <div className="overflow-hidden">
-                                    <p className="text-xs font-bold text-white truncate">{user ? user.email : 'Guest Mode'}</p>
-                                    <div className="flex gap-1.5 items-center mt-1">
-                                        {isPremium && user ? (
+                                    {username && <p className="text-sm font-black text-jtg-green truncate">@{username}</p>}
+                                    <p className="text-xs font-bold text-slate-300 truncate">{user ? user.email : ''}</p>
+                                    <div className="flex gap-1.5 items-center mt-1.5">
+                                        {isPremium ? (
                                             <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">PRO</span>
                                         ) : (
                                             <span className="bg-slate-800 text-slate-400 text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">FREE</span>
@@ -1084,83 +1188,51 @@ const App = () => {
                             </div>
 
                             {/* Section: Account Switcher & Sync */}
-                            {user && (
-                                <div className="space-y-3 mb-6">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Trading Accounts</p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <button
-                                            onClick={() => {
-                                                setShowMobileDrawer(false);
-                                                setShowAccountManager(true);
-                                            }}
-                                            className="bg-jtg-green/10 border border-jtg-green/30 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:bg-jtg-green/20 transition active:scale-95"
-                                        >
-                                            <span className="text-jtg-green"><Icons.User /></span>
-                                            <span className="text-[10px] font-bold text-white max-w-full truncate">
-                                                {accounts.find(a => a.id === activeAccountId)?.name || 'Accounts'}
-                                            </span>
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setShowMobileDrawer(false);
-                                                setShowSyncModal(true);
-                                            }}
-                                            className="bg-jtg-blue/10 border border-jtg-blue/30 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:bg-jtg-blue/20 transition active:scale-95"
-                                        >
-                                            <span className="text-jtg-green"><Icons.Key /></span>
-                                            <span className="text-[10px] font-bold text-white max-w-full truncate">
-                                                MT5 Sync
-                                            </span>
-                                        </button>
-                                    </div>
+                            <div className="space-y-3 mb-6">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Trading Accounts</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setShowMobileDrawer(false);
+                                            setShowAccountManager(true);
+                                        }}
+                                        className="bg-jtg-green/10 border border-jtg-green/30 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:bg-jtg-green/20 transition active:scale-95"
+                                    >
+                                        <span className="text-jtg-green"><Icons.User /></span>
+                                        <span className="text-[10px] font-bold text-white max-w-full truncate">
+                                            {accounts.find(a => a.id === activeAccountId)?.name || 'Accounts'}
+                                        </span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowMobileDrawer(false);
+                                            setShowSyncModal(true);
+                                        }}
+                                        className="bg-jtg-blue/10 border border-jtg-blue/30 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:bg-jtg-blue/20 transition active:scale-95"
+                                    >
+                                        <span className="text-jtg-green"><Icons.Key /></span>
+                                        <span className="text-[10px] font-bold text-white max-w-full truncate">
+                                            MT5 Sync
+                                        </span>
+                                    </button>
                                 </div>
-                            )}
+                            </div>
 
                             {/* Section: App Settings & Tools */}
                             <div className="space-y-2 mb-6">
                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Options & Utilities</p>
                                 
-                                {/* Reminders Button */}
+                                {/* Settings Hub Button */}
                                 <button 
                                     onClick={() => {
                                         setShowMobileDrawer(false);
-                                        setShowNotificationSettings(true);
+                                        setShowSettingsModal(true);
                                     }} 
-                                    className="w-full bg-jtg-input border border-jtg-blue/30 hover:border-jtg-blue/50 rounded-xl p-3 flex items-center justify-between transition group active:scale-[0.98]"
+                                    className="w-full bg-jtg-input border border-jtg-blue/30 hover:border-jtg-blue/50 rounded-xl p-3.5 flex items-center justify-between transition group active:scale-[0.98]"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <Icons.Clock className="w-5 h-5 text-jtg-green" />
-                                        <span className="text-xs font-bold text-white">Daily Reminders</span>
-                                    </div>
-                                    <Icons.ChevronRight />
-                                </button>
-
-                                {/* Interactive Tour Button */}
-                                <button 
-                                    onClick={() => {
-                                        setShowMobileDrawer(false);
-                                        startAppTour();
-                                    }} 
-                                    className="w-full bg-jtg-input border border-jtg-blue/30 hover:border-jtg-blue/50 rounded-xl p-3 flex items-center justify-between transition group active:scale-[0.98]"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Icons.Check className="w-5 h-5 text-jtg-green" />
-                                        <span className="text-xs font-bold text-white">Take Platform Tour</span>
-                                    </div>
-                                    <Icons.ChevronRight />
-                                </button>
-
-                                {/* Support Link */}
-                                <button 
-                                    onClick={() => {
-                                        setShowMobileDrawer(false);
-                                        window.open('https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg', '_blank');
-                                    }} 
-                                    className="w-full bg-jtg-input border border-jtg-blue/30 hover:border-jtg-blue/50 rounded-xl p-3 flex items-center justify-between transition group active:scale-[0.98]"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-slate-400 group-hover:text-white"><Icons.Support /></span>
-                                        <span className="text-xs font-bold text-white font-medium">WhatsApp Support</span>
+                                        <span className="text-jtg-green"><Icons.Settings /></span>
+                                        <span className="text-xs font-bold text-white">Platform Settings</span>
                                     </div>
                                     <Icons.ChevronRight />
                                 </button>
@@ -1172,7 +1244,7 @@ const App = () => {
                                             setIsDemoMode(!isDemoMode);
                                             setShowMobileDrawer(false);
                                         }} 
-                                        className={`w-full border rounded-xl p-3 flex items-center justify-between transition active:scale-[0.98] ${isDemoMode ? 'bg-[#1BA657]/10 border-[#1BA657] text-[#1BA657]' : 'bg-jtg-blue/10 border-jtg-blue/30 text-slate-300'}`}
+                                        className={`w-full border rounded-xl p-3.5 flex items-center justify-between transition active:scale-[0.98] ${isDemoMode ? 'bg-[#1BA657]/10 border-[#1BA657] text-[#1BA657]' : 'bg-jtg-blue/10 border-jtg-blue/30 text-slate-300'}`}
                                     >
                                         <span className="text-xs font-bold">{isDemoMode ? "Exit Demo Mode" : "View Demo Data"}</span>
                                         <span className="text-xs">⚡</span>
@@ -1180,7 +1252,7 @@ const App = () => {
                                 )}
 
                                 {/* Go Premium Upgrade Button */}
-                                {!isPremium && user && (
+                                {!isPremium && (
                                     <button 
                                         onClick={() => {
                                             setShowMobileDrawer(false);
@@ -1196,36 +1268,14 @@ const App = () => {
 
                         {/* Drawer Footer */}
                         <div className="border-t border-jtg-blue/20 pt-4 flex flex-col gap-3">
-                            {user ? (
-                                <button 
-                                    onClick={() => {
-                                        setShowMobileDrawer(false);
-                                        logout();
-                                    }} 
-                                    className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 rounded-xl py-3 text-xs font-bold transition active:scale-95"
-                                >
-                                    Logout Account
-                                </button>
-                            ) : (
-                                <button 
-                                    onClick={() => {
-                                        setShowMobileDrawer(false);
-                                        login();
-                                    }} 
-                                    className="w-full bg-jtg-green text-black rounded-xl py-3 text-xs font-bold transition hover:bg-emerald-400 active:scale-95"
-                                >
-                                    Login with Google
-                                </button>
-                            )}
-                            
                             <button 
                                 onClick={() => {
                                     setShowMobileDrawer(false);
-                                    window.open('https://jtg-ecosystem.vercel.app/', '_blank');
+                                    logout();
                                 }} 
-                                className="w-full py-2 text-[10px] text-slate-500 font-bold hover:text-white transition flex items-center justify-center gap-1.5"
+                                className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 rounded-xl py-3 text-xs font-bold transition active:scale-95"
                             >
-                                <Icons.Home /> Back to Ecosystem
+                                Logout Account
                             </button>
                         </div>
                     </div>
