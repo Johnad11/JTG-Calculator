@@ -79,12 +79,6 @@ const DiscordIcon = ({ className }) => (
     </svg>
 );
 
-const WhatsAppIcon = ({ className }) => (
-    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-        <path d="M19.073 4.907a10.011 10.011 0 0 0-14.126 0 9.946 9.946 0 0 0-2.317 10.223L1.05 20.35a.625.625 0 0 0 .772.772l5.22-1.58a9.947 9.947 0 0 0 12.031-1.611 10.012 10.012 0 0 0 0-14.126zM12.012 18.125a8.125 8.125 0 0 1-4.14-1.127.625.625 0 0 0-.495-.067l-3.23.978.978-3.23a.625.625 0 0 0-.067-.495 8.125 8.125 0 1 1 6.954 3.941zM15.534 12.8c-.193-.097-1.144-.565-1.32-.629-.177-.064-.306-.097-.435.097-.129.193-.5.629-.613.757-.113.129-.226.145-.419.048a5.293 5.293 0 0 1-1.558-.962 5.84 5.84 0 0 1-1.077-1.34c-.113-.193-.012-.298.084-.394.086-.086.193-.226.29-.338.097-.113.129-.193.193-.322.064-.129.032-.242-.016-.339-.048-.097-.435-1.047-.596-1.434-.157-.38-.328-.329-.449-.335-.116-.006-.25-.008-.383-.008a.735.735 0 0 0-.532.25c-.177.193-.677.661-.677 1.611s.693 1.87 1.79 2.015c.11.015 2.14 3.268 5.18 4.582.723.313 1.288.5 1.728.64.726.23 1.387.198 1.91.12.582-.087 1.79-.732 2.046-1.4.256-.669.256-1.241.18-1.354-.077-.113-.274-.21-.468-.306z"/>
-    </svg>
-);
-
 const PremiumStarIcon = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor" stroke="none">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -576,27 +570,16 @@ const Mt5IntegrationModal = ({ user, isPremium = false, triggerUpgrade, close })
                             <p className="text-slate-400 text-[11px] mt-1 leading-relaxed">Need technical help configuring whitelists, network connections, or setting up key handshakes? Connect directly with our team or our active trader group.</p>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {/* WhatsApp Support */}
-                            <a 
-                                href="https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center gap-2.5 py-3.5 bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] text-white font-extrabold text-xs tracking-wider rounded-xl transition-all duration-200 shadow-md shadow-[#25D366]/10 uppercase"
-                            >
-                                <WhatsAppIcon className="w-4.5 h-4.5" />
-                                WhatsApp Customer Success
-                            </a>
-
+                        <div className="flex justify-center mt-2">
                             {/* Discord Community */}
                             <a 
-                                href="https://discord.gg/ZZaTHrq3a"
+                                href="https://discord.gg/TkP8dR74"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center gap-2.5 py-3.5 bg-[#5865F2] hover:bg-[#4752C4] active:scale-[0.98] text-white font-extrabold text-xs tracking-wider rounded-xl transition-all duration-200 shadow-md shadow-[#5865F2]/10 uppercase"
+                                className="w-full flex items-center justify-center gap-2.5 py-3.5 bg-[#5865F2] hover:bg-[#4752C4] active:scale-[0.98] text-white font-extrabold text-xs tracking-wider rounded-xl transition-all duration-200 shadow-md shadow-[#5865F2]/10 uppercase"
                             >
                                 <DiscordIcon className="w-4.5 h-4.5" />
-                                Discord ecosystem Server
+                                Discord Ecosystem Server
                             </a>
                         </div>
                     </div>

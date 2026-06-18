@@ -103,9 +103,5 @@ STEP 4: VERIFY CONNECTIVITY
 Have questions, suggestions, or experiencing issues setting up your MT5 EA?
 * DISCORD SERVER: Join our JTG Ecosystem Discord Channel for community 
   support, updates, and direct developer communication:
-  https://discord.gg/ZZaTHrq3a
-
-* WHATSAPP CLIENT CARE: Connect directly with our customer success team for 
-  prompt resolution of your enquiries:
-  https://chat.whatsapp.com/Dasf32dLxyQHny6eUADTHg
+  https://discord.gg/TkP8dR74
 ========================================================================
