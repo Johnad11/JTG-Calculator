@@ -108,6 +108,17 @@ export default async function handler(req, res) {
         let accountId = '';
         let accountRef = null;
 
+        // Sort balance transactions chronologically by time
+        const sortedTx = Array.isArray(balanceTransactions)
+            ? [...balanceTransactions].sort((a, b) => (a.time || 0) - (b.time || 0))
+            : [];
+        
+        let firstDepositTicket = null;
+        const firstDepositTx = sortedTx.find(tx => parseFloat(tx.amount || 0) > 0);
+        if (firstDepositTx) {
+            firstDepositTicket = firstDepositTx.ticket;
+        }
+
         if (metadata && metadata.login && metadata.broker) {
             const login = String(metadata.login);
             const broker = String(metadata.broker);
@@ -125,13 +136,22 @@ export default async function handler(req, res) {
                 accountId = accountsSnapshot.docs[0].id;
                 console.log(`✅ Resolved existing dedicated account ID: ${accountId}`);
             } else {
-                // Calculate initialBalance: balance - netPnL
-                let netPnL = 0;
-                for (const trade of trades) {
-                    netPnL += parseFloat(trade.pnl || 0);
+                let initialBalance = 0;
+                if (firstDepositTx) {
+                    initialBalance = parseFloat(firstDepositTx.amount || 0);
+                    console.log(`✨ Set starting/initial balance to first MT5 deposit: ${initialBalance}`);
+                } else {
+                    // Fallback to balance - netPnL if no deposits are present
+                    let netPnL = 0;
+                    for (const trade of trades) {
+                        netPnL += parseFloat(trade.pnl || 0);
+                    }
+                    const currentBalance = parseFloat(metadata.balance || 0);
+                    initialBalance = currentBalance - netPnL;
+                    console.log(`✨ Fallback starting/initial balance computed as: ${initialBalance}`);
                 }
+
                 const currentBalance = parseFloat(metadata.balance || 0);
-                const initialBalance = currentBalance - netPnL;
 
                 console.log(`✨ Creating dedicated personal account for MT5 - ${broker} (${login})`);
                 const newAccountDoc = {
@@ -222,39 +242,61 @@ export default async function handler(req, res) {
             syncedCount++;
         }
 
-        // 5. Batch write withdrawals from balance transactions
-        if (Array.isArray(balanceTransactions)) {
-            for (const tx of balanceTransactions) {
-                const amountVal = parseFloat(tx.amount || 0);
-                if (amountVal < 0) { // Only sync withdrawals (negative balance changes)
-                    const withdrawalId = `mt5_w_${tx.ticket}`;
-                    const withdrawalRef = db.collection('withdrawals').doc(withdrawalId);
-                    const absAmount = Math.abs(amountVal);
-
-                    const newWithdrawal = {
-                        userId: userId,
-                        accountId: accountId,
-                        amount: absAmount,
-                        displayAmount: absAmount,
-                        currency: (metadata && metadata.currency) || "USD",
-                        note: "Synced withdrawal from MT5",
-                        date: new Date((tx.time || Date.now() / 1000) * 1000).toISOString(),
-                        createdAt: new Date().toISOString(),
-                        type: 'WITHDRAWAL'
-                    };
-
-                    batch.set(withdrawalRef, newWithdrawal, { merge: true });
-                    withdrawalCount++;
+        // 5. Batch write deposits and withdrawals from balance transactions
+        let depositCount = 0;
+        for (const tx of sortedTx) {
+            const amountVal = parseFloat(tx.amount || 0);
+            if (amountVal > 0) {
+                // Skip the first deposit since it's designated as the initial/starting balance
+                if (tx.ticket === firstDepositTicket) {
+                    console.log(`ℹ️ Skipping first deposit (ticket ${tx.ticket}) in sync batch as it's registered as starting balance.`);
+                    continue;
                 }
+                const depositId = `mt5_d_${tx.ticket}`;
+                const depositRef = db.collection('deposits').doc(depositId);
+
+                const newDeposit = {
+                    userId: userId,
+                    accountId: accountId,
+                    amount: amountVal,
+                    displayAmount: amountVal,
+                    currency: (metadata && metadata.currency) || "USD",
+                    note: "Synced deposit from MT5",
+                    date: new Date((tx.time || Date.now() / 1000) * 1000).toISOString(),
+                    createdAt: new Date().toISOString(),
+                    type: 'DEPOSIT'
+                };
+
+                batch.set(depositRef, newDeposit, { merge: true });
+                depositCount++;
+            } else if (amountVal < 0) {
+                const withdrawalId = `mt5_w_${tx.ticket}`;
+                const withdrawalRef = db.collection('withdrawals').doc(withdrawalId);
+                const absAmount = Math.abs(amountVal);
+
+                const newWithdrawal = {
+                    userId: userId,
+                    accountId: accountId,
+                    amount: absAmount,
+                    displayAmount: absAmount,
+                    currency: (metadata && metadata.currency) || "USD",
+                    note: "Synced withdrawal from MT5",
+                    date: new Date((tx.time || Date.now() / 1000) * 1000).toISOString(),
+                    createdAt: new Date().toISOString(),
+                    type: 'WITHDRAWAL'
+                };
+
+                batch.set(withdrawalRef, newWithdrawal, { merge: true });
+                withdrawalCount++;
             }
         }
 
         await batch.commit();
-        console.log(`🎉 Successfully synced ${syncedCount} trades and ${withdrawalCount} withdrawals for User ID: ${userId}`);
+        console.log(`🎉 Successfully synced ${syncedCount} trades, ${depositCount} deposits, and ${withdrawalCount} withdrawals for User ID: ${userId}`);
 
         return res.status(200).json({ 
             success: true, 
-            message: `Synced ${syncedCount} trades and ${withdrawalCount} withdrawals successfully.` 
+            message: `Synced ${syncedCount} trades, ${depositCount} deposits, and ${withdrawalCount} withdrawals successfully.` 
         });
 
     } catch (error) {

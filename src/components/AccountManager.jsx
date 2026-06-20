@@ -4,7 +4,7 @@ import { CURRENCIES } from '../constants';
 import { Icons } from './Icons';
 import { convertForDisplay, convertForStorage } from '../utils/currencyConverter';
 
-const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close, isPremium = false, currencySymbol = '$', currency = 'USD', exchangeRates, withdrawFunds, updateAccount, userId, triggerUpgrade }) => {
+const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close, isPremium = false, currencySymbol = '$', currency = 'USD', exchangeRates, withdrawFunds, depositFunds, updateAccount, userId, triggerUpgrade }) => {
     const canDelete = accounts.length > 1;
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
@@ -15,12 +15,13 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
     const [newAccountRules, setNewAccountRules] = useState([]);
     const [ruleInput, setRuleInput] = useState('');
 
-    // WITHDRAWAL STATE
-    const [withdrawalMode, setWithdrawalMode] = useState(null); // accountId or null
-    const [withdrawAmount, setWithdrawAmount] = useState('');
-    const [withdrawNote, setWithdrawNote] = useState('');
-    const [withdrawLoading, setWithdrawLoading] = useState(false);
-    const [withdrawalHistory, setWithdrawalHistory] = useState([]);
+    // TRANSACTION STATE (WITHDRAWAL / DEPOSIT)
+    const [transactionMode, setTransactionMode] = useState(null); // 'WITHDRAWAL' | 'DEPOSIT' | null
+    const [transactionAccountId, setTransactionAccountId] = useState(null);
+    const [transactionAmount, setTransactionAmount] = useState('');
+    const [transactionNote, setTransactionNote] = useState('');
+    const [transactionLoading, setTransactionLoading] = useState(false);
+    const [transactionHistory, setTransactionHistory] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
 
     // EDIT STATE
@@ -31,15 +32,16 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        if (withdrawalMode) {
-            loadWithdrawals(withdrawalMode);
+        if (transactionAccountId && transactionMode) {
+            loadTransactionHistory(transactionAccountId, transactionMode);
         }
-    }, [withdrawalMode]);
+    }, [transactionAccountId, transactionMode]);
 
-    const loadWithdrawals = async (accountId) => {
+    const loadTransactionHistory = async (accountId, mode) => {
         setHistoryLoading(true);
         try {
-            let query = db.collection('withdrawals')
+            const collectionName = mode === 'DEPOSIT' ? 'deposits' : 'withdrawals';
+            let query = db.collection(collectionName)
                 .where('accountId', '==', accountId);
 
             if (userId) {
@@ -52,30 +54,32 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
             // Sort locally to avoid index requirement
             docs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            setWithdrawalHistory(docs.slice(0, 20));
+            setTransactionHistory(docs.slice(0, 20));
         } catch (e) {
-            console.error("Error loading withdrawals:", e);
+            console.error(`Error loading ${mode.toLowerCase()} history:`, e);
         } finally {
             setHistoryLoading(false);
         }
     };
 
-    const handleWithdrawSubmit = async (e) => {
+    const handleTransactionSubmit = async (e) => {
         e.preventDefault();
-        if (!withdrawAmount || !withdrawalMode) return;
-        setWithdrawLoading(true);
+        if (!transactionAmount || !transactionAccountId || !transactionMode) return;
+        setTransactionLoading(true);
         try {
-            const success = await withdrawFunds(withdrawalMode, withdrawAmount, withdrawNote);
+            const success = transactionMode === 'DEPOSIT'
+                ? await depositFunds(transactionAccountId, transactionAmount, transactionNote)
+                : await withdrawFunds(transactionAccountId, transactionAmount, transactionNote);
             if (success) {
-                setWithdrawAmount('');
-                setWithdrawNote('');
-                loadWithdrawals(withdrawalMode); // Refresh history
-                alert("Withdrawal recorded successfully.");
+                setTransactionAmount('');
+                setTransactionNote('');
+                loadTransactionHistory(transactionAccountId, transactionMode); // Refresh history
+                alert(`${transactionMode === 'DEPOSIT' ? 'Deposit' : 'Withdrawal'} recorded successfully.`);
             }
         } catch (e) {
             console.error(e);
         } finally {
-            setWithdrawLoading(false);
+            setTransactionLoading(false);
         }
     };
 
@@ -84,7 +88,8 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         setEditMode(acc.id);
         setEditName(acc.name);
         setEditRules(acc.rules || []);
-        setWithdrawalMode(null); // Close withdrawal
+        setTransactionMode(null); // Close transactions
+        setTransactionAccountId(null);
     };
 
     const handleEditSave = async (e) => {
@@ -219,10 +224,10 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                 {/* Header */}
                 <div className="bg-jtg-green/10 p-4 border-b border-jtg-green/20 flex justify-between items-center">
                     <h2 className="text-white font-bold text-lg flex items-center gap-2">
-                        {withdrawalMode ? (
+                        {transactionMode ? (
                             <>
-                                <button onClick={() => setWithdrawalMode(null)}><Icons.ChevronLeft /></button>
-                                Withdrawal Funds
+                                <button onClick={() => { setTransactionMode(null); setTransactionAccountId(null); }}><Icons.ChevronLeft /></button>
+                                {transactionMode === 'DEPOSIT' ? 'Deposit Funds' : 'Withdraw Funds'}
                             </>
                         ) : editMode ? (
                             <>
@@ -240,19 +245,21 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
 
                 {/* Content */}
                 <div className="p-4 overflow-y-auto custom-scroll flex-1">
-                    {withdrawalMode ? (
+                    {transactionMode ? (
                         <div className="animate-fade-in">
-                            <div className="bg-jtg-blue/10 p-4 rounded-lg border border-jtg-blue/20 mb-6">
-                                <h3 className="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">New Withdrawal</h3>
-                                <form onSubmit={handleWithdrawSubmit} className="flex flex-col gap-3">
+                            <div className={`p-4 rounded-lg border mb-6 ${transactionMode === 'DEPOSIT' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-jtg-blue/10 border-jtg-blue/20'}`}>
+                                <h3 className="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider">
+                                    New {transactionMode === 'DEPOSIT' ? 'Deposit' : 'Withdrawal'}
+                                </h3>
+                                <form onSubmit={handleTransactionSubmit} className="flex flex-col gap-3">
                                     <div>
                                         <label className="text-xs text-slate-500 font-bold mb-1 block">Amount ({currencySymbol})</label>
                                         <input
                                             type="number"
                                             step="0.01"
-                                            value={withdrawAmount}
-                                            onChange={(e) => setWithdrawAmount(e.target.value)}
-                                            className="w-full bg-black/40 border border-slate-700 rounded p-2 text-white text-lg font-mono focus:border-red-500 outline-none"
+                                            value={transactionAmount}
+                                            onChange={(e) => setTransactionAmount(e.target.value)}
+                                            className={`w-full bg-black/40 border border-slate-700 rounded p-2 text-white text-lg font-mono outline-none focus:border-${transactionMode === 'DEPOSIT' ? 'emerald-500' : 'red-500'}`}
                                             placeholder="0.00"
                                             required
                                         />
@@ -261,42 +268,46 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         <label className="text-xs text-slate-500 font-bold mb-1 block">Note (Optional)</label>
                                         <input
                                             type="text"
-                                            value={withdrawNote}
-                                            onChange={(e) => setWithdrawNote(e.target.value)}
-                                            className="w-full bg-black/40 border border-slate-700 rounded p-2 text-white text-sm focus:border-red-500 outline-none"
-                                            placeholder="e.g. Payout, bills..."
+                                            value={transactionNote}
+                                            onChange={(e) => setTransactionNote(e.target.value)}
+                                            className={`w-full bg-black/40 border border-slate-700 rounded p-2 text-white text-sm outline-none focus:border-${transactionMode === 'DEPOSIT' ? 'emerald-500' : 'red-500'}`}
+                                            placeholder={transactionMode === 'DEPOSIT' ? 'e.g. Funding, credit...' : 'e.g. Payout, bills...'}
                                         />
                                     </div>
                                     <button
                                         type="submit"
-                                        disabled={withdrawLoading}
-                                        className="w-full py-3 bg-red-500/80 hover:bg-red-500 text-white font-bold rounded transition mt-2 flex items-center justify-center gap-2"
+                                        disabled={transactionLoading}
+                                        className={`w-full py-3 text-white font-bold rounded transition mt-2 flex items-center justify-center gap-2 ${transactionMode === 'DEPOSIT' ? 'bg-emerald-500/80 hover:bg-emerald-500' : 'bg-red-500/80 hover:bg-red-500'}`}
                                     >
-                                        {withdrawLoading ? 'PROCESSING...' : <><Icons.Minus /> WITHDRAW</>}
+                                        {transactionLoading ? 'PROCESSING...' : (
+                                            transactionMode === 'DEPOSIT' ? <><Icons.Plus /> DEPOSIT</> : <><Icons.Minus /> WITHDRAW</>
+                                        )}
                                     </button>
                                 </form>
                             </div>
 
                             <div className="mb-4">
                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                    <Icons.History /> Recent Withdrawals
+                                    <Icons.History /> Recent {transactionMode === 'DEPOSIT' ? 'Deposits' : 'Withdrawals'}
                                 </h3>
                                 {historyLoading ? (
                                     <div className="text-slate-500 text-sm text-center py-4">Loading history...</div>
-                                ) : withdrawalHistory.length === 0 ? (
-                                    <div className="text-slate-500 text-sm text-center py-4 italic bg-slate-800/20 rounded">No withdrawals recorded.</div>
+                                ) : transactionHistory.length === 0 ? (
+                                    <div className="text-slate-500 text-sm text-center py-4 italic bg-slate-800/20 rounded">
+                                        No {transactionMode === 'DEPOSIT' ? 'deposits' : 'withdrawals'} recorded.
+                                    </div>
                                 ) : (
                                     <div className="flex flex-col gap-2">
-                                        {withdrawalHistory.map(w => (
-                                            <div key={w.id} className="bg-slate-800/30 border border-slate-700/50 p-3 rounded flex justify-between items-center">
+                                        {transactionHistory.map(tx => (
+                                            <div key={tx.id} className="bg-slate-800/30 border border-slate-700/50 p-3 rounded flex justify-between items-center">
                                                 <div>
-                                                    <div className="text-red-400 font-bold font-mono text-sm">
-                                                        -{currencySymbol}{parseFloat(w.amount || w.displayAmount).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}
+                                                    <div className={`font-bold font-mono text-sm ${transactionMode === 'DEPOSIT' ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                        {transactionMode === 'DEPOSIT' ? '+' : '-'}{currencySymbol}{parseFloat(tx.amount || tx.displayAmount).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}
                                                     </div>
-                                                    <div className="text-[10px] text-slate-500">{new Date(w.date).toLocaleDateString()}</div>
+                                                    <div className="text-[10px] text-slate-500">{new Date(tx.date).toLocaleDateString()}</div>
                                                 </div>
                                                 <div className="text-right max-w-[150px]">
-                                                    <div className="text-xs text-slate-300 truncate">{w.note || 'Withdrawal'}</div>
+                                                    <div className="text-xs text-slate-300 truncate">{tx.note || (transactionMode === 'DEPOSIT' ? 'Deposit' : 'Withdrawal')}</div>
                                                 </div>
                                             </div>
                                         ))}
@@ -380,7 +391,22 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    setWithdrawalMode(acc.id);
+                                                    setTransactionMode('DEPOSIT');
+                                                    setTransactionAccountId(acc.id);
+                                                    setEditMode(null);
+                                                }}
+                                                className="p-2 text-slate-500 hover:text-jtg-green transition-colors border border-transparent hover:border-slate-600 rounded"
+                                                title="Deposit Funds"
+                                                aria-label="Deposit Funds"
+                                            >
+                                                <Icons.Plus />
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setTransactionMode('WITHDRAWAL');
+                                                    setTransactionAccountId(acc.id);
+                                                    setEditMode(null);
                                                 }}
                                                 className="p-2 text-slate-500 hover:text-white transition-colors border border-transparent hover:border-slate-600 rounded"
                                                 title="Withdraw Funds"
@@ -445,7 +471,22 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setWithdrawalMode(acc.id);
+                                                        setTransactionMode('DEPOSIT');
+                                                        setTransactionAccountId(acc.id);
+                                                        setEditMode(null);
+                                                    }}
+                                                    className="p-2 text-slate-500 hover:text-jtg-green transition-colors border border-transparent hover:border-slate-600 rounded"
+                                                    title="Deposit Funds"
+                                                    aria-label="Deposit Funds"
+                                                >
+                                                    <Icons.Plus />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setTransactionMode('WITHDRAWAL');
+                                                        setTransactionAccountId(acc.id);
+                                                        setEditMode(null);
                                                     }}
                                                     className="p-2 text-slate-500 hover:text-white transition-colors border border-transparent hover:border-slate-600 rounded"
                                                     title="Withdraw Funds"

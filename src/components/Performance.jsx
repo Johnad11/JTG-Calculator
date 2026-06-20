@@ -14,7 +14,7 @@ import {
     Cell 
 } from 'recharts';
 
-const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBalance, updateGlobalBalance, updateInitialBalance, currencySymbol = '$', currency = 'USD', exchangeRates, activeAccount }) => {
+const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, globalInitialBalance, updateGlobalBalance, updateInitialBalance, currencySymbol = '$', currency = 'USD', exchangeRates, activeAccount }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [tempBalance, setTempBalance] = useState(() => {
         const bal = globalInitialBalance || globalBalance || '';
@@ -23,7 +23,7 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
 
     const stats = useMemo(() => {
         const total = trades ? trades.length : 0;
-        if (total === 0) return { total: 0, winRate: 0, netPnL: 0, growthPct: 0, expectancy: 0, disciplineScore: 0, profitFactor: 0, currentBalance: 0, totalWithdrawals: 0, bestPair: 'N/A', leagueTable: [] };
+        if (total === 0) return { total: 0, winRate: 0, netPnL: 0, growthPct: 0, expectancy: 0, disciplineScore: 0, profitFactor: 0, currentBalance: 0, totalWithdrawals: 0, totalDeposits: 0, bestPair: 'N/A', leagueTable: [] };
 
         const wins = trades.filter(t => t && parseFloat(t.pnl || 0) > 0);
         const losses = trades.filter(t => t && parseFloat(t.pnl || 0) < 0);
@@ -91,6 +91,9 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
         // Withdrawals
         const totalWithdrawals = withdrawals ? withdrawals.reduce((acc, w) => acc + parseFloat(w.amount || 0), 0) : 0;
 
+        // Deposits
+        const totalDeposits = deposits ? deposits.reduce((acc, d) => acc + parseFloat(d.amount || 0), 0) : 0;
+
         // Growth
         const startBal = globalInitialBalance ? parseFloat(globalInitialBalance) : parseFloat(globalBalance || 0);
         const growthPct = (startBal > 0) ? (netPnLNative / startBal) * 100 : 0;
@@ -109,9 +112,10 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
             leagueTable,
             currentBalance: (parseFloat(globalBalance || 0)).toFixed(2),
             growthPct: isNaN(growthPct) ? '0.00' : growthPct.toFixed(2),
-            totalWithdrawals: totalWithdrawals.toFixed(2)
+            totalWithdrawals: totalWithdrawals.toFixed(2),
+            totalDeposits: totalDeposits.toFixed(2)
         };
-    }, [trades, globalBalance, withdrawals, currency, exchangeRates, globalInitialBalance]);
+    }, [trades, globalBalance, withdrawals, deposits, currency, exchangeRates, globalInitialBalance]);
 
     const heatmapData = useMemo(() => {
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -141,33 +145,71 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
     }, [trades, currency, exchangeRates]);
 
     const chartData = useMemo(() => {
-        if (!trades) return [];
-        const startPnLSum = trades.reduce((acc, t) => {
-            if (!t) return acc;
-            const pnlVal = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates && exchangeRates[currency] ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl || 0));
-            return isNaN(pnlVal) ? acc : acc + pnlVal;
-        }, 0);
+        const events = [];
 
-        const startBalNative = activeAccount?.balance ? parseFloat(activeAccount.balance) - startPnLSum : 0;
+        // 1. Gather trade events
+        if (trades) {
+            trades.forEach((t, index) => {
+                if (!t) return;
+                const pnlVal = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates && exchangeRates[currency] ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl || 0));
+                if (isNaN(pnlVal)) return;
+                events.push({
+                    date: new Date(t.closeDate || t.openDate || Date.now()),
+                    amount: pnlVal,
+                    label: t.closeDate ? new Date(t.closeDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : `Trade ${index + 1}`
+                });
+            });
+        }
+
+        // 2. Gather deposit events
+        if (deposits) {
+            deposits.forEach((d, index) => {
+                if (!d) return;
+                const amountVal = parseFloat(d.amount || 0);
+                if (isNaN(amountVal)) return;
+                events.push({
+                    date: new Date(d.date || Date.now()),
+                    amount: amountVal,
+                    label: d.note ? `Deposit: ${d.note}` : `Deposit ${index + 1}`
+                });
+            });
+        }
+
+        // 3. Gather withdrawal events
+        if (withdrawals) {
+            withdrawals.forEach((w, index) => {
+                if (!w) return;
+                const amountVal = parseFloat(w.amount || 0);
+                if (isNaN(amountVal)) return;
+                events.push({
+                    date: new Date(w.date || Date.now()),
+                    amount: -amountVal, // Withdrawals decrease balance
+                    label: w.note ? `Withdrawal: ${w.note}` : `Withdrawal ${index + 1}`
+                });
+            });
+        }
+
+        // 4. Sort all events chronologically (ascending)
+        events.sort((a, b) => a.date - b.date);
+
+        // 5. Initialize chart data with start point
+        const startBal = globalInitialBalance ? parseFloat(globalInitialBalance) : parseFloat(globalBalance || 0);
         const data = [{
             date: 'Start',
-            balance: isNaN(startBalNative) ? 0 : startBalNative
+            balance: isNaN(startBal) ? 0 : startBal
         }];
 
-        let runningBalance = isNaN(startBalNative) ? 0 : startBalNative;
-        trades.forEach((t, index) => {
-            if (!t) return;
-            const pnlVal = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates && exchangeRates[currency] ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl || 0));
-            if (isNaN(pnlVal)) return;
-            runningBalance += pnlVal;
+        let runningBalance = isNaN(startBal) ? 0 : startBal;
+        events.forEach(evt => {
+            runningBalance += evt.amount;
             data.push({
-                date: t.closeDate ? new Date(t.closeDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : `Trade ${index + 1}`,
+                date: evt.label,
                 balance: runningBalance
             });
         });
 
         return data;
-    }, [trades, activeAccount, currency, exchangeRates]);
+    }, [trades, deposits, withdrawals, globalInitialBalance, globalBalance, currency, exchangeRates]);
 
     const saveBalance = () => {
         if (updateInitialBalance) updateInitialBalance(tempBalance);
@@ -198,10 +240,11 @@ const Performance = ({ trades, withdrawals = [], globalBalance, globalInitialBal
                             <button onClick={saveBalance} className="bg-jtg-green text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-600 transition">SAVE</button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                             <div><p className="text-[10px] text-slate-500 uppercase font-bold">Starting</p><p className="text-sm md:text-lg font-mono text-slate-300">{currencySymbol}{parseFloat(globalInitialBalance || globalBalance || 0).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Current</p><p className="text-lg md:text-2xl font-mono text-white font-bold">{currencySymbol}{parseFloat(stats.currentBalance).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
+                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Deposits</p><p className="text-sm md:text-lg font-mono text-emerald-400">+{currencySymbol}{parseFloat(stats.totalDeposits).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
                             <div><p className="text-[10px] text-slate-500 uppercase font-bold">Withdrawals</p><p className="text-sm md:text-lg font-mono text-red-400">-{currencySymbol}{parseFloat(stats.totalWithdrawals).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
+                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Current</p><p className="text-lg md:text-2xl font-mono text-white font-bold">{currencySymbol}{parseFloat(stats.currentBalance).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
                             <div><p className="text-[10px] text-slate-500 uppercase font-bold">Growth</p><p className={`text-sm md:text-lg font-mono font-bold ${parseFloat(stats.growthPct) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>{parseFloat(stats.growthPct) > 0 ? '+' : ''}{stats.growthPct}%</p></div>
                         </div>
                     )}

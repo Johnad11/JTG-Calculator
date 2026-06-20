@@ -129,6 +129,18 @@ const DEMO_WITHDRAWALS = [
     }
 ];
 
+const DEMO_DEPOSITS = [
+    {
+        id: 'demo_d1',
+        amount: 500,
+        displayAmount: 500,
+        currency: 'USD',
+        note: 'Demo Deposit',
+        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        type: 'DEPOSIT'
+    }
+];
+
 const App = () => {
     const [page, setPage] = useState('calc');
     const [user, setUser] = useState(null);
@@ -176,6 +188,9 @@ const App = () => {
     // WITHDRAWALS STATE
     const [withdrawals, setWithdrawals] = useState([]);
 
+    // DEPOSITS STATE
+    const [deposits, setDeposits] = useState([]);
+
     // TRADES STATE
     const [trades, setTrades] = useState(() => {
         try {
@@ -187,6 +202,7 @@ const App = () => {
     const [isDemoMode, setIsDemoMode] = useState(false);
     const displayTrades = isDemoMode ? DEMO_TRADES : trades;
     const displayWithdrawals = isDemoMode ? DEMO_WITHDRAWALS : withdrawals;
+    const displayDeposits = isDemoMode ? DEMO_DEPOSITS : deposits;
 
     // Update Balance Handler
     const updateGlobalBalance = async (newBal) => {
@@ -423,6 +439,15 @@ const App = () => {
                     const cloudWithdrawals = wSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                     setWithdrawals(cloudWithdrawals);
 
+                    // Load Deposits (for Performance)
+                    const dQ = db.collection('deposits')
+                        .where('userId', '==', user.uid)
+                        .where('accountId', '==', activeAccountId);
+
+                    const dSnap = await dQ.get();
+                    const cloudDeposits = dSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                    setDeposits(cloudDeposits);
+
                     // Update active account balance in UI if needed
                     const acc = accounts.find(a => a.id === activeAccountId);
                     if (acc) setGlobalBalance(acc.balance);
@@ -481,6 +506,58 @@ const App = () => {
             }
         }
     }, [remindersEnabled, reminderTime, user]);
+
+    // DYNAMIC SEO TITLE & META DESCRIPTION UPDATE
+    useEffect(() => {
+        let title = "JTG FX Journal - Stop Gambling. Start Journaling.";
+        let desc = "The ultimate position calculator and analytical trade journal for disciplined traders. Elevate your performance, manage risk, and pass challenges.";
+
+        if (!user) {
+            title = "JTG FX Journal - Stop Gambling. Start Journaling.";
+        } else {
+            switch (page) {
+                case 'calc':
+                    title = "Position Size Calculator | JTG FX Journal";
+                    desc = "Calculate precise lot sizes, risk in account currency, and reward-to-risk ratios dynamically for Forex, Indices, and Commodities.";
+                    break;
+                case 'journal':
+                    title = "Log New Trade | JTG FX Journal";
+                    desc = "Log details of your trade, including entry/exit prices, emotional state, setup quality, and rule adherence for analytical tracking.";
+                    break;
+                case 'trades':
+                    title = "Trade History Log | JTG FX Journal";
+                    desc = "Review, filter, search, and export your entire logged trade history with detailed performance notes and PnL metrics.";
+                    break;
+                case 'calendar':
+                    title = "Trading Calendar & Daily PnL | JTG FX Journal";
+                    desc = "Visualize your daily trade distributions, win rates, and daily profit/loss figures on an interactive calendar.";
+                    break;
+                case 'perf':
+                    title = "Performance Analytics & Data | JTG FX Journal";
+                    desc = "Analyze detailed metrics, Sharpe ratio, win ratios, drawdown stats, and equity curves to scale your trading business.";
+                    break;
+                default:
+                    title = "JTG FX Journal - Stop Gambling. Start Journaling.";
+            }
+        }
+
+        document.title = title;
+
+        // Dynamically update meta description for search engines & browser state
+        let metaDescription = document.querySelector('meta[name="description"]');
+        if (!metaDescription) {
+            metaDescription = document.createElement('meta');
+            metaDescription.name = "description";
+            document.head.appendChild(metaDescription);
+        }
+        metaDescription.setAttribute('content', desc);
+        
+        // Dynamically update Open Graph title & desc
+        let ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.setAttribute('content', title);
+        let ogDesc = document.querySelector('meta[property="og:description"]');
+        if (ogDesc) ogDesc.setAttribute('content', desc);
+    }, [page, user]);
 
     const addAccount = async (accountData) => {
         if (!user) {
@@ -588,6 +665,53 @@ const App = () => {
         } catch (e) {
             console.error("Withdrawal Error:", e);
             alert("Error processing withdrawal: " + e.message);
+            return false;
+        }
+    };
+
+    const depositFunds = async (accountId, amount, note, date) => {
+        if (!user) return false;
+        const account = accounts.find(a => a.id === accountId);
+        if (!account) return false;
+
+        const amountNum = parseFloat(amount);
+        if (isNaN(amountNum) || amountNum <= 0) {
+            alert("Invalid amount");
+            return false;
+        }
+
+        // 1. Update Account Balance (Additions are now in native currency)
+        const newBalance = (parseFloat(account.balance) + amountNum).toString();
+
+        try {
+            // Update Account
+            await db.collection('accounts').doc(accountId).update({ balance: newBalance });
+
+            // 2. Log Deposit
+            const deposit = {
+                userId: user.uid,
+                accountId,
+                amount: amountNum, // Store native amount
+                displayAmount: amountNum,
+                currency: currency,
+                note,
+                date: date || new Date().toISOString(),
+                createdAt: new Date().toISOString(),
+                type: 'DEPOSIT'
+            };
+            await db.collection('deposits').add(deposit);
+
+            // 3. Update Local State
+            const updatedAccounts = accounts.map(a => a.id === accountId ? { ...a, balance: newBalance } : a);
+            setAccounts(updatedAccounts);
+            if (activeAccountId === accountId) {
+                setGlobalBalance(newBalance);
+                setDeposits([{ ...deposit, id: 'temp-' + Date.now() }, ...deposits]);
+            }
+            return true;
+        } catch (e) {
+            console.error("Deposit Error:", e);
+            alert("Error processing deposit: " + e.message);
             return false;
         }
     };
@@ -1056,7 +1180,7 @@ const App = () => {
                         )}
 
                         {page === 'calendar' && <CalendarView trades={displayTrades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
-                        {page === 'perf' && <Performance trades={displayTrades} withdrawals={displayWithdrawals} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : globalBalance} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
+                        {page === 'perf' && <Performance trades={displayTrades} withdrawals={displayWithdrawals} deposits={displayDeposits} activeAccount={activeAccount} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : globalBalance} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
                     </div>
                 </div>
             </main>
@@ -1076,6 +1200,9 @@ const App = () => {
                     currency={currency}
                     exchangeRates={exchangeRates}
                     withdrawFunds={withdrawFunds}
+                    depositFunds={depositFunds}
+                    withdrawals={displayWithdrawals}
+                    deposits={displayDeposits}
                     updateAccount={updateAccount}
                     userId={user?.uid}
                 />
