@@ -4,7 +4,7 @@
 Product Version: 1.10
 Copyright: 2026, JTG Ecosystem
 Official Website: https://jtg-ecosystem.app/
-Web Journal: https://jtg-journals.vercel.app/
+Web Journal: https://jtgjournal.johnadtradersgroup.name.ng/
 
 Thank you for upgrading to the JTG Premium Package! The JTG Evolution 
 Expert Advisor (EA) is a premium, state-of-the-art on-chart visual companion 
@@ -76,7 +76,7 @@ STEP 2: ENABLE WEBREQUESTS IN MT5
 * Select the "Expert Advisors" tab.
 * Check the box: "Allow WebRequest for listed URL:".
 * Double-click the "+" symbol and add this exact URL:
-  https://jtg-journals.vercel.app
+  https://jtgjournal.johnadtradersgroup.name.ng
 * Click OK to save the changes.
 
 STEP 3: DEPLOY THE EA ON A CHART

@@ -3,4 +3,4 @@ Allow: /
 Disallow: /api/
 Disallow: /admin/
 
-Sitemap: https://jtg-journals.vercel.app/sitemap.xml
+Sitemap: https://jtgjournal.johnadtradersgroup.name.ng/sitemap.xml

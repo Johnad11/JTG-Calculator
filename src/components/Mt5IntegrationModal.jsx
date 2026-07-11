@@ -507,7 +507,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, triggerUpgrade, close })
                                                 <h5 className="font-extrabold text-white text-xs uppercase">Allow WebRequests in MetaTrader 5</h5>
                                                 <p className="text-[11px] text-slate-400 mt-0.5">
                                                     Inside MT5, go to: <strong className="text-slate-200">Tools -&gt; Options</strong>. Click the <strong className="text-slate-200">Expert Advisors</strong> tab. Check <strong className="text-slate-200">"Allow WebRequest for listed URL:"</strong>. Double-click the <code className="bg-slate-900 px-1 py-0.5 text-[#1BA657] font-mono rounded">+</code> and paste:
-                                                    <code className="block bg-slate-900 border border-[#162C99]/20 p-2 font-mono text-[#1BA657] rounded-lg mt-2 text-center text-xs select-all">https://jtg-journals.vercel.app</code>
+                                                    <code className="block bg-slate-900 border border-[#162C99]/20 p-2 font-mono text-[#1BA657] rounded-lg mt-2 text-center text-xs select-all">https://jtgjournal.johnadtradersgroup.name.ng</code>
                                                     Click OK.
                                                 </p>
                                             </div>

@@ -4,7 +4,7 @@
 //|                                     https://jtg-ecosystem.app/   |
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2026, JTG Ecosystem"
-#property link      "https://jtg-journals.vercel.app/"
+#property link      "https://jtgjournal.johnadtradersgroup.name.ng/"
 #property version   "1.10"
 #property strict
 #property description "Advanced Standalone JTG Journal for MT5"
@@ -21,7 +21,7 @@ enum ENUM_TAB { TAB_OVERVIEW, TAB_STATS, TAB_CALENDAR, TAB_HISTORY, TAB_CALC, TA
 
 //--- INPUT PARAMETERS
 input string         InpTerminalKey = "JTG-XXXX-XXXX"; // Sync Key (Optional)
-input string         InpSyncUrl     = "https://jtg-journals.vercel.app/api/sync"; // Sync Endpoint URL
+input string         InpSyncUrl     = "https://jtgjournal.johnadtradersgroup.name.ng/api/sync"; // Sync Endpoint URL
 input ENUM_BASE_CORNER InpCorner    = CORNER_RIGHT_UPPER; // Dock Corner
 input color          InpMainColor   = C'0, 255, 136';   // Electric Green
 input color          InpBgColor     = C'13, 17, 23';    // Deep Navy
@@ -1095,7 +1095,7 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
          // Open Web Dash Button: x from 40 to 340, y from 315 to 365
          if(relativeX >= 40 && relativeX <= 340 && relativeY >= 315 && relativeY <= 365)
          {
-            Print("JTG Ecosystem: Please open your browser and navigate to your dashboard at: https://jtg-journals.vercel.app/");
+            Print("JTG Ecosystem: Please open your browser and navigate to your dashboard at: https://jtgjournal.johnadtradersgroup.name.ng/");
          }
          // Sync Now Button: x from 40 to 340, y from 380 to 430
          if(relativeX >= 40 && relativeX <= 340 && relativeY >= 380 && relativeY <= 430)

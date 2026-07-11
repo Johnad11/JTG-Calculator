@@ -148,7 +148,7 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
         }
 
         try {
-            qrBase64 = await toDataURL('https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://jtg-journals.vercel.app');
+            qrBase64 = await toDataURL('https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://jtgjournal.johnadtradersgroup.name.ng');
         } catch (e) {
             // console.warn("Could not fetch QR code base64, using fallback text.");
         }
@@ -223,7 +223,7 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
                 ` : `
                     <div style="text-align: right;">
                         <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Tracked Via</p>
-                        <p style="margin: 5px 0 0; font-size: 14px; font-weight: 700; color: #1BA657; opacity: 0.9; letter-spacing: 0.5px;">jtg-journals.vercel.app</p>
+                        <p style="margin: 5px 0 0; font-size: 14px; font-weight: 700; color: #1BA657; opacity: 0.9; letter-spacing: 0.5px;">jtgjournal.johnadtradersgroup.name.ng</p>
                     </div>
                 `}
             </div>

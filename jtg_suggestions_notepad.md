@@ -113,7 +113,7 @@ SECTION 3: LOW SEVERITY & NICE-TO-HAVE SUGGESTIONS (Fix Within 90 Days)
 2. [GROWTH] Overlay Watermarks or QR Links on Share Cards
    - Component: `TradeList.jsx` (lines 11-120)
    - Issue: Downloaded trade cards lack links back to the platform.
-   - Solution: Render a small watermark (e.g. `"tracked via jtg-journals.vercel.app"`) or a referral QR code in the canvas builder helper.
+   - Solution: Render a small watermark (e.g. `"tracked via jtgjournal.johnadtradersgroup.name.ng"`) or a referral QR code in the canvas builder helper.
 
 3. [MATH/UX] Support Configurable Broker Contract Sizes
    - Component: `Calculator.jsx` & Account Settings
