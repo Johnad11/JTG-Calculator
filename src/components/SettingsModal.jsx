@@ -405,7 +405,7 @@ const SettingsModal = ({
 
                                     {/* JTG Ecosystem website link */}
                                     <button
-                                        onClick={() => window.open('https://jtg-ecosystem.vercel.app/', '_blank')}
+                                        onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
                                         className="w-full bg-jtg-input/40 border border-jtg-blue/20 hover:border-jtg-blue/40 rounded-xl p-4 flex justify-between items-center transition group text-left"
                                     >
                                         <div>

@@ -972,7 +972,7 @@ const App = () => {
 
                 <div className="relative z-10 w-full max-w-md bg-jtg-card border border-jtg-blue/30 rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center animate-pop">
                     <button
-                        onClick={() => window.open('https://jtg-ecosystem.vercel.app/', '_blank')}
+                        onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
                         className="absolute top-6 left-6 text-slate-400 hover:text-white transition flex items-center gap-1.5 text-xs font-bold"
                     >
                         <Icons.ArrowLeft className="w-3.5 h-3.5" />
@@ -1024,7 +1024,7 @@ const App = () => {
                     
                     {/* BACK TO ECOSYSTEM LINK */}
                     <button 
-                        onClick={() => window.open('https://jtg-ecosystem.vercel.app/', '_blank')}
+                        onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
                         className="mb-4 text-slate-500 hover:text-white transition flex items-center gap-1 bg-jtg-blue/10 border border-jtg-blue/20 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wider hover:bg-jtg-blue/20 active:scale-95"
                         title="Back to Ecosystem"
                     >
@@ -1107,7 +1107,7 @@ const App = () => {
             <div className="md:hidden fixed top-0 w-full bg-jtg-dark/95 backdrop-blur z-30 border-b border-jtg-blue/30 p-4 flex justify-between items-center h-16">
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => window.open('https://jtg-ecosystem.vercel.app/', '_blank')}
+                        onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
                         className="text-slate-400 hover:text-white p-1 hover:bg-jtg-blue/10 rounded-lg transition active:scale-90"
                         title="Back to Ecosystem"
                         aria-label="Back to Ecosystem"
