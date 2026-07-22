@@ -1,3 +1,22 @@
+import admin from 'firebase-admin';
+
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY 
+        ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') 
+        : undefined;
+
+    if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && privateKey) {
+        admin.initializeApp({
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: privateKey,
+            }),
+        });
+    }
+}
+
 export default async function handler(req, res) {
     // 1. Enable CORS dynamically to support credentials and client origins
     const origin = req.headers.origin;
@@ -17,6 +36,27 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') {
         res.setHeader('Allow', 'POST');
         return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+    if (!idToken) {
+        return res.status(401).json({ error: 'Missing ID Token' });
+    }
+
+    try {
+        if (admin.apps.length) {
+            await admin.auth().verifyIdToken(idToken);
+        } else {
+            console.warn("⚠️ Firebase Admin not initialized, skipping token verification in development.");
+        }
+    } catch (authError) {
+        console.error("Error verifying ID Token in Chat API:", authError);
+        return res.status(401).json({ error: 'Unauthorized: Invalid ID Token' });
     }
 
     const { messages } = req.body;

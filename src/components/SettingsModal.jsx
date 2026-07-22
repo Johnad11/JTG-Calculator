@@ -185,10 +185,16 @@ const SettingsModal = ({
         }
 
         try {
+            const idToken = user ? await user.getIdToken() : null;
+            if (!idToken) {
+                throw new Error("Missing authentication token.");
+            }
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
                 },
                 body: JSON.stringify({ messages: updatedMessages })
             });
