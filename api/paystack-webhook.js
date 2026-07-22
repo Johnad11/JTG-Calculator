@@ -71,15 +71,39 @@ export default async function handler(req, res) {
         const db = admin.firestore();
 
         try {
-            // Update user settings premium fields
-            await db.collection('user_settings').doc(userId).set({
-                isPremium: true,
-                premiumPlan: planName || 'Premium Plan',
-                premiumUntil: premiumUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                subscribedAt: new Date().toISOString(),
-                paystackPaymentReference: ref,
-                paystackPaymentStatus: 'SUCCESS'
-            }, { merge: true });
+            const couponCode = metadata.couponCode;
+            const settingsRef = db.collection('user_settings').doc(userId);
+
+            await db.runTransaction(async (transaction) => {
+                const settingsSnap = await transaction.get(settingsRef);
+                let coupons = [];
+
+                if (settingsSnap.exists) {
+                    const dataSnap = settingsSnap.data();
+                    coupons = dataSnap.coupons || [];
+                }
+
+                if (couponCode) {
+                    const couponIndex = coupons.findIndex(c => c.code === couponCode);
+                    if (couponIndex !== -1) {
+                        coupons[couponIndex] = {
+                            ...coupons[couponIndex],
+                            used: true,
+                            usedAt: new Date().toISOString()
+                        };
+                    }
+                }
+
+                transaction.set(settingsRef, {
+                    isPremium: true,
+                    premiumPlan: planName || 'Premium Plan',
+                    premiumUntil: premiumUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    subscribedAt: new Date().toISOString(),
+                    paystackPaymentReference: ref,
+                    paystackPaymentStatus: 'SUCCESS',
+                    coupons: coupons
+                }, { merge: true });
+            });
 
             console.log(`🎉 Webhook successfully updated premium status for user ${userId}`);
             return res.status(200).json({ success: true, message: 'Premium status updated successfully' });

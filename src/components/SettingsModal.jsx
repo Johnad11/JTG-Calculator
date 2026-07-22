@@ -2,8 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Icons } from './Icons';
 import { db } from '../firebase';
 
+// Custom Gift Icon for referrals
+const GiftIcon = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20 12 20 22 4 22 4 12" />
+        <rect x="2" y="7" width="20" height="5" />
+        <line x1="12" y1="22" x2="12" y2="7" />
+        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+    </svg>
+);
+
 const SettingsModal = ({
     user,
+    userSettings,
     username,
     setUsername,
     isPremium,
@@ -24,6 +36,18 @@ const SettingsModal = ({
         'Notification' in window ? Notification.permission : 'unsupported'
     );
 
+    // Referral system state
+    const [referralInput, setReferralInput] = useState('');
+    const [redeemLoading, setRedeemLoading] = useState(false);
+    const [redeemErr, setRedeemErr] = useState('');
+    const [redeemSuccessMsg, setRedeemSuccessMsg] = useState('');
+    
+    const [convertLoading, setConvertLoading] = useState(false);
+    const [convertErr, setConvertErr] = useState('');
+    const [convertSuccessMsg, setConvertSuccessMsg] = useState('');
+    const [copiedCoupon, setCopiedCoupon] = useState(null);
+    const [copiedReferral, setCopiedReferral] = useState(false);
+
     const [chatMessages, setChatMessages] = useState([
         {
             role: 'assistant',
@@ -39,6 +63,90 @@ const SettingsModal = ({
             chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
     }, [chatMessages, isSending, activeTab]);
+
+    const handleRedeemReferral = async (e) => {
+        e.preventDefault();
+        const code = referralInput.trim().toUpperCase();
+        if (!code) return;
+
+        setRedeemLoading(true);
+        setRedeemErr('');
+        setRedeemSuccessMsg('');
+
+        try {
+            const idToken = await user.getIdToken();
+            const res = await fetch('/api/redeem-referral', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ referralCode: code })
+            });
+
+            if (!res.ok) {
+                let errMsg = 'Failed to redeem referral code.';
+                try {
+                    const data = await res.json();
+                    errMsg = data.error || errMsg;
+                } catch (e) {
+                    errMsg = `Server error: ${res.status} ${res.statusText}. Make sure you are running the backend server (e.g. vercel dev).`;
+                }
+                throw new Error(errMsg);
+            }
+
+            const data = await res.json();
+            setRedeemSuccessMsg(data.message || 'Success! Referral code redeemed.');
+            setReferralInput('');
+        } catch (err) {
+            console.error("Redeem referral error:", err);
+            setRedeemErr(err.message);
+        } finally {
+            setRedeemLoading(false);
+        }
+    };
+
+    const handleConvertPoints = async (rewardType) => {
+        if (convertLoading) return;
+        
+        setConvertLoading(true);
+        setConvertErr('');
+        setConvertSuccessMsg('');
+
+        try {
+            const idToken = await user.getIdToken();
+            const res = await fetch('/api/convert-points', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ rewardType })
+            });
+
+            if (!res.ok) {
+                let errMsg = 'Failed to convert points.';
+                try {
+                    const data = await res.json();
+                    errMsg = data.error || errMsg;
+                } catch (e) {
+                    errMsg = `Server error: ${res.status} ${res.statusText}. Make sure you are running the backend server (e.g. vercel dev).`;
+                }
+                throw new Error(errMsg);
+            }
+
+            const data = await res.json();
+            setConvertSuccessMsg(data.message || 'Success! Coupon generated.');
+            // Clear success message after 5 seconds
+            setTimeout(() => setConvertSuccessMsg(''), 5000);
+        } catch (err) {
+            console.error("Convert points error:", err);
+            setConvertErr(err.message);
+            setTimeout(() => setConvertErr(''), 5000);
+        } finally {
+            setConvertLoading(false);
+        }
+    };
 
     const handleSendMessage = async (e, textToSend = null) => {
         if (e) e.preventDefault();
@@ -220,6 +328,13 @@ const SettingsModal = ({
                         <span>Reminders</span>
                     </button>
                     <button
+                        onClick={() => setActiveTab('referrals')}
+                        className={`flex-1 md:flex-initial py-3 px-4 rounded-xl text-left text-xs font-bold uppercase tracking-wider flex items-center justify-center md:justify-start gap-3 transition-all ${activeTab === 'referrals' ? 'bg-jtg-green text-black shadow-lg shadow-jtg-green/10' : 'text-slate-400 hover:text-white hover:bg-jtg-blue/10'}`}
+                    >
+                        <GiftIcon className="w-4 h-4" />
+                        <span>Referrals</span>
+                    </button>
+                    <button
                         onClick={() => setActiveTab('system')}
                         className={`flex-1 md:flex-initial py-3 px-4 rounded-xl text-left text-xs font-bold uppercase tracking-wider flex items-center justify-center md:justify-start gap-3 transition-all ${activeTab === 'system' ? 'bg-jtg-green text-black shadow-lg shadow-jtg-green/10' : 'text-slate-400 hover:text-white hover:bg-jtg-blue/10'}`}
                     >
@@ -374,6 +489,187 @@ const SettingsModal = ({
                                                 <p className="text-[10px] text-slate-500 font-bold uppercase mt-3">Trigger time is set to your device's local time.</p>
                                             </div>
                                         </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Referrals Tab */}
+                        {activeTab === 'referrals' && (
+                            <div className="space-y-6 animate-fade-in">
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-1">Referral Rewards</h3>
+                                    <p className="text-xs text-slate-400">Share your code, earn points, and unlock Premium discounts.</p>
+                                </div>
+
+                                {/* Stats Grid */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 text-center">
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Your Points</span>
+                                        <span className="text-2xl font-black text-jtg-green">{userSettings?.referralPoints || 0} pts</span>
+                                    </div>
+                                    <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 text-center">
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Successful Referrals</span>
+                                        <span className="text-2xl font-black text-white">{userSettings?.referralsCount || 0}</span>
+                                    </div>
+                                </div>
+
+                                {/* Referral Code Box */}
+                                <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-5 space-y-3">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Your Unique Referral Code</label>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1 bg-jtg-dark border border-jtg-blue/30 rounded-lg p-3 text-center text-white font-extrabold text-lg tracking-widest">
+                                            {userSettings?.referralCode || 'JTG-JOURNAL'}
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(userSettings?.referralCode || '');
+                                                setCopiedReferral(true);
+                                                setTimeout(() => setCopiedReferral(false), 2000);
+                                            }}
+                                            className="px-4 bg-jtg-green hover:bg-emerald-600 text-black font-bold text-xs uppercase rounded-lg transition active:scale-95 shrink-0"
+                                        >
+                                            {copiedReferral ? 'Copied!' : 'Copy'}
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 text-center font-medium">
+                                        Share this code. Friends get 50 welcome points, and you get 100 points when they redeem it!
+                                    </p>
+                                </div>
+
+                                {/* Redeem Referrer's Code */}
+                                <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-5 space-y-4">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Were you referred by a friend?</label>
+                                    {userSettings?.referredBy ? (
+                                        <div className="bg-jtg-green/10 border border-jtg-green/20 rounded-lg p-3 text-jtg-green text-xs font-bold flex items-center justify-center gap-2">
+                                            <Icons.Check className="w-4 h-4" />
+                                            <span>Referral code successfully redeemed! Welcome bonus applied.</span>
+                                        </div>
+                                    ) : (
+                                        <form onSubmit={handleRedeemReferral} className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={referralInput}
+                                                onChange={e => setReferralInput(e.target.value)}
+                                                placeholder="Enter referral code (e.g. JTG-XXXXXX)"
+                                                className="flex-1 bg-jtg-dark border border-jtg-blue/30 rounded-lg px-3 py-2 text-white text-xs font-bold outline-none focus:border-jtg-green transition-all"
+                                                disabled={redeemLoading}
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={!referralInput.trim() || redeemLoading}
+                                                className="px-4 bg-jtg-green hover:bg-emerald-600 disabled:opacity-50 disabled:bg-slate-800 text-black font-bold text-xs uppercase rounded-lg transition active:scale-95 shrink-0 flex items-center justify-center"
+                                            >
+                                                {redeemLoading ? 'Redeeming...' : 'Redeem'}
+                                            </button>
+                                        </form>
+                                    )}
+                                    {redeemErr && <p className="text-red-500 text-xs font-bold">{redeemErr}</p>}
+                                    {redeemSuccessMsg && <p className="text-jtg-green text-xs font-bold">{redeemSuccessMsg}</p>}
+                                </div>
+
+                                {/* Convert Points to Coupon Section */}
+                                <div className="space-y-3">
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Convert Points to Coupons</h4>
+                                    
+                                    {convertErr && <p className="text-red-500 text-xs font-bold bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg">{convertErr}</p>}
+                                    {convertSuccessMsg && <p className="text-jtg-green text-xs font-bold bg-jtg-green/10 border border-jtg-green/20 p-2.5 rounded-lg">{convertSuccessMsg}</p>}
+
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {/* Bronze Coupon Card */}
+                                        <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 flex justify-between items-center">
+                                            <div>
+                                                <span className="text-sm font-bold text-white block">Bronze Discount Coupon</span>
+                                                <span className="text-xs text-slate-400">Save ₦100 on any Premium Plan</span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleConvertPoints('bronze')}
+                                                disabled={convertLoading || (userSettings?.referralPoints || 0) < 100}
+                                                className={`px-3 py-2 rounded-lg font-bold text-[10px] uppercase transition active:scale-95 ${
+                                                    (userSettings?.referralPoints || 0) >= 100
+                                                        ? 'bg-jtg-green hover:bg-emerald-600 text-black'
+                                                        : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                                                }`}
+                                            >
+                                                100 pts
+                                            </button>
+                                        </div>
+
+                                        {/* Silver Coupon Card */}
+                                        <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 flex justify-between items-center">
+                                            <div>
+                                                <span className="text-sm font-bold text-white block">Silver Discount Coupon</span>
+                                                <span className="text-xs text-slate-400">Save ₦200 on any Premium Plan</span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleConvertPoints('silver')}
+                                                disabled={convertLoading || (userSettings?.referralPoints || 0) < 200}
+                                                className={`px-3 py-2 rounded-lg font-bold text-[10px] uppercase transition active:scale-95 ${
+                                                    (userSettings?.referralPoints || 0) >= 200
+                                                        ? 'bg-jtg-green hover:bg-emerald-600 text-black'
+                                                        : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                                                }`}
+                                            >
+                                                200 pts
+                                            </button>
+                                        </div>
+
+                                        {/* Gold Coupon Card */}
+                                        <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 flex justify-between items-center">
+                                            <div>
+                                                <span className="text-sm font-bold text-white block">Gold Coupon (1 Month Free)</span>
+                                                <span className="text-xs text-slate-400">Get 1 Full Month of Premium free (₦800 value)</span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleConvertPoints('gold')}
+                                                disabled={convertLoading || (userSettings?.referralPoints || 0) < 800}
+                                                className={`px-3 py-2 rounded-lg font-bold text-[10px] uppercase transition active:scale-95 ${
+                                                    (userSettings?.referralPoints || 0) >= 800
+                                                        ? 'bg-jtg-green hover:bg-emerald-600 text-black'
+                                                        : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                                                }`}
+                                            >
+                                                800 pts
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* List of active coupons */}
+                                <div className="space-y-3">
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Your Converted Coupons</h4>
+                                    {userSettings?.coupons && userSettings.coupons.length > 0 ? (
+                                        <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scroll pr-1">
+                                            {userSettings.coupons.map((coupon, i) => (
+                                                <div key={i} className="bg-jtg-input/20 border border-jtg-blue/10 rounded-xl p-3 flex justify-between items-center text-xs">
+                                                    <div>
+                                                        <span className="font-extrabold text-white block select-all tracking-wider">{coupon.code}</span>
+                                                        <span className="text-[10px] text-slate-400 mt-0.5 block">{coupon.label}</span>
+                                                    </div>
+                                                    <div className="flex gap-2 items-center">
+                                                        {coupon.used ? (
+                                                            <span className="bg-slate-800 text-slate-500 font-extrabold text-[8px] uppercase tracking-wider px-2 py-0.5 rounded">USED</span>
+                                                        ) : (
+                                                            <>
+                                                                <span className="bg-[#1BA657]/20 text-[#1BA657] font-extrabold text-[8px] uppercase tracking-wider px-2 py-0.5 rounded border border-[#1BA657]/20">UNUSED</span>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        navigator.clipboard.writeText(coupon.code);
+                                                                        setCopiedCoupon(coupon.code);
+                                                                        setTimeout(() => setCopiedCoupon(null), 2000);
+                                                                    }}
+                                                                    className="text-slate-400 hover:text-white transition font-bold text-[10px] px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded"
+                                                                >
+                                                                    {copiedCoupon === coupon.code ? 'Copied!' : 'Copy'}
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-[10px] text-slate-500 italic text-center py-2">No coupons generated yet. Refer friends to earn points!</p>
                                     )}
                                 </div>
                             </div>

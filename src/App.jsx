@@ -155,6 +155,7 @@ const App = () => {
     const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [showSyncModal, setShowSyncModal] = useState(false);
     const [exportCount, setExportCount] = useState(0);
+    const [userSettings, setUserSettings] = useState(null);
     const [isPremium, setIsPremium] = useState(false);
     const [showPremiumUpgradeModal, setShowPremiumUpgradeModal] = useState(false);
     const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -331,11 +332,29 @@ const App = () => {
                         const initialDoc = await settingsRef.get();
                         let initialUsername = '';
                         let tourCompleted = false;
+                        let referralCode = '';
 
                         if (initialDoc.exists) {
                             const data = initialDoc.data();
                             initialUsername = data.username || '';
                             tourCompleted = data.hasCompletedTour === true;
+                            referralCode = data.referralCode || '';
+                            
+                            const updates = {};
+                            if (!referralCode) {
+                                referralCode = 'JTG-' + currentUser.uid.substring(0, 6).toUpperCase();
+                                updates.referralCode = referralCode;
+                            }
+                            if (data.referralPoints === undefined) {
+                                updates.referralPoints = 0;
+                            }
+                            if (data.coupons === undefined) {
+                                updates.coupons = [];
+                            }
+                            if (Object.keys(updates).length > 0) {
+                                await settingsRef.set(updates, { merge: true });
+                            }
+
                             if (initialUsername) {
                                 setUsername(initialUsername);
                                 setShowUsernameModal(false);
@@ -346,13 +365,20 @@ const App = () => {
                                 setShowUsernameModal(true);
                             }
                         } else {
-                            await settingsRef.set({ exportCount: 0 }, { merge: true });
+                            referralCode = 'JTG-' + currentUser.uid.substring(0, 6).toUpperCase();
+                            await settingsRef.set({ 
+                                exportCount: 0, 
+                                referralCode: referralCode,
+                                referralPoints: 0,
+                                coupons: []
+                            }, { merge: true });
                             setShowUsernameModal(true);
                         }
 
                         unsubscribeSettings = settingsRef.onSnapshot((docSnap) => {
                             if (docSnap.exists) {
                                 const data = docSnap.data();
+                                setUserSettings(data);
                                 setExportCount(data.exportCount || 0);
 
                                 if (data.remindersEnabled !== undefined) {
@@ -1232,6 +1258,7 @@ const App = () => {
             {showPremiumUpgradeModal && user && (
                 <PremiumUpgradeModal
                     user={user}
+                    userSettings={userSettings}
                     close={() => setShowPremiumUpgradeModal(false)}
                     onSuccess={(newSettings) => {
                         setIsPremium(newSettings.isPremium);
@@ -1245,6 +1272,7 @@ const App = () => {
             {showSettingsModal && (
                 <SettingsModal
                     user={user}
+                    userSettings={userSettings}
                     username={username}
                     setUsername={setUsername}
                     isPremium={isPremium}

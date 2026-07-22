@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { PAYSTACK_PUBLIC_KEY } from '../constants';
 
@@ -25,9 +25,52 @@ const CloseIcon = ({ className }) => (
     </svg>
 );
 
-const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
+const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState('monthly'); // 'trial', 'monthly', 'annual'
+
+    // Coupon system states
+    const [couponInput, setCouponInput] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [couponError, setCouponError] = useState('');
+    const [couponSuccess, setCouponSuccess] = useState('');
+
+    // Clear coupon when plan changes
+    useEffect(() => {
+        setAppliedCoupon(null);
+        setCouponInput('');
+        setCouponError('');
+        setCouponSuccess('');
+    }, [selectedPlan]);
+
+    const handleApplyCoupon = (e) => {
+        e.preventDefault();
+        const code = couponInput.trim().toUpperCase();
+        if (!code) return;
+
+        setCouponError('');
+        setCouponSuccess('');
+        setAppliedCoupon(null);
+
+        const coupon = userSettings?.coupons?.find(c => c.code === code);
+        if (!coupon) {
+            setCouponError('Invalid coupon code. Make sure you converted it in Settings -> Referrals first.');
+            return;
+        }
+
+        if (coupon.used) {
+            setCouponError('This coupon has already been used.');
+            return;
+        }
+
+        if (coupon.type === 'gold' && selectedPlan !== 'monthly') {
+            setCouponError('Gold Coupons (1 Month Free) can only be applied to the Monthly Plan.');
+            return;
+        }
+
+        setAppliedCoupon(coupon);
+        setCouponSuccess(`Coupon applied successfully! Saved ₦${coupon.value}`);
+    };
 
     const handleSubscribe = async () => {
         if (!user) {
@@ -55,11 +98,18 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                     }
                 });
 
-                const responseData = await res.json();
                 if (!res.ok) {
-                    throw new Error(responseData.error || 'Failed to activate trial.');
+                    let errMsg = 'Failed to activate trial.';
+                    try {
+                        const data = await res.json();
+                        errMsg = data.error || errMsg;
+                    } catch (e) {
+                        errMsg = `Server error: ${res.status} ${res.statusText}. Make sure you are running the backend server (e.g. vercel dev).`;
+                    }
+                    throw new Error(errMsg);
                 }
 
+                const responseData = await res.json();
                 alert(`🎉 Success! Your 14-Day Free Trial has been activated. Your JTG Premium access is now fully unlocked until ${new Date(responseData.premiumUntil).toLocaleDateString()}.`);
                 
                 if (onSuccess) {
@@ -86,6 +136,50 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                 amountInKobo = 800000; // 8,000 Naira
             }
 
+            let finalAmountInKobo = amountInKobo;
+            if (appliedCoupon) {
+                finalAmountInKobo = Math.max(0, amountInKobo - (appliedCoupon.value * 100));
+            }
+
+            if (finalAmountInKobo === 0) {
+                // Activate coupon directly (Gold 100% off coupon)
+                const idToken = await user.getIdToken();
+                const res = await fetch('/api/activate-coupon', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + idToken
+                    },
+                    body: JSON.stringify({ couponCode: appliedCoupon.code })
+                });
+
+                if (!res.ok) {
+                    let errMsg = 'Failed to activate coupon.';
+                    try {
+                        const data = await res.json();
+                        errMsg = data.error || errMsg;
+                    } catch (e) {
+                        errMsg = `Server error: ${res.status} ${res.statusText}. Make sure you are running the backend server (e.g. vercel dev).`;
+                    }
+                    throw new Error(errMsg);
+                }
+
+                const responseData = await res.json();
+
+                alert(`🎉 Success! Your JTG Premium access is active. Unlocked via Gold Coupon until ${new Date(responseData.premiumUntil).toLocaleDateString()}.`);
+                
+                if (onSuccess) {
+                    onSuccess({
+                        isPremium: true,
+                        premiumPlan: responseData.premiumPlan,
+                        premiumUntil: responseData.premiumUntil
+                    });
+                }
+                close();
+                setSubmitting(false);
+                return;
+            }
+
             // Launch Paystack Inline Checkout
             if (!window.PaystackPop) {
                 throw new Error("Paystack checkout library is still loading. Please try again in a few seconds.");
@@ -97,12 +191,12 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                     setSubmitting(true);
                     // Decoupled: direct firestore write removed to satisfy security rules.
                     // Webhook api/paystack-webhook.js handles firestore write.
-                    alert(`🎉 Thank you! Your payment of ₦${amountInKobo / 100} was successful (Ref: ${response.reference}). Your JTG Premium access is now active!`);
+                    alert(`🎉 Thank you! Your payment of ₦${finalAmountInKobo / 100} was successful (Ref: ${response.reference}). Your JTG Premium access is now active!`);
                     
                     if (onSuccess) {
                         onSuccess({
                             isPremium: true,
-                            premiumPlan: planName,
+                            premiumPlan: planName + (appliedCoupon ? ` (Discounted via ${appliedCoupon.code})` : ''),
                             premiumUntil: premiumUntil.toISOString()
                         });
                     }
@@ -117,13 +211,14 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
             const handler = window.PaystackPop.setup({
                 key: PAYSTACK_PUBLIC_KEY,
                 email: user.email || 'customer@jtg-journal.app',
-                amount: amountInKobo,
+                amount: finalAmountInKobo,
                 currency: 'NGN',
                 ref: 'JTG_' + Math.floor((Math.random() * 1000000000) + 1),
                 metadata: {
                     userId: user.uid,
-                    planName: planName,
-                    premiumUntil: premiumUntil.toISOString()
+                    planName: planName + (appliedCoupon ? ` (Discounted via ${appliedCoupon.code})` : ''),
+                    premiumUntil: premiumUntil.toISOString(),
+                    couponCode: appliedCoupon ? appliedCoupon.code : null
                 },
                 callback: function(response) {
                     handleSuccessfulPayment(response);
@@ -308,6 +403,66 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
 
                     </div>
 
+                    {/* Coupon Code Section */}
+                    {selectedPlan !== 'trial' && (
+                        <div className="bg-[#111633]/45 border border-[#162C99]/20 rounded-xl p-5 space-y-3">
+                            <label className="text-white text-xs font-bold uppercase tracking-wider block text-slate-400">Have a Discount Coupon?</label>
+                            
+                            {/* Display unused user coupons as quick-select chips if they have any */}
+                            {userSettings?.coupons?.filter(c => !c.used).length > 0 && (
+                                <div className="space-y-1.5">
+                                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Your Unused Coupons (Click to paste):</span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {userSettings.coupons.filter(c => !c.used).map((c, i) => (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                onClick={() => setCouponInput(c.code)}
+                                                className="bg-[#162C99]/10 hover:bg-[#162C99]/20 border border-[#162C99]/30 text-white text-[10px] px-2 py-1 rounded transition-all font-bold cursor-pointer"
+                                            >
+                                                {c.code} ({c.type === 'gold' ? '1 Mon Free' : `-₦${c.value}`})
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={couponInput}
+                                    onChange={e => setCouponInput(e.target.value)}
+                                    placeholder="Enter coupon code (e.g. JTG-BRONZE-XXXXXX)"
+                                    className="flex-1 bg-[#0f142b] border border-[#162C99]/30 rounded-lg px-3 py-2.5 text-white text-xs font-bold outline-none focus:border-[#1BA657] transition-all"
+                                    disabled={appliedCoupon !== null}
+                                />
+                                {appliedCoupon ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setAppliedCoupon(null);
+                                            setCouponInput('');
+                                            setCouponSuccess('');
+                                        }}
+                                        className="px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 rounded-lg text-xs font-bold uppercase transition cursor-pointer"
+                                    >
+                                        Remove
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="submit"
+                                        disabled={!couponInput.trim()}
+                                        className="px-4 bg-[#1BA657] hover:bg-[#158C47] disabled:bg-slate-800 disabled:opacity-50 disabled:text-slate-500 text-black font-bold text-xs uppercase rounded-lg transition cursor-pointer"
+                                    >
+                                        Apply
+                                    </button>
+                                )}
+                            </form>
+                            {couponError && <p className="text-red-500 text-xs font-bold">{couponError}</p>}
+                            {couponSuccess && <p className="text-[#1BA657] text-xs font-bold">{couponSuccess}</p>}
+                        </div>
+                    )}
+
                     {/* Bottom CTA Action Button */}
                     <div className="flex flex-col gap-2 mt-4">
                         <button
@@ -325,6 +480,12 @@ const PremiumUpgradeModal = ({ user, close, onSuccess }) => {
                                 </span>
                             ) : selectedPlan === 'trial' ? (
                                 'START 14-DAY FREE TRIAL'
+                            ) : appliedCoupon ? (
+                                Math.max(0, (selectedPlan === 'monthly' ? 800 : selectedPlan === 'quarterly' ? 2100 : 8000) - appliedCoupon.value) === 0 ? (
+                                    'APPLY COUPON & ACTIVATE PRO'
+                                ) : (
+                                    `ACTIVATE PREMIUM (₦${Math.max(0, (selectedPlan === 'monthly' ? 800 : selectedPlan === 'quarterly' ? 2100 : 8000) - appliedCoupon.value)})`
+                                )
                             ) : (
                                 `ACTIVATE PREMIUM MEMBERSHIP`
                             )}
