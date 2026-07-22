@@ -19,7 +19,7 @@ export const EXCHANGE_RATE_API = {
     cacheDateKey: 'jtg_exchange_rates_date'
 };
 
-export const PREMIUM_EMAILS = [];
+export const PREMIUM_EMAILS = ["nwabuezejohnad11@gmail.com"];
 
 export const LOGO_URL = "/logo.png";
 

@@ -351,6 +351,9 @@ const App = () => {
                             if (data.coupons === undefined) {
                                 updates.coupons = [];
                             }
+                            if (data.email === undefined || data.email !== currentUser.email) {
+                                updates.email = currentUser.email;
+                            }
                             if (Object.keys(updates).length > 0) {
                                 await settingsRef.set(updates, { merge: true });
                             }
@@ -370,7 +373,8 @@ const App = () => {
                                 exportCount: 0, 
                                 referralCode: referralCode,
                                 referralPoints: 0,
-                                coupons: []
+                                coupons: [],
+                                email: currentUser.email
                             }, { merge: true });
                             setShowUsernameModal(true);
                         }
