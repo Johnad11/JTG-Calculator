@@ -17,15 +17,25 @@ int TimeHour(datetime t)  { MqlDateTime dt; TimeToStruct(t, dt); return dt.hour;
 int TimeDay(datetime t)   { MqlDateTime dt; TimeToStruct(t, dt); return dt.day; }
 
 //--- ENUMS
+enum ENUM_AUTO_SYNC_INTERVAL {
+   AUTO_SYNC_DISABLED = 0,   // Disabled (Manual Only)
+   AUTO_SYNC_1_HOUR   = 1,   // Every 1 Hour
+   AUTO_SYNC_6_HOURS  = 6,   // Every 6 Hours
+   AUTO_SYNC_12_HOURS = 12,  // Every 12 Hours
+   AUTO_SYNC_24_HOURS = 24   // Every 24 Hours (Daily)
+};
+
 enum ENUM_TAB { TAB_OVERVIEW, TAB_STATS, TAB_CALENDAR, TAB_HISTORY, TAB_CALC, TAB_ECOSYSTEM };
 
 //--- INPUT PARAMETERS
-input string         InpTerminalKey = "JTG-XXXX-XXXX"; // Sync Key (Optional)
-input string         InpSyncUrl     = "https://jtgjournal.johnadtradersgroup.name.ng/api/sync"; // Sync Endpoint URL
-input ENUM_BASE_CORNER InpCorner    = CORNER_RIGHT_UPPER; // Dock Corner
-input color          InpMainColor   = C'0, 255, 136';   // Electric Green
-input color          InpBgColor     = C'13, 17, 23';    // Deep Navy
-input int            InpRefreshSec  = 5;                // Update Rate (Sec)
+input string                 InpTerminalKey      = "JTG-XXXX-XXXX"; // Sync Key (Optional)
+input string                 InpSyncUrl          = "https://jtgjournal.johnadtradersgroup.name.ng/api/sync"; // Sync Endpoint URL
+input ENUM_AUTO_SYNC_INTERVAL InpAutoSyncInterval = AUTO_SYNC_1_HOUR; // Auto-Sync Frequency
+input bool                   InpSyncOnTradeClose = true;            // Auto-Sync Instantly When Trade Closes
+input ENUM_BASE_CORNER       InpCorner           = CORNER_RIGHT_UPPER; // Dock Corner
+input color                  InpMainColor        = C'0, 255, 136';   // Electric Green
+input color                  InpBgColor          = C'13, 17, 23';    // Deep Navy
+input int                    InpRefreshSec       = 5;                // Update Rate (Sec)
 
 //--- PREMIUM UI CONSTANTS
 #define CLR_ACCENT_BLUE ARGB_Helper(C'88, 166, 255')
@@ -61,6 +71,7 @@ double         SessionPnL[3]; // 0=Tokyo, 1=London, 2=NY
 int            CurrentMonth = 0;
 string         LastSyncTime = "Never";
 string         SyncStatus = "Idle";
+datetime       g_LastAutoSyncTime = 0;
 int            GlobalMouseX = 0;
 int            GlobalMouseY = 0;
 
@@ -248,7 +259,43 @@ void OnDeinit(const int reason)
 void OnTimer()
 {
    FullHistoryScan();
+   
+   // Auto-Sync Interval Check
+   if(InpAutoSyncInterval != AUTO_SYNC_DISABLED)
+   {
+      int intervalSeconds = (int)InpAutoSyncInterval * 3600;
+      if(g_LastAutoSyncTime == 0)
+      {
+         g_LastAutoSyncTime = TimeCurrent(); // Initialize baseline on startup
+      }
+      else if((TimeCurrent() - g_LastAutoSyncTime) >= intervalSeconds)
+      {
+         g_LastAutoSyncTime = TimeCurrent();
+         PushTradesToCloud();
+      }
+   }
+   
    DrawUI();
+}
+
+//+------------------------------------------------------------------+
+//| Trade Transaction Handler (Instant Sync on Trade Close)         |
+//+------------------------------------------------------------------+
+void OnTradeTransaction(const MqlTradeTransaction& trans, const MqlTradeRequest& request, const MqlTradeResult& result)
+{
+   if(InpSyncOnTradeClose && trans.type == TRADE_TRANSACTION_DEAL_ADD)
+   {
+      ulong dealTicket = trans.deal;
+      if(dealTicket > 0 && HistoryDealSelect(dealTicket))
+      {
+         long entryType = HistoryDealGetInteger(dealTicket, DEAL_ENTRY);
+         if(entryType == DEAL_ENTRY_OUT || entryType == DEAL_ENTRY_INOUT || entryType == DEAL_ENTRY_OUT_BY)
+         {
+            g_LastAutoSyncTime = TimeCurrent();
+            PushTradesToCloud();
+         }
+      }
+   }
 }
 
 //+------------------------------------------------------------------+
