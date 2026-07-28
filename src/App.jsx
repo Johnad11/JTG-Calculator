@@ -178,6 +178,19 @@ const App = () => {
     const currency = activeAccount?.currency || 'USD';
     const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
+    // THEME STATE
+    const [theme, setTheme] = useState(() => localStorage.getItem('jtg_theme') || 'light');
+
+    useEffect(() => {
+        localStorage.setItem('jtg_theme', theme);
+        document.documentElement.classList.remove('theme-light', 'theme-dark');
+        document.body.classList.remove('theme-light', 'theme-dark');
+        document.documentElement.classList.add(`theme-${theme}`);
+        document.body.classList.add(`theme-${theme}`);
+    }, [theme]);
+
+    const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+
     // EXCHANGE RATE STATE
     const [exchangeRates, setExchangeRates] = useState(null);
     const [ratesLoading, setRatesLoading] = useState(true);
@@ -974,21 +987,21 @@ const App = () => {
     };
 
     const NavBtn = ({ id, icon, label }) => (
-        <button id={`nav-${id}`} onClick={() => setPage(id)} className={`flex flex-col items-center gap-1 w-full py-4 transition-all duration-300 border-l-4 ${page === id ? 'border-jtg-green bg-jtg-blue/20 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
-            <span className={page === id ? 'text-jtg-green' : 'text-current'}>{icon}</span>
+        <button id={`nav-${id}`} onClick={() => setPage(id)} className={`flex flex-col items-center gap-1 w-full py-4 transition-all duration-300 border-l-4 ${page === id ? 'border-jtg-green bg-emerald-50 text-jtg-blue font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/60'}`}>
+            <span className={page === id ? 'text-jtg-green' : 'text-slate-400'}>{icon}</span>
             <span className="text-[10px] font-bold tracking-wider">{label}</span>
         </button>
     );
 
     if (isAuthLoading) {
         return (
-            <div className="flex flex-col items-center justify-center w-screen h-screen bg-[#0a0e1a]">
+            <div className="flex flex-col items-center justify-center w-screen h-screen bg-slate-50">
                 <div className="relative w-20 h-20 flex items-center justify-center mb-6">
                     <div className="absolute inset-0 border-4 border-[#1BA657]/20 rounded-full"></div>
                     <div className="absolute inset-0 border-4 border-t-[#1BA657] rounded-full animate-spin"></div>
                     <img src={LOGO_URL} className="w-10 h-10 object-contain animate-pulse" />
                 </div>
-                <h2 className="text-lg font-bold text-white tracking-widest uppercase mb-1">JTG JOURNAL</h2>
+                <h2 className="text-lg font-bold text-slate-900 tracking-widest uppercase mb-1">JTG JOURNAL</h2>
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Establishing secure connection...</p>
             </div>
         );
@@ -996,14 +1009,14 @@ const App = () => {
 
     if (!user) {
         return (
-            <div className="relative flex flex-col items-center justify-center w-screen h-screen bg-[#0a0e1a] overflow-hidden p-6">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#162C99]/15 rounded-full blur-[120px] pointer-events-none"></div>
+            <div className="relative flex flex-col items-center justify-center w-screen h-screen bg-slate-100 overflow-hidden p-6">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#162C99]/10 rounded-full blur-[120px] pointer-events-none"></div>
                 <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#1BA657]/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-                <div className="relative z-10 w-full max-w-md bg-jtg-card border border-jtg-blue/30 rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center animate-pop">
+                <div className="relative z-10 w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center animate-pop">
                     <button
                         onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
-                        className="absolute top-6 left-6 text-slate-400 hover:text-white transition flex items-center gap-1.5 text-xs font-bold"
+                        className="absolute top-6 left-6 text-slate-500 hover:text-slate-900 transition flex items-center gap-1.5 text-xs font-bold"
                     >
                         <Icons.ArrowLeft className="w-3.5 h-3.5" />
                         <span>Go Back</span>
@@ -1013,21 +1026,21 @@ const App = () => {
                         <img src={LOGO_URL} className="w-full h-full object-contain" />
                     </div>
 
-                    <h1 className="text-2xl font-black text-white tracking-tight leading-none mb-1">JTG JOURNAL</h1>
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">JTG JOURNAL</h1>
                     <p className="text-[#1BA657] text-[10px] font-black uppercase tracking-[0.2em] mb-6">Stop Gambling. Start Journaling.</p>
                     
-                    <p className="text-slate-400 text-sm leading-relaxed mb-8">
+                    <p className="text-slate-600 text-sm leading-relaxed mb-8">
                         The ultimate position calculator and analytical trade journal for disciplined traders. Elevate your performance, manage your risk, and pass challenges consistently.
                     </p>
 
                     <button
                         onClick={login}
                         disabled={isLoggingIn}
-                        className="w-full py-4 bg-gradient-to-r from-jtg-green to-emerald-500 text-black font-black text-sm tracking-widest rounded-xl transition-all shadow-xl hover:shadow-jtg-green/20 flex items-center justify-center gap-3 hover:scale-[1.02]"
+                        className="w-full py-4 bg-[#162C99] hover:bg-[#12227a] text-white font-black text-sm tracking-widest rounded-xl transition-all shadow-xl hover:shadow-jtg-blue/30 flex items-center justify-center gap-3 hover:scale-[1.02]"
                     >
                         {isLoggingIn ? (
                             <>
-                                <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                 SECURING ACCESS...
                             </>
                         ) : (
@@ -1038,7 +1051,7 @@ const App = () => {
                         )}
                     </button>
 
-                    <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mt-8">
+                    <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider mt-8">
                         Authorized Access Only • Secured by Firebase
                     </p>
                 </div>
@@ -1047,15 +1060,15 @@ const App = () => {
     }
 
     return (
-        <div className="flex w-full h-full bg-jtg-dark">
+        <div className="flex w-full h-full bg-app-theme text-main-theme">
             {/* SIDEBAR */}
-            <div className="hidden md:flex w-24 bg-jtg-dark border-r border-jtg-blue/30 flex-col items-center py-6 z-20 shadow-2xl shrink-0 h-full overflow-y-auto custom-scroll justify-between">
+            <div className="hidden md:flex w-24 bg-sidebar-theme border-r border-theme flex-col items-center py-6 z-20 shadow-md shrink-0 h-full overflow-y-auto custom-scroll justify-between">
                 <div className="w-full flex flex-col items-center">
                     
                     {/* BACK TO ECOSYSTEM LINK */}
                     <button 
                         onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
-                        className="mb-4 text-slate-500 hover:text-white transition flex items-center gap-1 bg-jtg-blue/10 border border-jtg-blue/20 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wider hover:bg-jtg-blue/20 active:scale-95"
+                        className="mb-4 text-slate-500 hover:text-main-theme transition flex items-center gap-1 bg-input-theme border border-theme rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wider hover:opacity-80 active:scale-95"
                         title="Back to Ecosystem"
                     >
                         <Icons.ArrowLeft className="w-2.5 h-2.5" />
@@ -1072,20 +1085,20 @@ const App = () => {
                             <button
                                 id="account-switcher-button"
                                 onClick={() => setShowAccountManager(true)}
-                                className="w-full bg-jtg-green/10 border border-jtg-green/30 rounded-lg p-2 flex flex-col items-center gap-1 hover:bg-jtg-green/20 transition group"
+                                className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 flex flex-col items-center gap-1 hover:bg-emerald-500/20 transition group"
                             >
                                 <div className="text-jtg-green"><Icons.User /></div>
-                                <span id="active-account-name" className="text-[10px] font-bold text-white max-w-full truncate">
+                                <span id="active-account-name" className="text-[10px] font-bold text-main-theme max-w-full truncate">
                                     {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
                                 </span>
                             </button>
                             <button
                                 id="mt5-sync-button"
                                 onClick={() => setShowSyncModal(true)}
-                                className="w-full bg-jtg-blue/10 border border-jtg-blue/30 rounded-lg p-2 flex flex-col items-center gap-1 hover:bg-jtg-blue/20 transition group"
+                                className="w-full bg-jtg-blue/10 border border-jtg-blue/20 rounded-lg p-2 flex flex-col items-center gap-1 hover:bg-jtg-blue/20 transition group"
                             >
-                                <div className="text-jtg-green"><Icons.Key /></div>
-                                <span className="text-[10px] font-bold text-white max-w-full truncate">
+                                <div className="text-jtg-blue"><Icons.Key /></div>
+                                <span className="text-[10px] font-bold text-main-theme max-w-full truncate">
                                     MT5 Auto-Sync
                                 </span>
                             </button>
@@ -1103,29 +1116,40 @@ const App = () => {
 
                 <div className="w-full pb-4 mt-8 shrink-0 flex flex-col gap-4 items-center">
                     
+                    {/* THEME TOGGLE BUTTON */}
+                    <button 
+                        id="theme-toggle-button"
+                        onClick={toggleTheme}
+                        className="flex flex-col items-center gap-1 text-slate-400 hover:text-main-theme transition"
+                        title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    >
+                        {theme === 'dark' ? <Icons.Sun className="w-5 h-5 text-amber-400" /> : <Icons.Moon className="w-5 h-5 text-jtg-blue" />}
+                        <span className="text-[9px] font-bold tracking-wider">{theme === 'dark' ? 'LIGHT' : 'DARK'}</span>
+                    </button>
+
                     {/* SETTINGS BUTTON */}
                     <button 
                         id="settings-button" 
                         onClick={() => setShowSettingsModal(true)} 
-                        className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition" 
+                        className="flex flex-col items-center gap-1 text-slate-400 hover:text-main-theme transition" 
                         title="Platform Settings"
                     >
-                        <Icons.Settings className="w-5 h-5 text-jtg-green" />
+                        <Icons.Settings className="w-5 h-5 text-jtg-blue" />
                         <span className="text-[9px] font-bold tracking-wider">SETTINGS</span>
                     </button>
 
                     {/* USER PROFILE & LOGOUT */}
-                    <div className="flex flex-col items-center gap-2 mb-2 pt-4 border-t border-jtg-blue/20 w-full">
+                    <div className="flex flex-col items-center gap-2 mb-2 pt-4 border-t border-theme w-full">
                         {isPremium && (
-                            <div className="bg-[#1BA657]/20 border border-[#1BA657]/50 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-[0_0_10px_rgba(27,166,87,0.3)] animate-pulse mb-1">
-                                <PremiumStarIcon className="w-2.5 h-2.5 text-[#1BA657]" />
-                                <span className="text-[8px] font-extrabold text-[#1BA657] tracking-wider uppercase">PRO</span>
+                            <div className="bg-emerald-500/20 border border-emerald-500/40 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm animate-pulse mb-1">
+                                <PremiumStarIcon className="w-2.5 h-2.5 text-jtg-green" />
+                                <span className="text-[8px] font-extrabold text-jtg-green tracking-wider uppercase">PRO</span>
                             </div>
                         )}
-                        <button onClick={logout} className="flex flex-col items-center gap-1 text-slate-500 hover:text-red-500 transition" title="Logout">
-                            <div className="w-8 h-8 rounded-full bg-jtg-green text-black flex items-center justify-center font-bold text-xs relative">
+                        <button onClick={logout} className="flex flex-col items-center gap-1 text-slate-400 hover:text-red-500 transition" title="Logout">
+                            <div className="w-8 h-8 rounded-full bg-jtg-blue text-white flex items-center justify-center font-bold text-xs relative shadow-sm">
                                 {user.email[0].toUpperCase()}
-                                {isPremium && <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center border border-jtg-dark font-extrabold" title="Premium Access">★</span>}
+                                {isPremium && <span className="absolute -top-1 -right-1 bg-amber-400 text-black text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white font-extrabold" title="Premium Access">★</span>}
                             </div>
                             <span className="text-[9px] font-bold tracking-wider">LOGOUT</span>
                         </button>
@@ -1134,11 +1158,11 @@ const App = () => {
             </div>
 
             {/* MOBILE HEADER */}
-            <div className="md:hidden fixed top-0 w-full bg-jtg-dark/95 backdrop-blur z-30 border-b border-jtg-blue/30 p-4 flex justify-between items-center h-16">
+            <div className="md:hidden fixed top-0 w-full bg-sidebar-theme/95 backdrop-blur z-30 border-b border-theme p-4 flex justify-between items-center h-16 shadow-sm">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
-                        className="text-slate-400 hover:text-white p-1 hover:bg-jtg-blue/10 rounded-lg transition active:scale-90"
+                        className="text-slate-400 hover:text-main-theme p-1 hover:bg-input-theme rounded-lg transition active:scale-90"
                         title="Back to Ecosystem"
                         aria-label="Back to Ecosystem"
                     >
@@ -1146,20 +1170,27 @@ const App = () => {
                     </button>
                     <div className="flex items-center gap-2">
                         <div className="w-6 h-6"><img src={LOGO_URL} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} /></div>
-                        <span className="text-sm font-bold text-white tracking-wide">JTG <span className="text-jtg-green">JOURNAL</span></span>
+                        <span className="text-sm font-black text-jtg-blue tracking-wide">JTG <span className="text-jtg-green">JOURNAL</span></span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     {isDemoMode && (
-                        <span className="text-[9px] bg-jtg-green/20 text-jtg-green px-2 py-0.5 rounded font-extrabold border border-jtg-green/30 animate-pulse uppercase tracking-wide">Demo</span>
+                        <span className="text-[9px] bg-emerald-500/20 text-jtg-green px-2 py-0.5 rounded font-extrabold border border-emerald-500/30 animate-pulse uppercase tracking-wide">Demo</span>
                     )}
                     {isPremium && (
-                        <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[8px] font-extrabold px-1.5 py-0.5 rounded shadow-[0_0_5px_rgba(27,166,87,0.3)] tracking-wider">PRO</span>
+                        <span className="bg-emerald-500/20 border border-emerald-500/30 text-jtg-green text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider">PRO</span>
                     )}
                     <button
+                        onClick={toggleTheme}
+                        className="p-2 text-main-theme transition-colors bg-input-theme border border-theme rounded-lg flex items-center justify-center active:scale-95"
+                        title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    >
+                        {theme === 'dark' ? <Icons.Sun className="w-4 h-4 text-amber-400" /> : <Icons.Moon className="w-4 h-4 text-jtg-blue" />}
+                    </button>
+                    <button
                         onClick={() => setShowMobileDrawer(true)}
-                        className="p-2 text-slate-300 hover:text-white transition-colors bg-jtg-blue/10 border border-jtg-blue/30 rounded-lg flex items-center justify-center active:scale-95"
+                        className="p-2 text-main-theme transition-colors bg-input-theme border border-theme rounded-lg flex items-center justify-center active:scale-95"
                         aria-label="Open Menu"
                     >
                         <Icons.Menu />
@@ -1168,17 +1199,17 @@ const App = () => {
             </div>
 
             {/* MOBILE BOTTOM NAV */}
-            <div className="md:hidden fixed bottom-0 w-full bg-jtg-dark border-t border-jtg-blue/30 z-30 flex justify-around pb-safe h-20 items-center">
-                <button id="mobile-nav-calc" onClick={() => setPage('calc')} className={`p-2 flex flex-col items-center ${page === 'calc' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Calculator /><span className="text-[9px] font-bold mt-1">Calc</span></button>
-                <button id="mobile-nav-journal" onClick={() => setPage('journal')} className={`p-2 flex flex-col items-center ${page === 'journal' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Journal /><span className="text-[9px] font-bold mt-1">Entry</span></button>
-                <button id="mobile-nav-trades" onClick={() => setPage('trades')} className={`p-2 flex flex-col items-center ${page === 'trades' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.List /><span className="text-[9px] font-bold mt-1">Trades</span></button>
-                <button id="mobile-nav-calendar" onClick={() => setPage('calendar')} className={`p-2 flex flex-col items-center ${page === 'calendar' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Calendar /><span className="text-[9px] font-bold mt-1">Cal</span></button>
-                <button id="mobile-nav-perf" onClick={() => setPage('perf')} className={`p-2 flex flex-col items-center ${page === 'perf' ? 'text-jtg-green' : 'text-slate-500'}`}><Icons.Chart /><span className="text-[9px] font-bold mt-1">Data</span></button>
+            <div className="md:hidden fixed bottom-0 w-full bg-sidebar-theme border-t border-theme z-30 flex justify-around pb-safe h-20 items-center shadow-lg">
+                <button id="mobile-nav-calc" onClick={() => setPage('calc')} className={`p-2 flex flex-col items-center ${page === 'calc' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Calculator /><span className="text-[9px] font-bold mt-1">Calc</span></button>
+                <button id="mobile-nav-journal" onClick={() => setPage('journal')} className={`p-2 flex flex-col items-center ${page === 'journal' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Journal /><span className="text-[9px] font-bold mt-1">Entry</span></button>
+                <button id="mobile-nav-trades" onClick={() => setPage('trades')} className={`p-2 flex flex-col items-center ${page === 'trades' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.List /><span className="text-[9px] font-bold mt-1">Trades</span></button>
+                <button id="mobile-nav-calendar" onClick={() => setPage('calendar')} className={`p-2 flex flex-col items-center ${page === 'calendar' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Calendar /><span className="text-[9px] font-bold mt-1">Cal</span></button>
+                <button id="mobile-nav-perf" onClick={() => setPage('perf')} className={`p-2 flex flex-col items-center ${page === 'perf' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Chart /><span className="text-[9px] font-bold mt-1">Data</span></button>
             </div>
 
             {/* MAIN CONTENT AREA */}
             <main className="flex-1 relative h-full w-full overflow-hidden">
-                <div className="absolute inset-0 bg-jtg-dark w-full h-full overflow-hidden">
+                <div className="absolute inset-0 bg-app-theme w-full h-full overflow-hidden">
                     {/* Background Elements */}
                     <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-jtg-blue/10 rounded-full blur-[120px] pointer-events-none"></div>
                     <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-jtg-green/5 rounded-full blur-[100px] pointer-events-none"></div>
@@ -1190,27 +1221,29 @@ const App = () => {
                                 <span>📢 DEMO MODE ACTIVE: Viewing sample Forex trade logs. Click "EXIT DEMO" at the top to clear.</span>
                             </div>
                         )}
-                        {page === 'calc' && <Calculator globalBalance={isDemoMode ? '11020' : globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} activeAccount={activeAccount} />}
-                        {page === 'journal' && <Journal addTrade={addTrade} accountType={activeAccount?.type} />}
-                        {page === 'trades' && (
-                            <TradeList
-                                trades={displayTrades}
-                                deleteTrade={deleteTrade}
-                                isPremium={isPremium}
-                                triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
-                                exportCount={exportCount}
-                                incrementExportCount={incrementExportCount}
-                                currencySymbol={currencySymbol}
-                                currency={currency}
-                                exchangeRates={exchangeRates}
-                                ratesLoading={ratesLoading}
-                                activeAccount={activeAccount}
-                                username={username}
-                            />
-                        )}
+                        <div key={page} className="w-full h-full animate-page-enter">
+                            {page === 'calc' && <Calculator globalBalance={isDemoMode ? '11020' : globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} activeAccount={activeAccount} />}
+                            {page === 'journal' && <Journal addTrade={addTrade} accountType={activeAccount?.type} />}
+                            {page === 'trades' && (
+                                <TradeList
+                                    trades={displayTrades}
+                                    deleteTrade={deleteTrade}
+                                    isPremium={isPremium}
+                                    triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
+                                    exportCount={exportCount}
+                                    incrementExportCount={incrementExportCount}
+                                    currencySymbol={currencySymbol}
+                                    currency={currency}
+                                    exchangeRates={exchangeRates}
+                                    ratesLoading={ratesLoading}
+                                    activeAccount={activeAccount}
+                                    username={username}
+                                />
+                            )}
 
-                        {page === 'calendar' && <CalendarView trades={displayTrades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
-                        {page === 'perf' && <Performance trades={displayTrades} withdrawals={displayWithdrawals} deposits={displayDeposits} activeAccount={activeAccount} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : globalBalance} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
+                            {page === 'calendar' && <CalendarView trades={displayTrades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
+                            {page === 'perf' && <Performance trades={displayTrades} withdrawals={displayWithdrawals} deposits={displayDeposits} activeAccount={activeAccount} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : globalBalance} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
+                        </div>
                     </div>
                 </div>
             </main>

@@ -15,9 +15,9 @@ const EquityChart = ({ data, currencySymbol = '$' }) => {
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-jtg-dark border border-jtg-blue/30 p-3 rounded-lg shadow-xl shadow-black/50">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">{label}</p>
-                    <p className="text-sm font-bold text-white">
+                <div className="bg-white border border-slate-200 p-3 rounded-lg shadow-xl">
+                    <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">{label}</p>
+                    <p className="text-sm font-bold text-slate-900">
                         Equity: <span className={payload[0].value >= data[0].balance ? 'text-jtg-green' : 'text-red-500'}>
                             {currencySymbol}{payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>

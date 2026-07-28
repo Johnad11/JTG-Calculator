@@ -82,59 +82,59 @@ const Calculator = ({ globalBalance, currencySymbol = '$', currency = 'USD', exc
         <div id="calculator-container" className="flex flex-col p-4 md:p-10 pb-24 md:pb-10 h-full overflow-y-auto custom-scroll">
             {ratesLoading && currency !== 'USD' && (
                 <div className="mb-4 p-3 bg-jtg-blue/20 border border-jtg-blue/40 rounded-lg text-center flex items-center justify-center gap-2">
-                    <p className="text-xs text-slate-300">Loading live exchange rates...</p>
+                    <p className="text-xs text-muted-theme">Loading live exchange rates...</p>
                 </div>
             )}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pop mb-auto">
                 <div className="lg:col-span-7 space-y-8">
-                    <div className="flex gap-2 p-1.5 bg-jtg-input rounded-xl overflow-x-auto shadow-inner border border-jtg-blue/30 no-scrollbar">
+                    <div className="flex gap-2 p-1.5 bg-input-theme rounded-xl overflow-x-auto shadow-inner border border-theme no-scrollbar">
                         {Object.keys(ASSETS).map(key => (
                             <button key={key} onClick={() => setAssetClass(key)}
-                                className={`flex-1 py-3 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${assetClass === key ? 'bg-gradient-to-r from-jtg-blue to-blue-700 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
+                                className={`flex-1 py-3 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${assetClass === key ? 'bg-jtg-blue text-white shadow-md' : 'text-muted-theme hover:text-main-theme'}`}>
                                 {ASSETS[key].label}
                             </button>
                         ))}
                     </div>
-                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+                    <div className="bg-card-theme border border-theme rounded-2xl p-8 shadow-xl relative overflow-hidden text-main-theme">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-jtg-green to-jtg-blue"></div>
                         <div className="mb-8">
-                            <label className="text-xs font-bold text-slate-400 uppercase mb-3 block tracking-wider">Instrument</label>
+                            <label className="text-xs font-bold text-muted-theme uppercase mb-3 block tracking-wider">Instrument</label>
                             <div className="relative">
-                                <select id="calculator-instrument-select" value={pair} onChange={(e) => setPair(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 text-white text-lg font-medium rounded-xl p-4 pr-10 focus:ring-2 focus:ring-jtg-green/50 outline-none appearance-none">
+                                <select id="calculator-instrument-select" value={pair} onChange={(e) => setPair(e.target.value)} className="w-full bg-input-theme border border-theme text-main-theme text-lg font-medium rounded-xl p-4 pr-10 focus:ring-2 focus:ring-jtg-green/50 outline-none appearance-none">
                                     {ASSETS[assetClass].pairs.map(p => <option key={p} value={p}>{p}</option>)}
                                 </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"><Icons.ChevronDown /></div>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><Icons.ChevronDown /></div>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-6 mb-8">
-                            <div><label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Balance (Required)</label><input id="calculator-balance-input" type="number" value={balance} onChange={(e) => setBalance(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono text-lg font-medium focus:ring-2 focus:ring-jtg-green/50 outline-none" required /></div>
-                            <div><label className="text-xs font-bold text-slate-400 uppercase mb-3 block">Risk</label><div className="flex bg-jtg-input border border-jtg-blue/40 rounded-xl overflow-hidden"><input id="calculator-risk-input" type="number" value={riskValue} onChange={(e) => setRiskValue(e.target.value)} className="w-full bg-transparent p-4 text-white font-mono text-lg font-medium outline-none z-10" /><button id="calculator-risk-toggle-btn" onClick={() => setRiskMode(riskMode === 'percent' ? 'usd' : 'percent')} className="bg-jtg-blue/20 border-l border-jtg-blue/40 px-6 text-sm font-bold text-jtg-green hover:bg-jtg-blue/40 transition">{riskMode === 'percent' ? '%' : currencySymbol}</button></div></div>
+                            <div><label className="text-xs font-bold text-muted-theme uppercase mb-3 block">Balance (Required)</label><input id="calculator-balance-input" type="number" value={balance} onChange={(e) => setBalance(e.target.value)} className="w-full bg-input-theme border border-theme rounded-xl p-4 text-main-theme font-mono text-lg font-medium focus:ring-2 focus:ring-jtg-green/50 outline-none" required /></div>
+                            <div><label className="text-xs font-bold text-muted-theme uppercase mb-3 block">Risk</label><div className="flex bg-input-theme border border-theme rounded-xl overflow-hidden"><input id="calculator-risk-input" type="number" value={riskValue} onChange={(e) => setRiskValue(e.target.value)} className="w-full bg-transparent p-4 text-main-theme font-mono text-lg font-medium outline-none z-10" /><button id="calculator-risk-toggle-btn" onClick={() => setRiskMode(riskMode === 'percent' ? 'usd' : 'percent')} className="bg-jtg-blue/10 border-l border-theme px-6 text-sm font-bold text-jtg-blue hover:bg-jtg-blue/20 transition">{riskMode === 'percent' ? '%' : currencySymbol}</button></div></div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div><label className="text-xs font-bold text-jtg-green uppercase">Entry</label><input id="calculator-entry-input" type="number" placeholder="0.00" value={entryPrice} onChange={(e) => setEntryPrice(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-jtg-green/50 outline-none" /></div>
-                            <div><label className="text-xs font-bold text-red-500 uppercase">Stop Loss</label><input id="calculator-sl-input" type="number" placeholder="0.00" value={stopLoss} onChange={(e) => setStopLoss(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-red-500/50 outline-none" /></div>
-                            <div><label className="text-xs font-bold text-slate-400 uppercase">TP (Opt)</label><input id="calculator-tp-input" type="number" placeholder="Optional" value={takeProfit} onChange={(e) => setTakeProfit(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-slate-500 outline-none" /></div>
+                            <div><label className="text-xs font-bold text-jtg-green uppercase">Entry</label><input id="calculator-entry-input" type="number" placeholder="0.00" value={entryPrice} onChange={(e) => setEntryPrice(e.target.value)} className="w-full bg-input-theme border border-theme rounded-xl p-4 text-main-theme font-mono focus:ring-2 focus:ring-jtg-green/50 outline-none" /></div>
+                            <div><label className="text-xs font-bold text-red-500 uppercase">Stop Loss</label><input id="calculator-sl-input" type="number" placeholder="0.00" value={stopLoss} onChange={(e) => setStopLoss(e.target.value)} className="w-full bg-input-theme border border-theme rounded-xl p-4 text-main-theme font-mono focus:ring-2 focus:ring-red-500/50 outline-none" /></div>
+                            <div><label className="text-xs font-bold text-muted-theme uppercase">TP (Opt)</label><input id="calculator-tp-input" type="number" placeholder="Optional" value={takeProfit} onChange={(e) => setTakeProfit(e.target.value)} className="w-full bg-input-theme border border-theme rounded-xl p-4 text-main-theme font-mono focus:ring-2 focus:ring-slate-400 outline-none" /></div>
                         </div>
-                        <button id="calculator-calculate-btn" onClick={calculate} className="w-full mt-10 bg-gradient-to-r from-jtg-green to-emerald-600 hover:from-emerald-600 hover:to-jtg-green text-white font-bold uppercase tracking-widest py-5 rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm">Calculate Position</button>
+                        <button id="calculator-calculate-btn" onClick={calculate} className="w-full mt-10 bg-jtg-blue hover:bg-[#12227a] text-white font-bold uppercase tracking-widest py-5 rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm">Calculate Position</button>
                     </div>
                 </div>
                 <div className="lg:col-span-5 flex flex-col gap-8">
-                    <div className="bg-gradient-to-b from-jtg-card to-jtg-dark border border-jtg-blue/30 rounded-2xl p-10 text-center relative overflow-hidden shadow-2xl min-h-[350px] flex flex-col justify-center items-center">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-1 bg-jtg-green shadow-[0_0_50px_rgba(27,166,87,0.6)]"></div>
+                    <div id="calculator-lot-result-card" className="bg-card-theme border border-theme rounded-2xl p-10 text-center relative overflow-hidden shadow-xl min-h-[350px] flex flex-col justify-center items-center text-main-theme">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-1 bg-jtg-green shadow-[0_0_20px_rgba(27,166,87,0.4)]"></div>
                         {result ? (
                             <div className="animate-pop w-full">
-                                <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-4">Recommended Position</p>
-                                <div className="text-8xl font-black text-white tracking-tighter drop-shadow-2xl mb-4 leading-none">{result.lot}</div>
-                                <div className="inline-block bg-jtg-green/10 text-jtg-green border border-jtg-green/20 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-10">Standard Lots</div>
-                                <div className="w-full h-px bg-jtg-blue/30 mb-8"></div>
+                                <p className="text-muted-theme text-xs font-bold uppercase tracking-[0.3em] mb-4">Recommended Position</p>
+                                <div className="text-8xl font-black text-main-theme tracking-tighter mb-4 leading-none">{result.lot}</div>
+                                <div className="inline-block bg-emerald-500/20 text-jtg-green border border-emerald-500/30 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-10">Standard Lots</div>
+                                <div className="w-full h-px bg-theme mb-8"></div>
                                 <div className="flex justify-between items-center w-full px-2 mb-6">
-                                    <div className="text-left"><p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Risk</p><p className="text-xl font-bold text-red-500 font-mono">{currencySymbol}{result.risk}</p></div>
-                                    {result.profit && <div className="text-right"><p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Gain</p><p className="text-xl font-bold text-jtg-green font-mono">+{currencySymbol}{result.profit}</p></div>}
+                                    <div className="text-left"><p className="text-muted-theme text-[10px] font-bold uppercase mb-1">Risk</p><p className="text-xl font-bold text-red-500 font-mono">{currencySymbol}{result.risk}</p></div>
+                                    {result.profit && <div className="text-right"><p className="text-muted-theme text-[10px] font-bold uppercase mb-1">Gain</p><p className="text-xl font-bold text-jtg-green font-mono">+{currencySymbol}{result.profit}</p></div>}
                                 </div>
-                                {result.rr && <div className="w-full bg-slate-800/40 rounded-xl p-4 border border-slate-700/50 flex justify-between items-center"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-jtg-green"></div><span className="text-slate-400 text-xs font-bold uppercase">R:R</span></div><span className="text-white font-mono text-xl font-bold">1 : {result.rr}</span></div>}
+                                {result.rr && <div className="w-full bg-input-theme rounded-xl p-4 border border-theme flex justify-between items-center"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-jtg-green"></div><span className="text-muted-theme text-xs font-bold uppercase">R:R</span></div><span className="text-main-theme font-mono text-xl font-bold">1 : {result.rr}</span></div>}
                             </div>
                         ) : (
-                            <div className="opacity-20 flex flex-col items-center"><div className="w-24 h-24 border-4 border-slate-700 rounded-full flex items-center justify-center mb-6"><span className="text-4xl text-slate-600">--</span></div><p className="text-sm font-medium tracking-wide">Awaiting Details</p></div>
+                            <div className="opacity-40 flex flex-col items-center"><div className="w-24 h-24 border-4 border-theme rounded-full flex items-center justify-center mb-6"><span className="text-4xl text-muted-theme">--</span></div><p className="text-sm font-medium tracking-wide text-muted-theme">Awaiting Details</p></div>
                         )}
                     </div>
                 </div>

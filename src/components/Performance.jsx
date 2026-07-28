@@ -221,30 +221,30 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
         <div className="animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10 h-full flex flex-col">
             <div className="mb-auto">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-3xl font-bold text-white tracking-wide">Evolution Analytics</h2>
+                    <h2 className="text-3xl font-bold text-slate-900 tracking-wide">Evolution Analytics</h2>
                 </div>
 
                 {/* ACCOUNT HEALTH */}
-                <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 mb-8 shadow-xl relative overflow-hidden">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-8 shadow-xl relative overflow-hidden">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2"><Icons.Briefcase /> Account Health</h2>
-                        {!isEditing && globalBalance && <button onClick={() => setIsEditing(true)} className="text-xs text-jtg-green hover:text-white"><Icons.Edit /></button>}
+                        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2"><Icons.Briefcase /> Account Health</h2>
+                        {!isEditing && globalBalance && <button onClick={() => setIsEditing(true)} className="text-xs text-jtg-green hover:text-emerald-700 font-bold"><Icons.Edit /></button>}
                     </div>
 
                     {!globalBalance || isEditing ? (
                         <div className="flex gap-2 items-end">
                             <div className="flex-1">
-                                <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Set Starting Balance</label>
-                                <input type="number" value={tempBalance} onChange={e => setTempBalance(e.target.value)} className="w-full bg-jtg-input border border-jtg-blue/40 rounded-lg p-2 text-white outline-none" placeholder="e.g. 10000" />
+                                <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Set Starting Balance</label>
+                                <input type="number" value={tempBalance} onChange={e => setTempBalance(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-900 outline-none" placeholder="e.g. 10000" />
                             </div>
                             <button onClick={saveBalance} className="bg-jtg-green text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-600 transition">SAVE</button>
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Starting</p><p className="text-sm md:text-lg font-mono text-slate-300">{currencySymbol}{parseFloat(globalInitialBalance || globalBalance || 0).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Deposits</p><p className="text-sm md:text-lg font-mono text-emerald-400">+{currencySymbol}{parseFloat(stats.totalDeposits).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Withdrawals</p><p className="text-sm md:text-lg font-mono text-red-400">-{currencySymbol}{parseFloat(stats.totalWithdrawals).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Current</p><p className="text-lg md:text-2xl font-mono text-white font-bold">{currencySymbol}{parseFloat(stats.currentBalance).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
+                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Starting</p><p className="text-sm md:text-lg font-mono text-slate-700">{currencySymbol}{parseFloat(globalInitialBalance || globalBalance || 0).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
+                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Deposits</p><p className="text-sm md:text-lg font-mono text-emerald-600">+{currencySymbol}{parseFloat(stats.totalDeposits).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
+                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Withdrawals</p><p className="text-sm md:text-lg font-mono text-red-500">-{currencySymbol}{parseFloat(stats.totalWithdrawals).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
+                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Current</p><p className="text-lg md:text-2xl font-mono text-slate-900 font-bold">{currencySymbol}{parseFloat(stats.currentBalance).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
                             <div><p className="text-[10px] text-slate-500 uppercase font-bold">Growth</p><p className={`text-sm md:text-lg font-mono font-bold ${parseFloat(stats.growthPct) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>{parseFloat(stats.growthPct) > 0 ? '+' : ''}{stats.growthPct}%</p></div>
                         </div>
                     )}
@@ -267,28 +267,28 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
                 {/* CHARTS GRID */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     {/* EQUITY CURVE */}
-                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Icons.Chart /> Equity Curve</h3>
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Icons.Chart /> Equity Curve</h3>
                         <div className="flex-1 w-full">
                             {trades.length > 0 ? <EquityChart data={chartData} currencySymbol={currencySymbol} /> : <NoData />}
                         </div>
                     </div>
 
                     {/* DAY OF WEEK HEATMAP */}
-                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Icons.Calendar /> Performance by Day</h3>
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Icons.Calendar /> Performance by Day</h3>
                         <div className="flex-1 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={heatmapData.dayStats}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#162C99" opacity={0.1} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
                                     <YAxis hide />
                                     <Tooltip 
-                                        cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                                        cursor={{fill: 'rgba(0,0,0,0.03)'}}
                                         content={({ active, payload }) => {
                                             if (active && payload && payload.length) {
                                                 return (
-                                                    <div className="bg-jtg-dark border border-jtg-blue/30 p-2 rounded text-xs font-bold text-white shadow-xl">
+                                                    <div className="bg-white border border-slate-200 p-2 rounded text-xs font-bold text-slate-900 shadow-xl">
                                                         {payload[0].payload.name}: {currencySymbol}{payload[0].value.toLocaleString()}
                                                     </div>
                                                 );
@@ -298,7 +298,7 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
                                     />
                                     <Bar dataKey="pnl">
                                         {heatmapData.dayStats.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#1BA657' : '#EF4444'} opacity={0.8} />
+                                            <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#1BA657' : '#EF4444'} opacity={0.85} />
                                         ))}
                                     </Bar>
                                 </BarChart>
@@ -309,19 +309,19 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
                     {/* HOUR OF DAY HEATMAP */}
-                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Icons.Clock /> Performance by Hour</h3>
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Icons.Clock /> Performance by Hour</h3>
                         <div className="flex-1 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={heatmapData.hourStats}>
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 8}} interval={2} />
                                     <YAxis hide />
                                     <Tooltip 
-                                        cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                                        cursor={{fill: 'rgba(0,0,0,0.03)'}}
                                         content={({ active, payload }) => {
                                             if (active && payload && payload.length) {
                                                 return (
-                                                    <div className="bg-jtg-dark border border-jtg-blue/30 p-2 rounded text-xs font-bold text-white shadow-xl">
+                                                    <div className="bg-white border border-slate-200 p-2 rounded text-xs font-bold text-slate-900 shadow-xl">
                                                         {payload[0].payload.name}: {currencySymbol}{payload[0].value.toLocaleString()}
                                                     </div>
                                                 );
@@ -331,7 +331,7 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
                                     />
                                     <Bar dataKey="pnl">
                                         {heatmapData.hourStats.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#1BA657' : '#EF4444'} opacity={0.8} />
+                                            <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#1BA657' : '#EF4444'} opacity={0.85} />
                                         ))}
                                     </Bar>
                                 </BarChart>
@@ -340,12 +340,12 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
                     </div>
 
                     {/* ASSET LEAGUE TABLE */}
-                    <div className="bg-jtg-card border border-jtg-blue/30 rounded-2xl p-6 shadow-xl flex flex-col h-[400px] overflow-hidden">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Icons.Trophy /> Asset League Table</h3>
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl flex flex-col h-[400px] overflow-hidden">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Icons.Trophy /> Asset League Table</h3>
                         <div className="flex-1 overflow-y-auto custom-scroll">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="border-b border-slate-700">
+                                    <tr className="border-b border-slate-200">
                                         <th className="py-2 text-[10px] text-slate-500 uppercase">Pair</th>
                                         <th className="py-2 text-[10px] text-slate-500 uppercase text-center">Trades</th>
                                         <th className="py-2 text-[10px] text-slate-500 uppercase text-center">WR%</th>
@@ -354,10 +354,10 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
                                 </thead>
                                 <tbody>
                                     {stats.leagueTable?.map(row => (
-                                        <tr key={row.pair} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition">
-                                            <td className="py-3 font-bold text-white text-sm">{row.pair}</td>
-                                            <td className="py-3 text-center text-xs text-slate-400">{row.count}</td>
-                                            <td className="py-3 text-center text-xs text-white">{row.winRate}%</td>
+                                        <tr key={row.pair} className="border-b border-slate-100 hover:bg-slate-50 transition">
+                                            <td className="py-3 font-bold text-slate-900 text-sm">{row.pair}</td>
+                                            <td className="py-3 text-center text-xs text-slate-600">{row.count}</td>
+                                            <td className="py-3 text-center text-xs text-slate-900">{row.winRate}%</td>
                                             <td className={`py-3 text-right font-mono text-sm ${row.pnl >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>
                                                 {row.pnl >= 0 ? '+' : ''}{currencySymbol}{row.pnl.toLocaleString(undefined, {minimumFractionDigits: 2})}
                                             </td>
@@ -375,9 +375,9 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
 
 const NoData = () => (
     <div className="w-full h-full flex flex-col items-center justify-center text-center opacity-50 py-10">
-        <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 text-jtg-green"><Icons.Chart /></div>
-        <h3 className="text-lg font-bold text-white">Log trades to see analytics</h3>
-        <p className="text-slate-400 text-sm max-w-md mt-2">Your performance visualization will appear here.</p>
+        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-jtg-green"><Icons.Chart /></div>
+        <h3 className="text-lg font-bold text-slate-800">Log trades to see analytics</h3>
+        <p className="text-slate-500 text-sm max-w-md mt-2">Your performance visualization will appear here.</p>
     </div>
 );
 
