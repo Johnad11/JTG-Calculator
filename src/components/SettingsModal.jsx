@@ -36,6 +36,27 @@ const SettingsModal = ({
         'Notification' in window ? Notification.permission : 'unsupported'
     );
 
+    // Monthly Target state
+    const [monthlyTarget, setMonthlyTarget] = useState(userSettings?.monthlyTarget || 1000);
+    const [targetSaving, setTargetSaving] = useState(false);
+    const [targetSavedMsg, setTargetSavedMsg] = useState('');
+
+    const handleSaveMonthlyTarget = async (e) => {
+        e.preventDefault();
+        if (!user || !monthlyTarget) return;
+        setTargetSaving(true);
+        try {
+            await db.collection('user_settings').doc(user.uid).set({
+                monthlyTarget: parseFloat(monthlyTarget) || 1000
+            }, { merge: true });
+            setTargetSavedMsg('✅ Monthly profit goal updated successfully!');
+        } catch (err) {
+            console.error("Error saving monthly target:", err);
+        } finally {
+            setTargetSaving(false);
+        }
+    };
+
     // Referral system state
     const [referralInput, setReferralInput] = useState('');
     const [redeemLoading, setRedeemLoading] = useState(false);
@@ -429,6 +450,33 @@ const SettingsModal = ({
                                             <span className="bg-slate-800 text-slate-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">FREE TIER</span>
                                         )}
                                     </div>
+
+                                    {/* Monthly Target Goal Form */}
+                                    <form onSubmit={handleSaveMonthlyTarget} className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 space-y-3">
+                                        <div>
+                                            <label className="text-[10px] font-bold text-jtg-green uppercase tracking-widest block mb-1">Monthly Profit Goal ($)</label>
+                                            <p className="text-[11px] text-slate-400 mb-2">Set your target monthly profit to track on your dashboard & Performance page.</p>
+                                            <input
+                                                type="number"
+                                                step="100"
+                                                value={monthlyTarget}
+                                                onChange={(e) => { setMonthlyTarget(e.target.value); setTargetSavedMsg(''); }}
+                                                placeholder="1000"
+                                                className="w-full bg-jtg-dark border border-jtg-blue/30 rounded-lg p-3 text-white text-sm font-mono font-bold outline-none focus:border-jtg-green transition-all"
+                                                required
+                                            />
+                                        </div>
+
+                                        {targetSavedMsg && <p className="text-jtg-green text-xs font-bold">{targetSavedMsg}</p>}
+
+                                        <button
+                                            type="submit"
+                                            disabled={targetSaving}
+                                            className="w-full py-2.5 bg-jtg-green text-black font-extrabold text-xs rounded-lg uppercase tracking-wider hover:bg-green-400 transition"
+                                        >
+                                            {targetSaving ? 'Saving Target...' : 'Save Monthly Goal'}
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         )}

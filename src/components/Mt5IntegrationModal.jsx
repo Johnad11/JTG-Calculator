@@ -173,6 +173,19 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
         fetchUserData();
     }, [user, isPremium]);
 
+    // Safe API Response Parser Helper
+    const parseJsonResponse = async (res) => {
+        try {
+            const text = await res.text();
+            if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                return JSON.parse(text);
+            }
+            return { error: `Server Error (${res.status}): ${text.slice(0, 120) || res.statusText}` };
+        } catch (e) {
+            return { error: `Network error (${res.status}): ${res.statusText || 'Unable to parse server response.'}` };
+        }
+    };
+
     // Handle Cloud 24/7 Account Connect
     const handleConnectCloud = async (e) => {
         e.preventDefault();
@@ -198,7 +211,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                 })
             });
 
-            const data = await res.json();
+            const data = await parseJsonResponse(res);
             if (!res.ok || data.error) {
                 throw new Error(data.error || 'Failed to connect MetaApi cloud account.');
             }
@@ -238,7 +251,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                 body: JSON.stringify({ userId: user.uid })
             });
 
-            const data = await res.json();
+            const data = await parseJsonResponse(res);
             if (!res.ok || data.error) {
                 throw new Error(data.error || 'Sync failed.');
             }
@@ -266,10 +279,12 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
         setIsConnectingCloud(true);
         try {
             const res = await fetch(`/api/metaapi-status?userId=${user.uid}`, { method: 'DELETE' });
-            const data = await res.json();
+            const data = await parseJsonResponse(res);
             if (data.success) {
                 setCloudStatus(null);
                 setCloudFeedback({ type: 'success', message: 'Cloud account disconnected successfully.' });
+            } else if (data.error) {
+                throw new Error(data.error);
             }
         } catch (err) {
             setCloudFeedback({ type: 'error', message: err.message });

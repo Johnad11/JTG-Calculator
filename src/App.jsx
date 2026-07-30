@@ -12,6 +12,7 @@ import Mt5IntegrationModal from './components/Mt5IntegrationModal';
 import PremiumUpgradeModal from './components/PremiumUpgradeModal';
 import SettingsModal from './components/SettingsModal';
 import OnboardingTourPopup from './components/OnboardingTourPopup';
+import StreakBadgeWidget from './components/StreakBadgeWidget';
 import { LOGO_URL, CURRENCIES, ASSETS, PREMIUM_EMAILS } from './constants';
 
 import { fetchExchangeRates } from './utils/exchangeRate';
@@ -1152,8 +1153,12 @@ const App = () => {
                         <span className="text-[9px] font-bold tracking-wider">SETTINGS</span>
                     </button>
 
-                    {/* USER PROFILE & LOGOUT */}
+                    {/* STREAK WIDGET & USER PROFILE */}
                     <div className="flex flex-col items-center gap-2 mb-2 pt-4 border-t border-theme w-full">
+                        <div className="mb-1">
+                            <StreakBadgeWidget trades={displayTrades} />
+                        </div>
+
                         {currentPlanTier === 'diamond' ? (
                             <div className="bg-cyan-500/20 border border-cyan-400/60 rounded-full px-2.5 py-0.5 flex items-center gap-1 shadow-[0_0_15px_rgba(6,182,212,0.6)] animate-pulse mb-1">
                                 <PremiumStarIcon className="w-3 h-3 text-cyan-300" />
@@ -1202,6 +1207,7 @@ const App = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <StreakBadgeWidget trades={displayTrades} />
                     {isDemoMode && (
                         <span className="text-[9px] bg-emerald-500/20 text-jtg-green px-2 py-0.5 rounded font-extrabold border border-emerald-500/30 animate-pulse uppercase tracking-wide">Demo</span>
                     )}
@@ -1276,7 +1282,7 @@ const App = () => {
                             )}
 
                             {page === 'calendar' && <CalendarView trades={displayTrades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
-                            {page === 'perf' && <Performance key={activeAccountId || 'default'} trades={displayTrades} withdrawals={displayWithdrawals} deposits={displayDeposits} activeAccount={activeAccount} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : (activeAccount ? activeAccount.balance : globalBalance)} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
+                            {page === 'perf' && <Performance key={activeAccountId || 'default'} trades={displayTrades} withdrawals={displayWithdrawals} deposits={displayDeposits} activeAccount={activeAccount} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : (activeAccount ? activeAccount.balance : globalBalance)} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} userSettings={userSettings} />}
                         </div>
                     </div>
                 </div>

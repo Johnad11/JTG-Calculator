@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Icons } from './Icons';
 import StatCard from './StatCard';
 import EquityChart from './EquityChart';
+import StreakBadgeWidget from './StreakBadgeWidget';
 import { convertForDisplay } from '../utils/currencyConverter';
 import { 
     BarChart, 
@@ -14,7 +15,7 @@ import {
     Cell 
 } from 'recharts';
 
-const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, globalInitialBalance, updateGlobalBalance, updateInitialBalance, currencySymbol = '$', currency = 'USD', exchangeRates, activeAccount }) => {
+const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, globalInitialBalance, updateGlobalBalance, updateInitialBalance, currencySymbol = '$', currency = 'USD', exchangeRates, activeAccount, userSettings }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [tempBalance, setTempBalance] = useState(() => {
         const bal = activeAccount?.balance || globalInitialBalance || globalBalance || '';
@@ -253,6 +254,40 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
                             <div><p className="text-[10px] text-slate-500 uppercase font-bold">Growth</p><p className={`text-sm md:text-lg font-mono font-bold ${parseFloat(stats.growthPct) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>{parseFloat(stats.growthPct) > 0 ? '+' : ''}{stats.growthPct}%</p></div>
                         </div>
                     )}
+                </div>
+
+                {/* MONTHLY PROFIT TARGET & STREAK BADGES */}
+                <div className="grid grid-cols-1 gap-6 mb-8">
+                    {/* Monthly Profit Goal Progress Bar */}
+                    <div className="bg-[#0b0f26] border border-[#162C99]/40 rounded-2xl p-5 shadow-xl">
+                        <div className="flex justify-between items-center mb-3">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xl">🎯</span>
+                                <div>
+                                    <h4 className="text-white font-extrabold text-sm uppercase tracking-wider">Monthly Profit Goal</h4>
+                                    <p className="text-[11px] text-slate-400">Monthly Target: {currencySymbol}{parseFloat(userSettings?.monthlyTarget || 1000).toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <span className={`text-base font-black font-mono ${parseFloat(stats.netPnL || 0) >= parseFloat(userSettings?.monthlyTarget || 1000) ? 'text-jtg-green' : 'text-cyan-400'}`}>
+                                    {currencySymbol}{parseFloat(stats.netPnL || 0).toLocaleString()} / {currencySymbol}{parseFloat(userSettings?.monthlyTarget || 1000).toLocaleString()}
+                                </span>
+                                <span className="text-[10px] font-mono font-extrabold text-slate-400 block uppercase">
+                                    {Math.min(Math.max((parseFloat(stats.netPnL || 0) / parseFloat(userSettings?.monthlyTarget || 1000)) * 100, 0), 100).toFixed(1)}% Achieved
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div className="w-full bg-slate-900/80 h-3.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                            <div 
+                                className="bg-gradient-to-r from-cyan-500 via-emerald-400 to-[#1BA657] h-full rounded-full transition-all duration-1000 shadow-[0_0_12px_rgba(27,166,87,0.5)]"
+                                style={{ width: `${Math.min(Math.max((parseFloat(stats.netPnL || 0) / parseFloat(userSettings?.monthlyTarget || 1000)) * 100, 0), 100)}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Streak Badges Milestone Widget */}
+                    <StreakBadgeWidget trades={trades} showDetails={true} />
                 </div>
 
                 {/* INSTITUTIONAL METRICS */}
