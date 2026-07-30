@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { CURRENCIES } from '../constants';
 import { Icons } from './Icons';
-import { convertForDisplay, convertForStorage } from '../utils/currencyConverter';
 
-const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close, isPremium = false, currencySymbol = '$', currency = 'USD', exchangeRates, withdrawFunds, depositFunds, updateAccount, userId, triggerUpgrade }) => {
+const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAccount, deleteAccount, close, isPremium = false, currencySymbol = '$', currency = 'USD', exchangeRates, withdrawFunds, depositFunds, updateAccount, userId, userSettings, triggerUpgrade }) => {
     const canDelete = accounts.length > 1;
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
@@ -16,7 +15,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
     const [ruleInput, setRuleInput] = useState('');
 
     // TRANSACTION STATE (WITHDRAWAL / DEPOSIT)
-    const [transactionMode, setTransactionMode] = useState(null); // 'WITHDRAWAL' | 'DEPOSIT' | null
+    const [transactionMode, setTransactionMode] = useState(null);
     const [transactionAccountId, setTransactionAccountId] = useState(null);
     const [transactionAmount, setTransactionAmount] = useState('');
     const [transactionNote, setTransactionNote] = useState('');
@@ -25,11 +24,17 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
     const [historyLoading, setHistoryLoading] = useState(false);
 
     // EDIT STATE
-    const [editMode, setEditMode] = useState(null); // accountId
+    const [editMode, setEditMode] = useState(null);
     const [editName, setEditName] = useState('');
     const [editRules, setEditRules] = useState([]);
     const [editRuleInput, setEditRuleInput] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    // Determine user plan tier & max account limit
+    const isEmailAdmin = userSettings?.email === 'nwabuezejohnad11@gmail.com' || userSettings?.username === 'nwabuezejohnad11';
+    const planTier = isEmailAdmin ? 'diamond' : (userSettings?.planTier || (isPremium ? 'gold' : 'free'));
+    const maxAccounts = planTier === 'diamond' ? 7 : (planTier === 'gold' ? 5 : 2);
+    const cloudSyncCount = accounts.filter(a => a.source === 'METAAPI_CLOUD_SYNC' || a.isCloudSync).length;
 
     useEffect(() => {
         if (transactionAccountId && transactionMode) {
@@ -41,22 +46,15 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         setHistoryLoading(true);
         try {
             const collectionName = mode === 'DEPOSIT' ? 'deposits' : 'withdrawals';
-            let query = db.collection(collectionName)
-                .where('accountId', '==', accountId);
-
-            if (userId) {
-                query = query.where('userId', '==', userId);
-            }
+            let query = db.collection(collectionName).where('accountId', '==', accountId);
+            if (userId) query = query.where('userId', '==', userId);
 
             const snap = await query.get();
             const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-            // Sort locally to avoid index requirement
             docs.sort((a, b) => new Date(b.date) - new Date(a.date));
-
             setTransactionHistory(docs.slice(0, 20));
         } catch (e) {
-            console.error(`Error loading ${mode.toLowerCase()} history:`, e);
+            console.error(`Error loading history:`, e);
         } finally {
             setHistoryLoading(false);
         }
@@ -73,7 +71,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
             if (success) {
                 setTransactionAmount('');
                 setTransactionNote('');
-                loadTransactionHistory(transactionAccountId, transactionMode); // Refresh history
+                loadTransactionHistory(transactionAccountId, transactionMode);
                 alert(`${transactionMode === 'DEPOSIT' ? 'Deposit' : 'Withdrawal'} recorded successfully.`);
             }
         } catch (e) {
@@ -83,12 +81,11 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         }
     };
 
-
     const handleEditClick = (acc) => {
         setEditMode(acc.id);
         setEditName(acc.name);
         setEditRules(acc.rules || []);
-        setTransactionMode(null); // Close transactions
+        setTransactionMode(null);
         setTransactionAccountId(null);
     };
 
@@ -96,10 +93,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         e.preventDefault();
         setIsSaving(true);
         try {
-            await updateAccount(editMode, { 
-                name: editName, 
-                rules: editRules
-            });
+            await updateAccount(editMode, { name: editName, rules: editRules });
             setEditMode(null);
         } catch (e) {
             console.error(e);
@@ -108,75 +102,37 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         }
     };
 
-    // Add rule in edit mode
-    const addEditRule = (e) => {
-        e.preventDefault();
-        if (editRuleInput.trim()) {
-            setEditRules([...editRules, editRuleInput.trim()]);
-            setEditRuleInput('');
-        }
-    };
-
-    const removeEditRule = (index) => {
-        setEditRules(editRules.filter((_, i) => i !== index));
-    };
-
-
-    const personalAccounts = accounts.filter(a => a.type === 'Personal');
-    const propAccounts = accounts.filter(a => a.type === 'Prop Firm');
-
     const handleAdd = async (e) => {
         e.preventDefault();
         if (!newAccountName || !newAccountBalance) {
-            console.warn("Missing required fields");
+            alert("Please provide an Account Name and Starting Balance.");
             return;
         }
 
-        // Final check for limits before proceeding
-        if (newAccountType === 'Personal' && personalAccounts.length >= MAX_PERSONAL) {
-            if (!isPremium) {
-                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PERSONAL} Personal accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal and 5 Prop Firm accounts?`)) {
-                    triggerUpgrade();
-                    close();
-                }
+        // Limit check
+        if (accounts.length >= maxAccounts) {
+            if (planTier === 'free') {
+                alert(`Account limit reached: Free tier is limited to 2 accounts.\n\nUpgrade to Gold (5 accounts) or Diamond (7 accounts) to add more!`);
+                triggerUpgrade();
+                close();
+            } else if (planTier === 'gold') {
+                alert(`Account limit reached: Gold Plan allows up to 5 accounts in total.\n\nUpgrade to Diamond Plan ($1.50/mo / ₦2,450/mo) for up to 7 accounts!`);
+                triggerUpgrade();
             } else {
-                alert(`Limit reached: Premium accounts are limited to ${MAX_PERSONAL} Personal accounts.`);
+                alert(`Account limit reached: Diamond Plan allows a maximum of 7 total accounts.`);
             }
-            setIsAdding(false);
-            return;
-        }
-        if (newAccountType === 'Prop Firm' && propAccounts.length >= MAX_PROP) {
-            if (!isPremium) {
-                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PROP} Prop Firm accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal and 5 Prop Firm accounts?`)) {
-                    triggerUpgrade();
-                    close();
-                }
-            } else {
-                alert(`Limit reached: Premium accounts are limited to ${MAX_PROP} Prop Firm accounts.`);
-            }
-            setIsAdding(false);
             return;
         }
 
         setIsAdding(true);
-        console.log("Attempting to add account:", { newAccountName, newAccountType, newAccountBalance, newAccountRules });
-
         try {
-            const addPromise = addAccount({
+            const success = await addAccount({
                 name: newAccountName,
                 type: newAccountType,
-                balance: newAccountBalance, // Store native balance directly
+                balance: newAccountBalance,
                 currency: newAccountCurrency,
                 rules: newAccountRules
             });
-
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("Request timed out. Please check your connection.")), 15000)
-            );
-
-            const success = await Promise.race([addPromise, timeoutPromise]);
-
-            console.log("Add account result:", success);
 
             if (success) {
                 setNewAccountName('');
@@ -185,18 +141,13 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                 setNewAccountCurrency('USD');
                 setNewAccountRules([]);
                 setRuleInput('');
-                setIsFormOpen(false); // Close the form
-                setIsAdding(false); // Explicitly set false after success
-            } else {
-                // If addAccount returned false (e.g. handled internal error)
-                setIsAdding(false);
+                setIsFormOpen(false);
             }
         } catch (err) {
-            console.error("Error in handleAdd:", err);
+            console.error("Error adding account:", err);
             alert("An error occurred: " + err.message);
-            setIsAdding(false);
         } finally {
-            setIsAdding(false); // Double safety to ensure loading state is cleared
+            setIsAdding(false);
         }
     };
 
@@ -211,15 +162,9 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         setNewAccountRules(newAccountRules.filter((_, i) => i !== index));
     };
 
-    const MAX_PERSONAL = isPremium ? 3 : 2;
-    const MAX_PROP = isPremium ? 5 : 3;
-
-    const canAddPersonal = personalAccounts.length < MAX_PERSONAL;
-    const canAddProp = propAccounts.length < MAX_PROP;
-
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="bg-jtg-dark border border-jtg-green/30 w-full max-w-md rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] relative">
+            <div className="bg-jtg-dark border border-jtg-green/30 w-full max-w-md rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] relative">
 
                 {/* Header */}
                 <div className="bg-jtg-green/10 p-4 border-b border-jtg-green/20 flex justify-between items-center">
@@ -259,7 +204,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                             step="0.01"
                                             value={transactionAmount}
                                             onChange={(e) => setTransactionAmount(e.target.value)}
-                                            className={`w-full bg-black/40 border border-slate-700 rounded p-2 text-white text-lg font-mono outline-none focus:border-${transactionMode === 'DEPOSIT' ? 'emerald-500' : 'red-500'}`}
+                                            className="w-full bg-black/40 border border-slate-700 rounded p-2 text-white text-lg font-mono outline-none focus:border-jtg-green"
                                             placeholder="0.00"
                                             required
                                         />
@@ -270,8 +215,8 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                             type="text"
                                             value={transactionNote}
                                             onChange={(e) => setTransactionNote(e.target.value)}
-                                            className={`w-full bg-black/40 border border-slate-700 rounded p-2 text-white text-sm outline-none focus:border-${transactionMode === 'DEPOSIT' ? 'emerald-500' : 'red-500'}`}
-                                            placeholder={transactionMode === 'DEPOSIT' ? 'e.g. Funding, credit...' : 'e.g. Payout, bills...'}
+                                            className="w-full bg-black/40 border border-slate-700 rounded p-2 text-white text-sm outline-none focus:border-jtg-green"
+                                            placeholder={transactionMode === 'DEPOSIT' ? 'e.g. Funding...' : 'e.g. Payout...'}
                                         />
                                     </div>
                                     <button
@@ -279,40 +224,9 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         disabled={transactionLoading}
                                         className={`w-full py-3 text-white font-bold rounded transition mt-2 flex items-center justify-center gap-2 ${transactionMode === 'DEPOSIT' ? 'bg-emerald-500/80 hover:bg-emerald-500' : 'bg-red-500/80 hover:bg-red-500'}`}
                                     >
-                                        {transactionLoading ? 'PROCESSING...' : (
-                                            transactionMode === 'DEPOSIT' ? <><Icons.Plus /> DEPOSIT</> : <><Icons.Minus /> WITHDRAW</>
-                                        )}
+                                        {transactionLoading ? 'PROCESSING...' : (transactionMode === 'DEPOSIT' ? 'DEPOSIT' : 'WITHDRAW')}
                                     </button>
                                 </form>
-                            </div>
-
-                            <div className="mb-4">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                    <Icons.History /> Recent {transactionMode === 'DEPOSIT' ? 'Deposits' : 'Withdrawals'}
-                                </h3>
-                                {historyLoading ? (
-                                    <div className="text-slate-500 text-sm text-center py-4">Loading history...</div>
-                                ) : transactionHistory.length === 0 ? (
-                                    <div className="text-slate-500 text-sm text-center py-4 italic bg-slate-800/20 rounded">
-                                        No {transactionMode === 'DEPOSIT' ? 'deposits' : 'withdrawals'} recorded.
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col gap-2">
-                                        {transactionHistory.map(tx => (
-                                            <div key={tx.id} className="bg-slate-800/30 border border-slate-700/50 p-3 rounded flex justify-between items-center">
-                                                <div>
-                                                    <div className={`font-bold font-mono text-sm ${transactionMode === 'DEPOSIT' ? 'text-emerald-400' : 'text-red-400'}`}>
-                                                        {transactionMode === 'DEPOSIT' ? '+' : '-'}{currencySymbol}{parseFloat(tx.amount || tx.displayAmount).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}
-                                                    </div>
-                                                    <div className="text-[10px] text-slate-500">{new Date(tx.date).toLocaleDateString()}</div>
-                                                </div>
-                                                <div className="text-right max-w-[150px]">
-                                                    <div className="text-xs text-slate-300 truncate">{tx.note || (transactionMode === 'DEPOSIT' ? 'Deposit' : 'Withdrawal')}</div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
                         </div>
                     ) : editMode ? (
@@ -328,30 +242,6 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                                         required
                                     />
                                 </div>
-                                {accounts.find(a => a.id === editMode)?.type === 'Prop Firm' && (
-                                    <div>
-                                        <label className="text-xs text-slate-500 font-bold mb-1 block">Rules</label>
-                                        <div className="flex gap-2 mb-2">
-                                            <input
-                                                type="text"
-                                                value={editRuleInput}
-                                                onChange={(e) => setEditRuleInput(e.target.value)}
-                                                className="flex-1 bg-black/40 border border-slate-700 rounded p-2 text-white text-xs focus:border-jtg-green outline-none"
-                                                placeholder="Add rule..."
-                                            />
-                                            <button type="button" onClick={addEditRule} className="bg-jtg-green/20 text-jtg-green p-2 rounded hover:bg-jtg-green/30"><Icons.Plus /></button>
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            {editRules.map((rule, i) => (
-                                                <div key={i} className="flex justify-between items-center bg-slate-800/50 p-2 rounded text-xs text-slate-300">
-                                                    <span>{rule}</span>
-                                                    <button type="button" onClick={() => removeEditRule(i)} className="text-red-400 hover:text-red-300"><Icons.X /></button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
                                 <button type="submit" disabled={isSaving} className="w-full py-3 bg-jtg-green text-black font-bold rounded hover:bg-green-400 transition mt-2">
                                     {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
                                 </button>
@@ -359,264 +249,130 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
                         </div>
                     ) : (
                         <>
-
-                            {/* PERSONAL ACCOUNTS */}
+                            {/* UNIFIED ACCOUNTS LIST */}
                             <div className="mb-6">
-                                <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 flex justify-between">
-                                    Personal Accounts <span>{personalAccounts.length}/{MAX_PERSONAL}</span>
-                                </h3>
+                                <div className="flex justify-between items-center mb-3">
+                                    <h3 className="text-slate-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                                        <span>Your Trading Accounts</span>
+                                        <span className="bg-jtg-green/15 text-jtg-green border border-jtg-green/30 text-[10px] px-2 py-0.5 rounded-full uppercase">
+                                            {planTier.toUpperCase()} TIER
+                                        </span>
+                                    </h3>
+                                    <span className="text-xs font-mono text-slate-400 font-bold">
+                                        {accounts.length} / {maxAccounts} Accounts Used
+                                    </span>
+                                </div>
+
                                 <div className="flex flex-col gap-2">
-                                    {personalAccounts.map(acc => (
+                                    {accounts.map(acc => (
                                         <div key={acc.id} className="flex items-center gap-2 group">
                                             <button
                                                 onClick={() => switchAccount(acc.id)}
                                                 className={`flex-1 flex items-center justify-between p-3 rounded-lg border transition-all ${activeAccountId === acc.id ? 'bg-jtg-green/20 border-jtg-green text-white' : 'bg-jtg-blue/10 border-transparent text-slate-300 hover:bg-jtg-blue/20'}`}
                                             >
-                                                <span className="font-semibold">{acc.name}</span>
-                                                <span className="font-mono text-sm opacity-80">
-                                                    {CURRENCIES[acc.currency]?.symbol || '$'}{parseFloat(acc.balance).toLocaleString(undefined, { minimumFractionDigits: acc.currency === 'NGN' ? 0 : 2, maximumFractionDigits: acc.currency === 'NGN' ? 0 : 2 })}
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-semibold text-sm">{acc.name}</span>
+                                                    <span className="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono uppercase">
+                                                        {acc.type || 'Personal'}
+                                                    </span>
+                                                </div>
+                                                <span className="font-mono text-sm font-bold text-[#1BA657]">
+                                                    {CURRENCIES[acc.currency]?.symbol || '$'}{parseFloat(acc.balance || 0).toLocaleString(undefined, { minimumFractionDigits: acc.currency === 'NGN' ? 0 : 2, maximumFractionDigits: acc.currency === 'NGN' ? 0 : 2 })}
                                                 </span>
                                             </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleEditClick(acc);
-                                                }}
-                                                className="p-2 text-slate-500 hover:text-jtg-green transition-colors border border-transparent hover:border-slate-600 rounded"
-                                                title="Edit Account"
-                                                aria-label="Edit Account"
-                                            >
+
+                                            <button onClick={() => handleEditClick(acc)} className="p-2 text-slate-400 hover:text-jtg-green" title="Edit">
                                                 <Icons.Edit />
                                             </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setTransactionMode('DEPOSIT');
-                                                    setTransactionAccountId(acc.id);
-                                                    setEditMode(null);
-                                                }}
-                                                className="p-2 text-slate-500 hover:text-jtg-green transition-colors border border-transparent hover:border-slate-600 rounded"
-                                                title="Deposit Funds"
-                                                aria-label="Deposit Funds"
-                                            >
+                                            <button onClick={() => { setTransactionMode('DEPOSIT'); setTransactionAccountId(acc.id); }} className="p-2 text-slate-400 hover:text-emerald-400" title="Deposit">
                                                 <Icons.Plus />
                                             </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setTransactionMode('WITHDRAWAL');
-                                                    setTransactionAccountId(acc.id);
-                                                    setEditMode(null);
-                                                }}
-                                                className="p-2 text-slate-500 hover:text-white transition-colors border border-transparent hover:border-slate-600 rounded"
-                                                title="Withdraw Funds"
-                                                aria-label="Withdraw Funds"
-                                            >
+                                            <button onClick={() => { setTransactionMode('WITHDRAWAL'); setTransactionAccountId(acc.id); }} className="p-2 text-slate-400 hover:text-red-400" title="Withdraw">
                                                 <Icons.Minus />
                                             </button>
                                             {canDelete && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        console.log("AccountManager: Personal Delete clicked", acc.id);
-                                                        e.stopPropagation();
-                                                        deleteAccount(acc.id);
-                                                    }}
-                                                    className="p-2 text-slate-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                                    title="Delete Account"
-                                                    aria-label="Delete Account"
-                                                >
+                                                <button onClick={() => deleteAccount(acc.id)} className="p-2 text-slate-500 hover:text-red-500" title="Delete">
                                                     <Icons.Trash />
                                                 </button>
                                             )}
                                         </div>
                                     ))}
-                                    {personalAccounts.length === 0 && <div className="text-slate-500 text-sm italic p-2 text-center">No personal accounts</div>}
+
+                                    {accounts.length === 0 && <div className="text-slate-500 text-sm italic p-4 text-center">No trading accounts found.</div>}
                                 </div>
                             </div>
 
-                            {/* PROP ACCOUNTS */}
-                            <div className="mb-6">
-                                <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 flex justify-between">
-                                    Prop Firm Accounts <span>{propAccounts.length}/{MAX_PROP}</span>
-                                </h3>
-                                <div className="flex flex-col gap-2">
-                                    {propAccounts.map(acc => (
-                                        <div key={acc.id} className="flex flex-col mb-2">
-                                            <div className="flex items-center gap-2 group">
-                                                <button
-                                                    onClick={() => switchAccount(acc.id)}
-                                                    className={`flex-1 flex items-center justify-between p-3 rounded-lg border transition-all ${activeAccountId === acc.id ? 'bg-jtg-green/20 border-jtg-green text-white' : 'bg-jtg-blue/10 border-transparent text-slate-300 hover:bg-jtg-blue/20'}`}
-                                                >
-                                                    <span className="font-semibold">{acc.name}</span>
-                                                    <div className="text-right">
-                                                        <div className="font-mono text-sm opacity-80">
-                                                            {CURRENCIES[acc.currency]?.symbol || '$'}{parseFloat(acc.balance).toLocaleString(undefined, { minimumFractionDigits: acc.currency === 'NGN' ? 0 : 2, maximumFractionDigits: acc.currency === 'NGN' ? 0 : 2 })}
-                                                        </div>
-                                                        {acc.rules && acc.rules.length > 0 && (
-                                                            <div className="text-[10px] text-jtg-green opacity-70">{acc.rules.length} Rules Active</div>
-                                                        )}
-                                                    </div>
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleEditClick(acc);
-                                                    }}
-                                                    className="p-2 text-slate-500 hover:text-jtg-green transition-colors border border-transparent hover:border-slate-600 rounded"
-                                                    title="Edit Account"
-                                                    aria-label="Edit Account"
-                                                >
-                                                    <Icons.Edit />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setTransactionMode('DEPOSIT');
-                                                        setTransactionAccountId(acc.id);
-                                                        setEditMode(null);
-                                                    }}
-                                                    className="p-2 text-slate-500 hover:text-jtg-green transition-colors border border-transparent hover:border-slate-600 rounded"
-                                                    title="Deposit Funds"
-                                                    aria-label="Deposit Funds"
-                                                >
-                                                    <Icons.Plus />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setTransactionMode('WITHDRAWAL');
-                                                        setTransactionAccountId(acc.id);
-                                                        setEditMode(null);
-                                                    }}
-                                                    className="p-2 text-slate-500 hover:text-white transition-colors border border-transparent hover:border-slate-600 rounded"
-                                                    title="Withdraw Funds"
-                                                    aria-label="Withdraw Funds"
-                                                >
-                                                    <Icons.Minus />
-                                                </button>
-                                                {canDelete && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            console.log("AccountManager: Prop Delete clicked", acc.id);
-                                                            e.stopPropagation();
-                                                            deleteAccount(acc.id);
-                                                        }}
-                                                        className="p-2 text-slate-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                                        title="Delete Account"
-                                                        aria-label="Delete Account"
-                                                    >
-                                                        <Icons.Trash />
-                                                    </button>
-                                                )}
-                                            </div>
-                                            {acc.rules && acc.rules.length > 0 && activeAccountId === acc.id && (
-                                                <div className="bg-black/20 p-2 rounded mt-1 mx-2 text-xs text-slate-400 border-l-2 border-jtg-green/30">
-                                                    <div className="font-bold mb-1 text-slate-500 uppercase tracking-wider text-[10px]">Account Rules:</div>
-                                                    <ul className="list-disc pl-4 space-y-1">
-                                                        {acc.rules.map((rule, i) => (
-                                                            <li key={i}>{rule}</li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                    {propAccounts.length === 0 && <div className="text-slate-500 text-sm italic p-2 text-center">No prop firm accounts</div>}
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {/* Footer / Add Action */}
-                    <div className="p-4 border-t border-jtg-green/20 bg-jtg-blue/5">
-                        {!isFormOpen ? (
-                            <button
-                                onClick={() => setIsFormOpen(true)}
-                                className="w-full py-3 bg-jtg-green text-black font-bold rounded hover:bg-green-400 transition flex items-center justify-center gap-2"
-                            >
-                                <Icons.Plus /> ADD NEW ACCOUNT
-                            </button>
-                        ) : (
-                            <form onSubmit={handleAdd} className="flex flex-col gap-3 animate-fade-in-up">
-                                <div className="flex gap-2">
-                                    <select
-                                        value={newAccountType}
-                                        onChange={(e) => setNewAccountType(e.target.value)}
-                                        className="bg-black/40 border border-slate-700 rounded p-2 text-white text-sm focus:border-jtg-green outline-none"
-                                    >
-                                        <option value="Personal">Personal</option>
-                                        <option value="Prop Firm">Prop Firm</option>
-                                    </select>
-                                    <input
-                                        type="text"
-                                        placeholder="Account Name"
-                                        value={newAccountName}
-                                        onChange={(e) => setNewAccountName(e.target.value)}
-                                        className="flex-1 bg-black/40 border border-slate-700 rounded p-2 text-white text-sm focus:border-jtg-green outline-none"
-                                        required
-                                    />
-                                    <select
-                                        value={newAccountCurrency}
-                                        onChange={(e) => {
-                                            setNewAccountCurrency(e.target.value);
-                                        }}
-                                        className="bg-black/40 border border-slate-700 rounded p-2 text-white text-sm focus:border-jtg-green outline-none"
-                                    >
-                                        <option value="USD">USD ($)</option>
-                                        <option value="NGN">NGN (₦)</option>
-                                    </select>
-                                </div>
-                                <input
-                                    type="number"
-                                    step={newAccountCurrency === 'NGN' ? '1' : '0.01'}
-                                    placeholder="Initial Balance"
-                                    value={newAccountBalance}
-                                    onChange={(e) => setNewAccountBalance(e.target.value)}
-                                    className="w-full bg-black/40 border border-slate-700 rounded p-2 text-white text-sm focus:border-jtg-green outline-none"
-                                    required
-                                />
-
-
-                                {(newAccountType === 'Personal' && !canAddPersonal) || (newAccountType === 'Prop Firm' && !canAddProp) ? (
-                                    <div className="text-center p-3">
-                                        <div className="text-red-400 text-xs font-bold mb-2">
-                                            {isPremium ? 'Maximum Account Limit Reached' : `Free Plan Limit Reached (${newAccountType === 'Personal' ? MAX_PERSONAL : MAX_PROP}/${newAccountType === 'Personal' ? MAX_PERSONAL : MAX_PROP})`}
-                                        </div>
-                                        {!isPremium && (
-                                            <button
-                                                type="button"
-                                                onClick={() => { triggerUpgrade(); close(); }}
-                                                className="text-xs bg-gradient-to-r from-jtg-green to-emerald-500 text-black font-bold py-2 px-4 rounded hover:brightness-110 transition shadow-lg w-full flex items-center justify-center gap-2"
-                                            >
-                                                <Icons.Star className="w-3 h-3" /> UPGRADE TO PREMIUM
-                                            </button>
-                                        )}
+                            {/* ADD ACCOUNT FORM / TRIGGER */}
+                            {isFormOpen ? (
+                                <form onSubmit={handleAdd} className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl flex flex-col gap-3 animate-fade-in">
+                                    <h4 className="text-white font-bold text-xs uppercase tracking-wider">Add New Account</h4>
+                                    <div>
+                                        <label className="text-[10px] text-slate-400 font-bold block mb-1">ACCOUNT NAME</label>
+                                        <input
+                                            type="text"
+                                            value={newAccountName}
+                                            onChange={(e) => setNewAccountName(e.target.value)}
+                                            placeholder="e.g. Funded Account #1"
+                                            className="w-full bg-black/40 border border-slate-700 rounded p-2 text-xs text-white outline-none focus:border-jtg-green"
+                                            required
+                                        />
                                     </div>
-                                ) : (
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsFormOpen(false)}
-                                            className="flex-1 py-2 bg-slate-700 text-white rounded hover:bg-slate-600 transition text-sm font-bold"
-                                        >
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="text-[10px] text-slate-400 font-bold block mb-1">STARTING BALANCE</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={newAccountBalance}
+                                                onChange={(e) => setNewAccountBalance(e.target.value)}
+                                                placeholder="10000"
+                                                className="w-full bg-black/40 border border-slate-700 rounded p-2 text-xs text-white font-mono outline-none focus:border-jtg-green"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] text-slate-400 font-bold block mb-1">ACCOUNT TYPE</label>
+                                            <select
+                                                value={newAccountType}
+                                                onChange={(e) => setNewAccountType(e.target.value)}
+                                                className="w-full bg-black/40 border border-slate-700 rounded p-2 text-xs text-white outline-none"
+                                            >
+                                                <option value="Personal">Personal Account</option>
+                                                <option value="Prop Firm">Prop Firm Account</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2 mt-2">
+                                        <button type="submit" disabled={isAdding} className="flex-1 py-2.5 bg-jtg-green text-black font-extrabold text-xs rounded hover:bg-green-400 transition">
+                                            {isAdding ? 'ADDING...' : 'CREATE ACCOUNT'}
+                                        </button>
+                                        <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2.5 border border-slate-700 text-slate-400 text-xs font-bold rounded">
                                             CANCEL
                                         </button>
-                                        <button
-                                            type="submit"
-                                            disabled={isAdding} // Disable while invalid or adding
-                                            className={`flex-1 py-2 bg-jtg-green text-black rounded hover:bg-green-400 transition text-sm font-bold ${isAdding ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        >
-                                            {isAdding ? 'CREATING...' : 'CREATE'}
-                                        </button>
                                     </div>
-                                )}
-                            </form>
-                        )}
-                    </div>
+                                </form>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        if (accounts.length >= maxAccounts) {
+                                            alert(`Account limit reached: Your ${planTier.toUpperCase()} Plan allows a maximum of ${maxAccounts} accounts.\n\nPlease upgrade your subscription tier to add more accounts!`);
+                                            if (planTier !== 'diamond') triggerUpgrade();
+                                        } else {
+                                            setIsFormOpen(true);
+                                        }
+                                    }}
+                                    className="w-full py-3 bg-jtg-green/15 border border-jtg-green/40 hover:bg-jtg-green/25 text-jtg-green font-extrabold text-xs tracking-wider rounded-xl transition flex items-center justify-center gap-2 uppercase"
+                                >
+                                    <Icons.Plus /> Add Account ({accounts.length}/{maxAccounts})
+                                </button>
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
-        </div >
+        </div>
     );
 };
 
-export default React.memo(AccountManager);
+export default AccountManager;

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Icons } from './Icons';
 import StatCard from './StatCard';
 import EquityChart from './EquityChart';
@@ -17,9 +17,14 @@ import {
 const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, globalInitialBalance, updateGlobalBalance, updateInitialBalance, currencySymbol = '$', currency = 'USD', exchangeRates, activeAccount }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [tempBalance, setTempBalance] = useState(() => {
-        const bal = globalInitialBalance || globalBalance || '';
+        const bal = activeAccount?.balance || globalInitialBalance || globalBalance || '';
         return bal;
     });
+
+    useEffect(() => {
+        const bal = activeAccount?.balance || globalInitialBalance || globalBalance || '';
+        setTempBalance(bal);
+    }, [activeAccount?.id, activeAccount?.balance, globalBalance, globalInitialBalance]);
 
     const stats = useMemo(() => {
         const total = trades ? trades.length : 0;
@@ -110,12 +115,12 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
             disciplineScore: isNaN(disciplineScore) ? '0.0' : disciplineScore,
             bestPair,
             leagueTable,
-            currentBalance: (parseFloat(globalBalance || 0)).toFixed(2),
+            currentBalance: (parseFloat(activeAccount?.balance || globalBalance || 0)).toFixed(2),
             growthPct: isNaN(growthPct) ? '0.00' : growthPct.toFixed(2),
             totalWithdrawals: totalWithdrawals.toFixed(2),
             totalDeposits: totalDeposits.toFixed(2)
         };
-    }, [trades, globalBalance, withdrawals, deposits, currency, exchangeRates, globalInitialBalance]);
+    }, [trades, globalBalance, withdrawals, deposits, currency, exchangeRates, globalInitialBalance, activeAccount]);
 
     const heatmapData = useMemo(() => {
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

@@ -157,6 +157,10 @@ const App = () => {
     const [exportCount, setExportCount] = useState(0);
     const [userSettings, setUserSettings] = useState(null);
     const [isPremium, setIsPremium] = useState(false);
+
+    // Derived plan tier helper
+    const isEmailAdmin = (user?.email && user.email.toLowerCase() === "nwabuezejohnad11@gmail.com") || (username && username.toLowerCase() === "nwabuezejohnad11");
+    const currentPlanTier = isEmailAdmin ? 'diamond' : (userSettings?.planTier || (isPremium ? 'gold' : 'free'));
     const [showPremiumUpgradeModal, setShowPremiumUpgradeModal] = useState(false);
     const [isAuthLoading, setIsAuthLoading] = useState(true);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -407,17 +411,23 @@ const App = () => {
                                     localStorage.setItem('jtg_reminder_time', data.reminderTime);
                                 }
 
-                                // Check Premium Status
-                                const isEmailPremium = PREMIUM_EMAILS.includes(currentUser.email);
+                                // Check Premium Status & Lifetime Admin Override
+                                const isEmailAdmin = (currentUser.email && currentUser.email.toLowerCase() === "nwabuezejohnad11@gmail.com") || (data.username && data.username.toLowerCase() === "nwabuezejohnad11");
+                                const isEmailPremium = PREMIUM_EMAILS.includes(currentUser.email) || isEmailAdmin;
                                 const hasActivePremiumSetting = data.isPremium === true;
                                 let isSubscriptionValid = false;
 
-                                if (hasActivePremiumSetting) {
+                                if (isEmailAdmin) {
+                                    isSubscriptionValid = true;
+                                    if (data.planTier !== 'diamond') {
+                                        settingsRef.set({ isPremium: true, planTier: 'diamond', premiumPlan: 'Diamond Plan (Lifetime Admin)' }, { merge: true });
+                                    }
+                                } else if (hasActivePremiumSetting) {
                                     if (data.premiumUntil) {
                                         const premiumUntilDate = new Date(data.premiumUntil);
                                         isSubscriptionValid = premiumUntilDate > new Date();
                                     } else {
-                                        isSubscriptionValid = true; // Fallback if no date is stored
+                                        isSubscriptionValid = true;
                                     }
                                 }
 
@@ -453,58 +463,58 @@ const App = () => {
         }
     }, []);
 
-    // LOAD TRADES WHEN ACTIVE ACCOUNT CHANGES
+    // LOAD DATA WHEN ACTIVE ACCOUNT CHANGES (REAL-TIME SNAPSHOTS)
     useEffect(() => {
         if (user && activeAccountId) {
-            const loadTrades = async () => {
-                try {
-                    // Load Trades
-                    const q = db.collection('trades')
-                        .where('userId', '==', user.uid)
-                        .where('accountId', '==', activeAccountId); // Filter by Account
+            // 1. Subscribe to Trades for Active Account
+            const q = db.collection('trades')
+                .where('userId', '==', user.uid)
+                .where('accountId', '==', activeAccountId);
 
-                    const snapshot = await q.get();
-                    const cloudTrades = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                    // Sort by closing date (lowest to highest)
-                    const sortedTrades = cloudTrades.sort((a, b) => {
-                        const dateA = new Date(a.closeDate || a.openDate || 0);
-                        const dateB = new Date(b.closeDate || b.openDate || 0);
-                        return dateA - dateB;
-                    });
-                    setTrades(sortedTrades);
+            const unsubTrades = q.onSnapshot((snapshot) => {
+                const cloudTrades = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                const sortedTrades = cloudTrades.sort((a, b) => {
+                    const dateA = new Date(a.closeDate || a.openDate || 0);
+                    const dateB = new Date(b.closeDate || b.openDate || 0);
+                    return dateA - dateB;
+                });
+                setTrades(sortedTrades);
+            }, (err) => console.error("Error subscribing trades:", err));
 
-                    // Load Withdrawals (for Performance)
-                    const wQ = db.collection('withdrawals')
-                        .where('userId', '==', user.uid)
-                        .where('accountId', '==', activeAccountId);
+            // 2. Subscribe to Withdrawals
+            const wQ = db.collection('withdrawals')
+                .where('userId', '==', user.uid)
+                .where('accountId', '==', activeAccountId);
 
-                    const wSnap = await wQ.get();
-                    const cloudWithdrawals = wSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                    setWithdrawals(cloudWithdrawals);
+            const unsubWithdrawals = wQ.onSnapshot((wSnap) => {
+                setWithdrawals(wSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+            }, (err) => console.error("Error subscribing withdrawals:", err));
 
-                    // Load Deposits (for Performance)
-                    const dQ = db.collection('deposits')
-                        .where('userId', '==', user.uid)
-                        .where('accountId', '==', activeAccountId);
+            // 3. Subscribe to Deposits
+            const dQ = db.collection('deposits')
+                .where('userId', '==', user.uid)
+                .where('accountId', '==', activeAccountId);
 
-                    const dSnap = await dQ.get();
-                    const cloudDeposits = dSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                    setDeposits(cloudDeposits);
+            const unsubDeposits = dQ.onSnapshot((dSnap) => {
+                setDeposits(dSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+            }, (err) => console.error("Error subscribing deposits:", err));
 
-                    // Update active account balance in UI if needed
-                    const acc = accounts.find(a => a.id === activeAccountId);
-                    if (acc) setGlobalBalance(acc.balance);
+            // Update balance
+            const acc = accounts.find(a => a.id === activeAccountId);
+            if (acc) setGlobalBalance(acc.balance);
 
-                    localStorage.setItem('jtg_last_account', activeAccountId);
-                } catch (e) { console.error("Error loading trades:", e); }
+            localStorage.setItem('jtg_last_account', activeAccountId);
+
+            return () => {
+                unsubTrades();
+                unsubWithdrawals();
+                unsubDeposits();
             };
-            loadTrades();
         } else if (!user) {
-            // Local storage fallback for guests (simplified: single account behavior)
             const saved = localStorage.getItem('jtg_journal');
             if (saved) setTrades(JSON.parse(saved));
         }
-    }, [user, activeAccountId]);
+    }, [user, activeAccountId, accounts]);
 
     // SAVE LOCAL (GUEST)
     useEffect(() => {
@@ -847,6 +857,10 @@ const App = () => {
 
     const switchAccount = (id) => {
         setActiveAccountId(id);
+        const targetAcc = accounts.find(a => a.id === id);
+        if (targetAcc) {
+            setGlobalBalance(targetAcc.balance);
+        }
         setShowAccountManager(false);
     };
 
@@ -1140,18 +1154,31 @@ const App = () => {
 
                     {/* USER PROFILE & LOGOUT */}
                     <div className="flex flex-col items-center gap-2 mb-2 pt-4 border-t border-theme w-full">
-                        {isPremium && (
-                            <div className="bg-emerald-500/20 border border-emerald-500/40 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm animate-pulse mb-1">
-                                <PremiumStarIcon className="w-2.5 h-2.5 text-jtg-green" />
-                                <span className="text-[8px] font-extrabold text-jtg-green tracking-wider uppercase">PRO</span>
+                        {currentPlanTier === 'diamond' ? (
+                            <div className="bg-cyan-500/20 border border-cyan-400/60 rounded-full px-2.5 py-0.5 flex items-center gap-1 shadow-[0_0_15px_rgba(6,182,212,0.6)] animate-pulse mb-1">
+                                <PremiumStarIcon className="w-3 h-3 text-cyan-300" />
+                                <span className="text-[8px] font-black text-cyan-300 tracking-widest uppercase">DIAMOND</span>
                             </div>
-                        )}
+                        ) : currentPlanTier === 'gold' ? (
+                            <div className="bg-amber-500/20 border border-amber-400/60 rounded-full px-2.5 py-0.5 flex items-center gap-1 shadow-[0_0_15px_rgba(234,179,8,0.6)] animate-pulse mb-1">
+                                <PremiumStarIcon className="w-3 h-3 text-amber-400" />
+                                <span className="text-[8px] font-black text-amber-400 tracking-widest uppercase">GOLD</span>
+                            </div>
+                        ) : null}
                         <button onClick={logout} className="flex flex-col items-center gap-1 text-slate-400 hover:text-red-500 transition" title="Logout">
-                            <div className="w-8 h-8 rounded-full bg-jtg-blue text-white flex items-center justify-center font-bold text-xs relative shadow-sm">
+                            <div className={`w-9 h-9 rounded-full bg-jtg-blue text-white flex items-center justify-center font-bold text-xs relative shadow-md ${
+                                currentPlanTier === 'diamond' ? 'ring-2 ring-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.8)]' : 
+                                currentPlanTier === 'gold' ? 'ring-2 ring-amber-400 shadow-[0_0_15px_rgba(234,179,8,0.8)]' : ''
+                            }`}>
                                 {user.email[0].toUpperCase()}
-                                {isPremium && <span className="absolute -top-1 -right-1 bg-amber-400 text-black text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white font-extrabold" title="Premium Access">★</span>}
+                                {currentPlanTier === 'diamond' && (
+                                    <span className="absolute -top-1 -right-1 bg-cyan-400 text-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center border border-black font-black shadow-lg animate-pulse" title="Diamond Tier Active">💎</span>
+                                )}
+                                {currentPlanTier === 'gold' && (
+                                    <span className="absolute -top-1 -right-1 bg-amber-400 text-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center border border-black font-black shadow-lg animate-pulse" title="Gold Tier Active">★</span>
+                                )}
                             </div>
-                            <span className="text-[9px] font-bold tracking-wider">LOGOUT</span>
+                            <span className="text-[9px] font-bold tracking-wider mt-0.5">LOGOUT</span>
                         </button>
                     </div>
                 </div>
@@ -1178,8 +1205,15 @@ const App = () => {
                     {isDemoMode && (
                         <span className="text-[9px] bg-emerald-500/20 text-jtg-green px-2 py-0.5 rounded font-extrabold border border-emerald-500/30 animate-pulse uppercase tracking-wide">Demo</span>
                     )}
-                    {isPremium && (
-                        <span className="bg-emerald-500/20 border border-emerald-500/30 text-jtg-green text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider">PRO</span>
+                    {currentPlanTier === 'diamond' && (
+                        <span className="bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 text-[9px] font-black px-2 py-0.5 rounded-full tracking-widest shadow-[0_0_12px_rgba(6,182,212,0.5)] flex items-center gap-1 animate-pulse">
+                            <span>💎</span> DIAMOND
+                        </span>
+                    )}
+                    {currentPlanTier === 'gold' && (
+                        <span className="bg-amber-500/20 border border-amber-400/50 text-amber-400 text-[9px] font-black px-2 py-0.5 rounded-full tracking-widest shadow-[0_0_12px_rgba(234,179,8,0.5)] flex items-center gap-1 animate-pulse">
+                            <span>★</span> GOLD
+                        </span>
                     )}
                     <button
                         onClick={toggleTheme}
@@ -1242,7 +1276,7 @@ const App = () => {
                             )}
 
                             {page === 'calendar' && <CalendarView trades={displayTrades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
-                            {page === 'perf' && <Performance trades={displayTrades} withdrawals={displayWithdrawals} deposits={displayDeposits} activeAccount={activeAccount} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : globalBalance} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
+                            {page === 'perf' && <Performance key={activeAccountId || 'default'} trades={displayTrades} withdrawals={displayWithdrawals} deposits={displayDeposits} activeAccount={activeAccount} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : (activeAccount ? activeAccount.balance : globalBalance)} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} />}
                         </div>
                     </div>
                 </div>
@@ -1258,6 +1292,12 @@ const App = () => {
                     deleteAccount={deleteAccount}
                     close={() => setShowAccountManager(false)}
                     isPremium={isPremium}
+                    userSettings={{
+                        ...userSettings,
+                        email: user?.email || userSettings?.email || '',
+                        username: username || userSettings?.username || '',
+                        planTier: currentPlanTier
+                    }}
                     triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
                     currencySymbol={currencySymbol}
                     currency={currency}
@@ -1277,7 +1317,6 @@ const App = () => {
                     onUsernameSet={(name) => {
                         setUsername(name);
                         setShowUsernameModal(false);
-                        // Trigger onboarding tour popup modal for new users
                         setTimeout(() => setShowTourPrompt(true), 500);
                     }}
                 />
@@ -1287,6 +1326,12 @@ const App = () => {
                 <Mt5IntegrationModal
                     user={user}
                     isPremium={isPremium}
+                    userSettings={{
+                        ...userSettings,
+                        email: user?.email || userSettings?.email || '',
+                        username: username || userSettings?.username || '',
+                        planTier: currentPlanTier
+                    }}
                     triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
                     close={() => setShowSyncModal(false)}
                 />
@@ -1295,7 +1340,12 @@ const App = () => {
             {showPremiumUpgradeModal && user && (
                 <PremiumUpgradeModal
                     user={user}
-                    userSettings={userSettings}
+                    userSettings={{
+                        ...userSettings,
+                        email: user?.email || userSettings?.email || '',
+                        username: username || userSettings?.username || '',
+                        planTier: currentPlanTier
+                    }}
                     close={() => setShowPremiumUpgradeModal(false)}
                     onSuccess={(newSettings) => {
                         setIsPremium(newSettings.isPremium);

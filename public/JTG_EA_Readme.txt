@@ -3,7 +3,7 @@
 ========================================================================
 Product Version: 1.10
 Copyright: 2026, JTG Ecosystem
-Official Website: https://jtg-ecosystem.app/
+Official Website: https://www.johnadtradersgroup.name.ng/
 Web Journal: https://jtgjournal.johnadtradersgroup.name.ng/
 
 Thank you for upgrading to the JTG Premium Package! The JTG Evolution 

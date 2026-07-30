@@ -85,7 +85,8 @@ export default async function handler(req, res) {
         console.log(`✅ Authenticated User ID: ${userId}`);
 
         // 3. Verify JTG Premium subscription status
-        const isEmailPremium = userData.email && ["nwabuezejohnad11@gmail.com"].includes(userData.email);
+        const isEmailAdmin = (userData.email && userData.email.toLowerCase() === "nwabuezejohnad11@gmail.com") || (userData.username && userData.username.toLowerCase() === "nwabuezejohnad11");
+        const isEmailPremium = isEmailAdmin || (userData.email && ["nwabuezejohnad11@gmail.com"].includes(userData.email));
         const isPremium = userData.isPremium === true || isEmailPremium;
         let isSubscriptionValid = false;
 

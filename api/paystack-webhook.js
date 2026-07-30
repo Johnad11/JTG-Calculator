@@ -62,7 +62,9 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Missing userId in transaction metadata' });
         }
 
-        console.log(`✅ Verified charge.success for User: ${userId}, Reference: ${ref}, Plan: ${planName}`);
+        const planTier = metadata.planTier || (planName && planName.toLowerCase().includes('diamond') ? 'diamond' : 'gold');
+
+        console.log(`✅ Verified charge.success for User: ${userId}, Reference: ${ref}, Plan: ${planName}, Tier: ${planTier}`);
 
         if (!admin.apps.length) {
             return res.status(500).json({ error: 'Firebase Admin not initialized' });
@@ -96,7 +98,8 @@ export default async function handler(req, res) {
 
                 transaction.set(settingsRef, {
                     isPremium: true,
-                    premiumPlan: planName || 'Premium Plan',
+                    planTier: planTier,
+                    premiumPlan: planName || `${planTier === 'diamond' ? 'Diamond' : 'Gold'} Plan`,
                     premiumUntil: premiumUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                     subscribedAt: new Date().toISOString(),
                     paystackPaymentReference: ref,
