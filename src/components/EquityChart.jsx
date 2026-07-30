@@ -16,19 +16,19 @@ const EquityChart = ({ data, currencySymbol = '$' }) => {
         if (!data || data.length === 0) return [];
         if (timeframe === 'ALL') return data;
 
-        const now = new Date();
-        let cutoff = new Date();
+        const nowMs = Date.now();
+        let cutoffMs = nowMs;
 
-        if (timeframe === '7D') cutoff.setDate(now.getDate() - 7);
-        else if (timeframe === '30D') cutoff.setDate(now.getDate() - 30);
-        else if (timeframe === '90D') cutoff.setDate(now.getDate() - 90);
-        else if (timeframe === 'YTD') cutoff = new Date(now.getFullYear(), 0, 1);
+        if (timeframe === '7D') cutoffMs = nowMs - (7 * 24 * 60 * 60 * 1000);
+        else if (timeframe === '30D') cutoffMs = nowMs - (30 * 24 * 60 * 60 * 1000);
+        else if (timeframe === '90D') cutoffMs = nowMs - (90 * 24 * 60 * 60 * 1000);
+        else if (timeframe === 'YTD') cutoffMs = new Date(new Date().getFullYear(), 0, 1).getTime();
 
-        const cutoffStr = cutoff.toISOString().split('T')[0];
-
-        const sliced = data.filter(d => {
-            if (!d.rawDate) return true;
-            return d.rawDate >= cutoffStr;
+        const sliced = data.filter((d, index) => {
+            if (index === 0) return true; // Always include baseline start point
+            if (d.timestamp) return d.timestamp >= cutoffMs;
+            if (d.rawDate) return new Date(d.rawDate).getTime() >= cutoffMs;
+            return true;
         });
 
         return sliced.length > 0 ? sliced : data;

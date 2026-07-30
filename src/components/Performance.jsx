@@ -200,8 +200,11 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
 
         // 5. Initialize chart data with start point
         const startBal = globalInitialBalance ? parseFloat(globalInitialBalance) : parseFloat(globalBalance || 0);
+        const firstDate = events[0] ? events[0].date : new Date();
         const data = [{
             date: 'Start',
+            rawDate: firstDate.toISOString().split('T')[0],
+            timestamp: firstDate.getTime(),
             balance: isNaN(startBal) ? 0 : startBal
         }];
 
@@ -210,9 +213,13 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
             runningBalance += evt.amount;
             data.push({
                 date: evt.label,
+                rawDate: evt.date.toISOString().split('T')[0],
+                timestamp: evt.date.getTime(),
                 balance: runningBalance
             });
         });
+
+        return data;
 
         return data;
     }, [trades, deposits, withdrawals, globalInitialBalance, globalBalance, currency, exchangeRates]);

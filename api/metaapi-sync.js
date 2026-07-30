@@ -84,7 +84,16 @@ export default async function handler(req, res) {
         // 2. Connect via RPC to fetch live data
         const connection = account.getRPCConnection();
         await connection.connect();
-        await connection.waitSynchronized();
+
+        try {
+            await connection.waitSynchronized(20000);
+        } catch (syncErr) {
+            console.warn(`⚠️ MetaApi RPC waitSynchronized timeout for account ${metaAccountId}:`, syncErr.message);
+            return res.status(202).json({
+                status: 'SYNCHRONIZING',
+                message: 'MetaApi Cloud terminal is connecting to your broker... Please click "Sync Now" again in 10-15 seconds.'
+            });
+        }
 
         // 3. Fetch account information and deal history
         const accountInfo = await connection.getAccountInformation();

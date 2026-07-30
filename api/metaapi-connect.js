@@ -83,23 +83,34 @@ export default async function handler(req, res) {
         
         const api = new MetaApi(token);
 
-        // 2. Create the cloud account on MetaApi
-        const accountData = {
-            name: accountName || `JTG-${login}`,
-            type: 'cloud',
-            login: String(login).trim(),
-            password: String(password).trim(),
-            server: String(server).trim(),
-            platform: platform.toLowerCase() === 'mt4' ? 'mt4' : 'mt5',
-            magic: 0,
-            reliability: 'high'
-        };
+        // 2. Check if account already exists on MetaApi to prevent duplication
+        const existingAccounts = await api.metatraderAccountApi.getAccounts();
+        let account = existingAccounts.find(a => 
+            String(a.login).trim() === String(login).trim() && 
+            String(a.server).trim().toLowerCase() === String(server).trim().toLowerCase()
+        );
 
-        const account = await api.metatraderAccountApi.createAccount(accountData);
-        console.log(`✅ MetaApi Account created with ID: ${account.id}. Now deploying...`);
+        if (!account) {
+            const accountData = {
+                name: accountName || `JTG-${login}`,
+                type: 'cloud',
+                login: String(login).trim(),
+                password: String(password).trim(),
+                server: String(server).trim(),
+                platform: platform.toLowerCase() === 'mt4' ? 'mt4' : 'mt5',
+                magic: 0,
+                reliability: 'high'
+            };
+            account = await api.metatraderAccountApi.createAccount(accountData);
+            console.log(`✅ MetaApi Account created with ID: ${account.id}.`);
+        } else {
+            console.log(`ℹ️ MetaApi Account already exists with ID: ${account.id}.`);
+        }
 
         // 3. Trigger account deployment on MetaApi
-        await account.deploy();
+        if (account.state !== 'DEPLOYED' && account.state !== 'DEPLOYING') {
+            await account.deploy();
+        }
 
         // 4. Update user_settings in Firestore with cloud account metadata
         if (admin.apps.length) {
