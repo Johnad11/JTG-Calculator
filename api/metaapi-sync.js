@@ -36,7 +36,8 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Missing required parameter: userId' });
         }
 
-        const token = process.env.METAAPI_TOKEN;
+        const rawToken = process.env.METAAPI_TOKEN;
+        const token = rawToken ? rawToken.trim().replace(/^["']|["']$/g, '') : null;
         if (!token) {
             return res.status(500).json({ error: 'Server misconfiguration: METAAPI_TOKEN environment variable is missing in Vercel.' });
         }
