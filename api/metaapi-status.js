@@ -30,24 +30,23 @@ export default async function handler(req, res) {
         return;
     }
 
-    const { userId } = req.query.userId ? req.query : (req.body || {});
-    if (!userId) {
-        return res.status(400).json({ error: 'Missing required parameter: userId' });
-    }
-
-    const token = process.env.METAAPI_TOKEN;
-    if (!token) {
-        return res.status(500).json({ error: 'Server misconfiguration: METAAPI_TOKEN is missing.' });
-    }
-
-    if (!admin.apps.length) {
-        return res.status(500).json({ error: 'Firebase Admin not initialized.' });
-    }
-
-    const db = admin.firestore();
-    const userDocRef = db.collection('user_settings').doc(userId);
-
     try {
+        const { userId } = req.query.userId ? req.query : (req.body || {});
+        if (!userId) {
+            return res.status(400).json({ error: 'Missing required parameter: userId' });
+        }
+
+        const token = process.env.METAAPI_TOKEN;
+        if (!token) {
+            return res.status(500).json({ error: 'Server misconfiguration: METAAPI_TOKEN environment variable is missing in Vercel.' });
+        }
+
+        if (!admin.apps.length) {
+            return res.status(500).json({ error: 'Firebase Admin not initialized.' });
+        }
+
+        const db = admin.firestore();
+        const userDocRef = db.collection('user_settings').doc(userId);
         const userDoc = await userDocRef.get();
         if (!userDoc.exists) {
             return res.status(404).json({ error: 'User settings not found.' });

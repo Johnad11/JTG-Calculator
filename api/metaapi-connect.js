@@ -32,22 +32,23 @@ export default async function handler(req, res) {
         return;
     }
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+    try {
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method not allowed' });
+        }
 
-    const token = process.env.METAAPI_TOKEN;
-    if (!token) {
-        return res.status(500).json({ error: 'Server misconfiguration: METAAPI_TOKEN environment variable is missing.' });
-    }
+        const token = process.env.METAAPI_TOKEN;
+        if (!token) {
+            return res.status(500).json({ error: 'Server misconfiguration: METAAPI_TOKEN environment variable is missing in Vercel.' });
+        }
 
-    const { userId, login, password, server, platform = 'mt5', accountName } = req.body || {};
+        const { userId, login, password, server, platform = 'mt5', accountName } = req.body || {};
 
-    if (!userId || !login || !password || !server) {
-        return res.status(400).json({ 
-            error: 'Missing required parameters. Please provide userId, login, password (investor password), and server.' 
-        });
-    }
+        if (!userId || !login || !password || !server) {
+            return res.status(400).json({ 
+                error: 'Missing required parameters. Please provide userId, login, password (investor password), and server.' 
+            });
+        }
 
         // 1.5 Verify user has Diamond Plan tier subscription
         if (admin.apps.length) {
@@ -84,11 +85,17 @@ export default async function handler(req, res) {
         const api = new MetaApi(token);
 
         // 2. Check if account already exists on MetaApi to prevent duplication
-        const existingAccounts = await api.metatraderAccountApi.getAccounts();
-        let account = existingAccounts.find(a => 
-            String(a.login).trim() === String(login).trim() && 
-            String(a.server).trim().toLowerCase() === String(server).trim().toLowerCase()
-        );
+        let account = null;
+        try {
+            const accountsResp = await api.metatraderAccountApi.getAccountsWithClassicPagination();
+            const existingAccounts = Array.isArray(accountsResp) ? accountsResp : (accountsResp?.items || []);
+            account = existingAccounts.find(a => 
+                String(a.login).trim() === String(login).trim() && 
+                String(a.server).trim().toLowerCase() === String(server).trim().toLowerCase()
+            );
+        } catch (searchErr) {
+            console.warn('⚠️ Could not search existing MetaApi accounts:', searchErr.message);
+        }
 
         if (!account) {
             const accountData = {
