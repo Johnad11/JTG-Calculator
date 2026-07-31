@@ -15,7 +15,18 @@ import {
     Cell 
 } from 'recharts';
 
-const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, globalInitialBalance, updateGlobalBalance, updateInitialBalance, currencySymbol = '$', currency = 'USD', exchangeRates, activeAccount, userSettings }) => {
+const safeDate = (raw) => {
+    if (!raw) return new Date();
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? new Date() : d;
+};
+
+const safeDateStr = (dateObj) => {
+    const d = (dateObj && !isNaN(dateObj.getTime())) ? dateObj : new Date();
+    return d.toISOString().split('T')[0];
+};
+
+const Performance = ({ trades = [], withdrawals = [], deposits = [], globalBalance, globalInitialBalance, updateGlobalBalance, updateInitialBalance, currencySymbol = '$', currency = 'USD', exchangeRates, activeAccount, userSettings }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [tempBalance, setTempBalance] = useState(() => {
         const bal = activeAccount?.balance || globalInitialBalance || globalBalance || '';
@@ -28,22 +39,23 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
     }, [activeAccount?.id, activeAccount?.balance, globalBalance, globalInitialBalance]);
 
     const stats = useMemo(() => {
-        const total = trades ? trades.length : 0;
+        const safeTrades = Array.isArray(trades) ? trades : [];
+        const total = safeTrades.length;
         if (total === 0) return { total: 0, winRate: 0, netPnL: 0, growthPct: 0, expectancy: 0, disciplineScore: 0, profitFactor: 0, currentBalance: 0, totalWithdrawals: 0, totalDeposits: 0, bestPair: 'N/A', leagueTable: [] };
 
-        const wins = trades.filter(t => t && parseFloat(t.pnl || 0) > 0);
-        const losses = trades.filter(t => t && parseFloat(t.pnl || 0) < 0);
+        const wins = safeTrades.filter(t => t && parseFloat(t.pnl || 0) > 0);
+        const losses = safeTrades.filter(t => t && parseFloat(t.pnl || 0) < 0);
         
         const winCount = wins.length;
         const lossCount = losses.length;
 
-        const grossProfitNative = trades.reduce((acc, t) => {
+        const grossProfitNative = safeTrades.reduce((acc, t) => {
             if (!t) return acc;
             const val = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates && exchangeRates[currency] ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl || 0));
             return (val > 0 && !isNaN(val)) ? acc + val : acc;
         }, 0);
 
-        const grossLossNative = Math.abs(trades.reduce((acc, t) => {
+        const grossLossNative = Math.abs(safeTrades.reduce((acc, t) => {
             if (!t) return acc;
             const val = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates && exchangeRates[currency] ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl || 0));
             return (val < 0 && !isNaN(val)) ? acc + val : acc;
@@ -52,7 +64,7 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
         const netPnLNative = (grossProfitNative || 0) - (grossLossNative || 0);
         
         // Discipline Score
-        const disciplinedTrades = trades.filter(t => t && t.ruleAdherence === 'Yes').length;
+        const disciplinedTrades = safeTrades.filter(t => t && t.ruleAdherence === 'Yes').length;
         const disciplineScore = total > 0 ? ((disciplinedTrades / total) * 100).toFixed(1) : 0;
 
         // Expectancy: (WinRate * AvgWin) - (LossRate * AvgLoss)
@@ -63,7 +75,7 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
         const expectancy = (winRateVal * avgWin) - (lossRateVal * avgLoss);
 
         // Sharpe Ratio (Simplified)
-        const returns = trades.map(t => {
+        const returns = safeTrades.map(t => {
             if (!t) return 0;
             const val = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates && exchangeRates[currency] ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl || 0));
             return isNaN(val) ? 0 : val;
@@ -75,7 +87,7 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
 
         // League Table (Pairs)
         const pairStats = {};
-        trades.forEach(t => { 
+        safeTrades.forEach(t => { 
             if (!t || !t.pair) return;
             if (!pairStats[t.pair]) pairStats[t.pair] = { pnl: 0, count: 0, wins: 0 }; 
             const pnlVal = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates && exchangeRates[currency] ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl || 0));
@@ -95,10 +107,12 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
         const bestPair = leagueTable[0]?.pair || 'N/A';
 
         // Withdrawals
-        const totalWithdrawals = withdrawals ? withdrawals.reduce((acc, w) => acc + parseFloat(w.amount || 0), 0) : 0;
+        const safeWithdrawals = Array.isArray(withdrawals) ? withdrawals : [];
+        const totalWithdrawals = safeWithdrawals.reduce((acc, w) => acc + parseFloat(w?.amount || 0), 0);
 
         // Deposits
-        const totalDeposits = deposits ? deposits.reduce((acc, d) => acc + parseFloat(d.amount || 0), 0) : 0;
+        const safeDeposits = Array.isArray(deposits) ? deposits : [];
+        const totalDeposits = safeDeposits.reduce((acc, d) => acc + parseFloat(d?.amount || 0), 0);
 
         // Growth
         const startBal = globalInitialBalance ? parseFloat(globalInitialBalance) : parseFloat(globalBalance || 0);
@@ -128,12 +142,12 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
         const dayStats = days.map(day => ({ name: day, pnl: 0 }));
         const hourStats = Array.from({ length: 24 }, (_, i) => ({ name: `${i}:00`, pnl: 0 }));
 
-        if (trades) {
+        if (Array.isArray(trades)) {
             trades.forEach(t => {
                 if (!t) return;
                 const tradeDate = t.closeDate || t.openDate;
                 if (!tradeDate) return;
-                const date = new Date(tradeDate);
+                const date = safeDate(tradeDate);
                 if (isNaN(date.getTime())) return;
 
                 const pnlVal = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates && exchangeRates[currency] ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl || 0));
@@ -154,27 +168,28 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
         const events = [];
 
         // 1. Gather trade events
-        if (trades) {
+        if (Array.isArray(trades)) {
             trades.forEach((t, index) => {
                 if (!t) return;
                 const pnlVal = t.pnlNative ? parseFloat(t.pnlNative) : (exchangeRates && exchangeRates[currency] ? convertForDisplay(t.pnl, currency, exchangeRates) : parseFloat(t.pnl || 0));
                 if (isNaN(pnlVal)) return;
+                const evtDate = safeDate(t.closeDate || t.openDate);
                 events.push({
-                    date: new Date(t.closeDate || t.openDate || Date.now()),
+                    date: evtDate,
                     amount: pnlVal,
-                    label: t.closeDate ? new Date(t.closeDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : `Trade ${index + 1}`
+                    label: t.closeDate && !isNaN(new Date(t.closeDate).getTime()) ? new Date(t.closeDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : `Trade ${index + 1}`
                 });
             });
         }
 
         // 2. Gather deposit events
-        if (deposits) {
+        if (Array.isArray(deposits)) {
             deposits.forEach((d, index) => {
                 if (!d) return;
                 const amountVal = parseFloat(d.amount || 0);
                 if (isNaN(amountVal)) return;
                 events.push({
-                    date: new Date(d.date || Date.now()),
+                    date: safeDate(d.date),
                     amount: amountVal,
                     label: d.note ? `Deposit: ${d.note}` : `Deposit ${index + 1}`
                 });
@@ -182,14 +197,14 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
         }
 
         // 3. Gather withdrawal events
-        if (withdrawals) {
+        if (Array.isArray(withdrawals)) {
             withdrawals.forEach((w, index) => {
                 if (!w) return;
                 const amountVal = parseFloat(w.amount || 0);
                 if (isNaN(amountVal)) return;
                 events.push({
-                    date: new Date(w.date || Date.now()),
-                    amount: -amountVal, // Withdrawals decrease balance
+                    date: safeDate(w.date),
+                    amount: -amountVal,
                     label: w.note ? `Withdrawal: ${w.note}` : `Withdrawal ${index + 1}`
                 });
             });
@@ -200,10 +215,10 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
 
         // 5. Initialize chart data with start point
         const startBal = globalInitialBalance ? parseFloat(globalInitialBalance) : parseFloat(globalBalance || 0);
-        const firstDate = events[0] ? events[0].date : new Date();
+        const firstDate = (events[0] && !isNaN(events[0].date.getTime())) ? events[0].date : new Date();
         const data = [{
             date: 'Start',
-            rawDate: firstDate.toISOString().split('T')[0],
+            rawDate: safeDateStr(firstDate),
             timestamp: firstDate.getTime(),
             balance: isNaN(startBal) ? 0 : startBal
         }];
@@ -213,13 +228,11 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
             runningBalance += evt.amount;
             data.push({
                 date: evt.label,
-                rawDate: evt.date.toISOString().split('T')[0],
+                rawDate: safeDateStr(evt.date),
                 timestamp: evt.date.getTime(),
                 balance: runningBalance
             });
         });
-
-        return data;
 
         return data;
     }, [trades, deposits, withdrawals, globalInitialBalance, globalBalance, currency, exchangeRates]);
@@ -234,31 +247,31 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
         <div className="animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10 h-full flex flex-col">
             <div className="mb-auto">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-3xl font-bold text-slate-900 tracking-wide">Evolution Analytics</h2>
+                    <h2 className="text-3xl font-bold text-main-theme tracking-wide">Evolution Analytics</h2>
                 </div>
 
                 {/* ACCOUNT HEALTH */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-8 shadow-xl relative overflow-hidden">
+                <div className="bg-card-theme border border-theme rounded-2xl p-6 mb-8 shadow-xl relative overflow-hidden text-main-theme">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2"><Icons.Briefcase /> Account Health</h2>
+                        <h2 className="text-xl font-bold text-main-theme flex items-center gap-2"><Icons.Briefcase /> Account Health</h2>
                         {!isEditing && globalBalance && <button onClick={() => setIsEditing(true)} className="text-xs text-jtg-green hover:text-emerald-700 font-bold"><Icons.Edit /></button>}
                     </div>
 
                     {!globalBalance || isEditing ? (
                         <div className="flex gap-2 items-end">
                             <div className="flex-1">
-                                <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Set Starting Balance</label>
-                                <input type="number" value={tempBalance} onChange={e => setTempBalance(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-900 outline-none" placeholder="e.g. 10000" />
+                                <label className="text-[10px] text-muted-theme uppercase font-bold block mb-1">Set Starting Balance</label>
+                                <input type="number" value={tempBalance} onChange={e => setTempBalance(e.target.value)} className="w-full bg-input-theme border border-theme rounded-lg p-2 text-main-theme outline-none" placeholder="e.g. 10000" />
                             </div>
                             <button onClick={saveBalance} className="bg-jtg-green text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-600 transition">SAVE</button>
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Starting</p><p className="text-sm md:text-lg font-mono text-slate-700">{currencySymbol}{parseFloat(globalInitialBalance || globalBalance || 0).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Deposits</p><p className="text-sm md:text-lg font-mono text-emerald-600">+{currencySymbol}{parseFloat(stats.totalDeposits).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Withdrawals</p><p className="text-sm md:text-lg font-mono text-red-500">-{currencySymbol}{parseFloat(stats.totalWithdrawals).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Current</p><p className="text-lg md:text-2xl font-mono text-slate-900 font-bold">{currencySymbol}{parseFloat(stats.currentBalance).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-slate-500 uppercase font-bold">Growth</p><p className={`text-sm md:text-lg font-mono font-bold ${parseFloat(stats.growthPct) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>{parseFloat(stats.growthPct) > 0 ? '+' : ''}{stats.growthPct}%</p></div>
+                            <div><p className="text-[10px] text-muted-theme uppercase font-bold">Starting</p><p className="text-sm md:text-lg font-mono text-main-theme">{currencySymbol}{parseFloat(globalInitialBalance || globalBalance || 0).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
+                            <div><p className="text-[10px] text-muted-theme uppercase font-bold">Deposits</p><p className="text-sm md:text-lg font-mono text-emerald-600">+{currencySymbol}{parseFloat(stats.totalDeposits).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
+                            <div><p className="text-[10px] text-muted-theme uppercase font-bold">Withdrawals</p><p className="text-sm md:text-lg font-mono text-red-500">-{currencySymbol}{parseFloat(stats.totalWithdrawals).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
+                            <div><p className="text-[10px] text-muted-theme uppercase font-bold">Current</p><p className="text-lg md:text-2xl font-mono text-main-theme font-bold">{currencySymbol}{parseFloat(stats.currentBalance).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
+                            <div><p className="text-[10px] text-muted-theme uppercase font-bold">Growth</p><p className={`text-sm md:text-lg font-mono font-bold ${parseFloat(stats.growthPct) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>{parseFloat(stats.growthPct) > 0 ? '+' : ''}{stats.growthPct}%</p></div>
                         </div>
                     )}
                 </div>
@@ -266,26 +279,26 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
                 {/* MONTHLY PROFIT TARGET & STREAK BADGES */}
                 <div className="grid grid-cols-1 gap-6 mb-8">
                     {/* Monthly Profit Goal Progress Bar */}
-                    <div className="bg-[#0b0f26] border border-[#162C99]/40 rounded-2xl p-5 shadow-xl">
+                    <div className="bg-card-theme border border-theme rounded-2xl p-5 shadow-xl">
                         <div className="flex justify-between items-center mb-3">
                             <div className="flex items-center gap-2">
                                 <span className="text-xl">🎯</span>
                                 <div>
-                                    <h4 className="text-white font-extrabold text-sm uppercase tracking-wider">Monthly Profit Goal</h4>
-                                    <p className="text-[11px] text-slate-400">Monthly Target: {currencySymbol}{parseFloat(userSettings?.monthlyTarget || 1000).toLocaleString()}</p>
+                                    <h4 className="text-main-theme font-extrabold text-sm uppercase tracking-wider">Monthly Profit Goal</h4>
+                                    <p className="text-[11px] text-muted-theme">Monthly Target: {currencySymbol}{parseFloat(userSettings?.monthlyTarget || 1000).toLocaleString()}</p>
                                 </div>
                             </div>
                             <div className="text-right">
                                 <span className={`text-base font-black font-mono ${parseFloat(stats.netPnL || 0) >= parseFloat(userSettings?.monthlyTarget || 1000) ? 'text-jtg-green' : 'text-cyan-400'}`}>
                                     {currencySymbol}{parseFloat(stats.netPnL || 0).toLocaleString()} / {currencySymbol}{parseFloat(userSettings?.monthlyTarget || 1000).toLocaleString()}
                                 </span>
-                                <span className="text-[10px] font-mono font-extrabold text-slate-400 block uppercase">
+                                <span className="text-[10px] font-mono font-extrabold text-muted-theme block uppercase">
                                     {Math.min(Math.max((parseFloat(stats.netPnL || 0) / parseFloat(userSettings?.monthlyTarget || 1000)) * 100, 0), 100).toFixed(1)}% Achieved
                                 </span>
                             </div>
                         </div>
                         
-                        <div className="w-full bg-slate-900/80 h-3.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                        <div className="w-full bg-input-theme h-3.5 rounded-full overflow-hidden p-0.5 border border-theme">
                             <div 
                                 className="bg-gradient-to-r from-cyan-500 via-emerald-400 to-[#1BA657] h-full rounded-full transition-all duration-1000 shadow-[0_0_12px_rgba(27,166,87,0.5)]"
                                 style={{ width: `${Math.min(Math.max((parseFloat(stats.netPnL || 0) / parseFloat(userSettings?.monthlyTarget || 1000)) * 100, 0), 100)}%` }}
@@ -314,28 +327,28 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
                 {/* CHARTS GRID */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     {/* EQUITY CURVE */}
-                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
-                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Icons.Chart /> Equity Curve</h3>
+                    <div className="bg-card-theme border border-theme rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
+                        <h3 className="text-lg font-bold text-main-theme mb-4 flex items-center gap-2"><Icons.Chart /> Equity Curve</h3>
                         <div className="flex-1 w-full">
                             {trades.length > 0 ? <EquityChart data={chartData} currencySymbol={currencySymbol} /> : <NoData />}
                         </div>
                     </div>
 
                     {/* DAY OF WEEK HEATMAP */}
-                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
-                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Icons.Calendar /> Performance by Day</h3>
+                    <div className="bg-card-theme border border-theme rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
+                        <h3 className="text-lg font-bold text-main-theme mb-4 flex items-center gap-2"><Icons.Calendar /> Performance by Day</h3>
                         <div className="flex-1 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={heatmapData.dayStats}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-jtg-border)" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--color-text-muted)', fontSize: 10}} />
                                     <YAxis hide />
                                     <Tooltip 
                                         cursor={{fill: 'rgba(0,0,0,0.03)'}}
                                         content={({ active, payload }) => {
                                             if (active && payload && payload.length) {
                                                 return (
-                                                    <div className="bg-white border border-slate-200 p-2 rounded text-xs font-bold text-slate-900 shadow-xl">
+                                                    <div className="bg-card-theme border border-theme p-2 rounded text-xs font-bold text-main-theme shadow-xl">
                                                         {payload[0].payload.name}: {currencySymbol}{payload[0].value.toLocaleString()}
                                                     </div>
                                                 );
@@ -356,19 +369,19 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
                     {/* HOUR OF DAY HEATMAP */}
-                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
-                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Icons.Clock /> Performance by Hour</h3>
+                    <div className="bg-card-theme border border-theme rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
+                        <h3 className="text-lg font-bold text-main-theme mb-4 flex items-center gap-2"><Icons.Clock /> Performance by Hour</h3>
                         <div className="flex-1 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={heatmapData.hourStats}>
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 8}} interval={2} />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--color-text-muted)', fontSize: 8}} interval={2} />
                                     <YAxis hide />
                                     <Tooltip 
                                         cursor={{fill: 'rgba(0,0,0,0.03)'}}
                                         content={({ active, payload }) => {
                                             if (active && payload && payload.length) {
                                                 return (
-                                                    <div className="bg-white border border-slate-200 p-2 rounded text-xs font-bold text-slate-900 shadow-xl">
+                                                    <div className="bg-card-theme border border-theme p-2 rounded text-xs font-bold text-main-theme shadow-xl">
                                                         {payload[0].payload.name}: {currencySymbol}{payload[0].value.toLocaleString()}
                                                     </div>
                                                 );
@@ -387,24 +400,24 @@ const Performance = ({ trades, withdrawals = [], deposits = [], globalBalance, g
                     </div>
 
                     {/* ASSET LEAGUE TABLE */}
-                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl flex flex-col h-[400px] overflow-hidden">
-                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Icons.Trophy /> Asset League Table</h3>
+                    <div className="bg-card-theme border border-theme rounded-2xl p-6 shadow-xl flex flex-col h-[400px] overflow-hidden">
+                        <h3 className="text-lg font-bold text-main-theme mb-4 flex items-center gap-2"><Icons.Trophy /> Asset League Table</h3>
                         <div className="flex-1 overflow-y-auto custom-scroll">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="border-b border-slate-200">
-                                        <th className="py-2 text-[10px] text-slate-500 uppercase">Pair</th>
-                                        <th className="py-2 text-[10px] text-slate-500 uppercase text-center">Trades</th>
-                                        <th className="py-2 text-[10px] text-slate-500 uppercase text-center">WR%</th>
-                                        <th className="py-2 text-[10px] text-slate-500 uppercase text-right">Net PnL</th>
+                                    <tr className="border-b border-theme">
+                                        <th className="py-2 text-[10px] text-muted-theme uppercase">Pair</th>
+                                        <th className="py-2 text-[10px] text-muted-theme uppercase text-center">Trades</th>
+                                        <th className="py-2 text-[10px] text-muted-theme uppercase text-center">WR%</th>
+                                        <th className="py-2 text-[10px] text-muted-theme uppercase text-right">Net PnL</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {stats.leagueTable?.map(row => (
-                                        <tr key={row.pair} className="border-b border-slate-100 hover:bg-slate-50 transition">
-                                            <td className="py-3 font-bold text-slate-900 text-sm">{row.pair}</td>
-                                            <td className="py-3 text-center text-xs text-slate-600">{row.count}</td>
-                                            <td className="py-3 text-center text-xs text-slate-900">{row.winRate}%</td>
+                                        <tr key={row.pair} className="border-b border-theme/50 hover:bg-input-theme transition">
+                                            <td className="py-3 font-bold text-main-theme text-sm">{row.pair}</td>
+                                            <td className="py-3 text-center text-xs text-muted-theme">{row.count}</td>
+                                            <td className="py-3 text-center text-xs text-main-theme">{row.winRate}%</td>
                                             <td className={`py-3 text-right font-mono text-sm ${row.pnl >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>
                                                 {row.pnl >= 0 ? '+' : ''}{currencySymbol}{row.pnl.toLocaleString(undefined, {minimumFractionDigits: 2})}
                                             </td>

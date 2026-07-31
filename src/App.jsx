@@ -1002,8 +1002,8 @@ const App = () => {
     };
 
     const NavBtn = ({ id, icon, label }) => (
-        <button id={`nav-${id}`} onClick={() => setPage(id)} className={`flex flex-col items-center gap-1 w-full py-4 transition-all duration-300 border-l-4 ${page === id ? 'border-jtg-green bg-emerald-50 text-jtg-blue font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/60'}`}>
-            <span className={page === id ? 'text-jtg-green' : 'text-slate-400'}>{icon}</span>
+        <button id={`nav-${id}`} onClick={() => setPage(id)} className={`flex flex-col items-center gap-1 w-full py-4 transition-all duration-300 border-l-4 ${page === id ? 'border-jtg-green bg-jtg-green/10 text-jtg-green font-extrabold' : 'border-transparent text-muted-theme hover:text-main-theme hover:bg-input-theme'}`}>
+            <span className={page === id ? 'text-jtg-green' : 'text-muted-theme'}>{icon}</span>
             <span className="text-[10px] font-bold tracking-wider">{label}</span>
         </button>
     );
@@ -1388,7 +1388,7 @@ const App = () => {
                 />
             )}
 
-            {/* MOBILE DRAWER */}
+                    {/* MOBILE DRAWER */}
             {showMobileDrawer && (
                 <div className="md:hidden fixed inset-0 z-50 flex justify-end">
                     {/* Backdrop */}
@@ -1398,30 +1398,30 @@ const App = () => {
                     ></div>
 
                     {/* Drawer Content */}
-                    <div className="relative w-80 max-w-[85vw] h-full bg-jtg-dark border-l border-jtg-blue/30 p-6 flex flex-col justify-between shadow-2xl overflow-y-auto custom-scroll animate-slide-in">
+                    <div className="relative w-80 max-w-[85vw] h-full bg-sidebar-theme border-l border-theme p-6 flex flex-col justify-between shadow-2xl overflow-y-auto custom-scroll animate-slide-in text-main-theme">
                         {/* Drawer Header */}
                         <div>
-                            <div className="flex justify-between items-center mb-8 pb-4 border-b border-jtg-blue/20">
+                            <div className="flex justify-between items-center mb-8 pb-4 border-b border-theme">
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6"><img src={LOGO_URL} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} /></div>
-                                    <span className="text-sm font-bold text-white tracking-wide">JTG <span className="text-jtg-green">JOURNAL</span></span>
+                                    <span className="text-sm font-bold text-main-theme tracking-wide">JTG <span className="text-jtg-green">JOURNAL</span></span>
                                 </div>
                                 <button 
                                     onClick={() => setShowMobileDrawer(false)} 
-                                    className="p-1 text-slate-400 hover:text-white transition"
+                                    className="p-1 text-muted-theme hover:text-main-theme transition"
                                 >
                                     <Icons.X />
                                 </button>
                             </div>
 
                             {/* User Profile Info */}
-                            <div className="mb-8 p-4 bg-jtg-blue/10 border border-jtg-blue/20 rounded-xl flex items-center gap-3">
+                            <div className="mb-8 p-4 bg-input-theme border border-theme rounded-xl flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-jtg-green text-black flex items-center justify-center font-bold text-sm shrink-0">
                                     {username ? username[0].toUpperCase() : (user ? user.email[0].toUpperCase() : 'G')}
                                 </div>
                                 <div className="overflow-hidden">
                                     {username && <p className="text-sm font-black text-jtg-green truncate">@{username}</p>}
-                                    <p className="text-xs font-bold text-slate-300 truncate">{user ? user.email : ''}</p>
+                                    <p className="text-xs font-bold text-muted-theme truncate">{user ? user.email : ''}</p>
                                     <div className="flex gap-1.5 items-center mt-1.5">
                                         {isPremium ? (
                                             <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">PRO</span>
@@ -1437,7 +1437,7 @@ const App = () => {
 
                             {/* Section: Account Switcher & Sync */}
                             <div className="space-y-3 mb-6">
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Trading Accounts</p>
+                                <p className="text-[10px] font-extrabold text-muted-theme uppercase tracking-widest px-1">Trading Accounts</p>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         onClick={() => {
@@ -1447,7 +1447,7 @@ const App = () => {
                                         className="bg-jtg-green/10 border border-jtg-green/30 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:bg-jtg-green/20 transition active:scale-95"
                                     >
                                         <span className="text-jtg-green"><Icons.User /></span>
-                                        <span className="text-[10px] font-bold text-white max-w-full truncate">
+                                        <span className="text-[10px] font-bold text-main-theme max-w-full truncate">
                                             {accounts.find(a => a.id === activeAccountId)?.name || 'Accounts'}
                                         </span>
                                     </button>
@@ -1459,7 +1459,7 @@ const App = () => {
                                         className="bg-jtg-blue/10 border border-jtg-blue/30 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:bg-jtg-blue/20 transition active:scale-95"
                                     >
                                         <span className="text-jtg-green"><Icons.Key /></span>
-                                        <span className="text-[10px] font-bold text-white max-w-full truncate">
+                                        <span className="text-[10px] font-bold text-main-theme max-w-full truncate">
                                             MT5 Sync
                                         </span>
                                     </button>
@@ -1468,7 +1468,7 @@ const App = () => {
 
                             {/* Section: App Settings & Tools */}
                             <div className="space-y-2 mb-6">
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Options & Utilities</p>
+                                <p className="text-[10px] font-extrabold text-muted-theme uppercase tracking-widest px-1">Options & Utilities</p>
                                 
                                 {/* Settings Hub Button */}
                                 <button 
@@ -1476,11 +1476,11 @@ const App = () => {
                                         setShowMobileDrawer(false);
                                         setShowSettingsModal(true);
                                     }} 
-                                    className="w-full bg-jtg-input border border-jtg-blue/30 hover:border-jtg-blue/50 rounded-xl p-3.5 flex items-center justify-between transition group active:scale-[0.98]"
+                                    className="w-full bg-input-theme border border-theme hover:bg-card-theme rounded-xl p-3.5 flex items-center justify-between transition group active:scale-[0.98]"
                                 >
                                     <div className="flex items-center gap-3">
                                         <span className="text-jtg-green"><Icons.Settings /></span>
-                                        <span className="text-xs font-bold text-white">Platform Settings</span>
+                                        <span className="text-xs font-bold text-main-theme">Platform Settings</span>
                                     </div>
                                     <Icons.ChevronRight />
                                 </button>
@@ -1492,7 +1492,7 @@ const App = () => {
                                             setIsDemoMode(!isDemoMode);
                                             setShowMobileDrawer(false);
                                         }} 
-                                        className={`w-full border rounded-xl p-3.5 flex items-center justify-between transition active:scale-[0.98] ${isDemoMode ? 'bg-[#1BA657]/10 border-[#1BA657] text-[#1BA657]' : 'bg-jtg-blue/10 border-jtg-blue/30 text-slate-300'}`}
+                                        className={`w-full border rounded-xl p-3.5 flex items-center justify-between transition active:scale-[0.98] ${isDemoMode ? 'bg-[#1BA657]/10 border-[#1BA657] text-[#1BA657]' : 'bg-input-theme border border-theme text-main-theme'}`}
                                     >
                                         <span className="text-xs font-bold">{isDemoMode ? "Exit Demo Mode" : "View Demo Data"}</span>
                                         <span className="text-xs">⚡</span>
@@ -1515,7 +1515,7 @@ const App = () => {
                         </div>
 
                         {/* Drawer Footer */}
-                        <div className="border-t border-jtg-blue/20 pt-4 flex flex-col gap-3">
+                        <div className="border-t border-theme pt-4 flex flex-col gap-3">
                             <button 
                                 onClick={() => {
                                     setShowMobileDrawer(false);

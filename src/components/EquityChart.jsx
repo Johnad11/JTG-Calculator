@@ -53,10 +53,11 @@ const EquityChart = ({ data, currencySymbol = '$' }) => {
         return null;
     };
 
-    const balances = filteredData.map(d => d.balance);
-    const minBal = Math.min(...balances);
-    const maxBal = Math.max(...balances);
-    const padding = (maxBal - minBal) * 0.1 || 100;
+    const balances = filteredData.map(d => parseFloat(d.balance)).filter(v => !isNaN(v));
+    const minBal = balances.length > 0 ? Math.min(...balances) : 0;
+    const maxBal = balances.length > 0 ? Math.max(...balances) : 100;
+    const rawDiff = maxBal - minBal;
+    const padding = (rawDiff > 0 && !isNaN(rawDiff)) ? rawDiff * 0.1 : 100;
 
     return (
         <div className="w-full flex flex-col gap-3">
