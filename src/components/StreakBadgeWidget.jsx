@@ -72,7 +72,7 @@ const StreakBadgeWidget = ({ trades = [], showDetails = false }) => {
         return (
             <div className={`px-2.5 py-1 rounded-full border bg-gradient-to-r ${activeBadge.color} flex items-center gap-1.5 shadow-sm text-xs font-black tracking-wide animate-pulse`} title={`Streak: ${currentStreak} Consecutive Active Days`}>
                 <span>{activeBadge.icon}</span>
-                <span>{currentStreak}D STREAK</span>
+                <span>{currentStreak} DAY STREAK</span>
             </div>
         );
     }

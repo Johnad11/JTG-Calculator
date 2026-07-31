@@ -1243,8 +1243,8 @@ const App = () => {
                 <button id="mobile-nav-calc" onClick={() => setPage('calc')} className={`p-2 flex flex-col items-center ${page === 'calc' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Calculator /><span className="text-[9px] font-bold mt-1">Calc</span></button>
                 <button id="mobile-nav-journal" onClick={() => setPage('journal')} className={`p-2 flex flex-col items-center ${page === 'journal' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Journal /><span className="text-[9px] font-bold mt-1">Entry</span></button>
                 <button id="mobile-nav-trades" onClick={() => setPage('trades')} className={`p-2 flex flex-col items-center ${page === 'trades' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.List /><span className="text-[9px] font-bold mt-1">Trades</span></button>
-                <button id="mobile-nav-calendar" onClick={() => setPage('calendar')} className={`p-2 flex flex-col items-center ${page === 'calendar' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Calendar /><span className="text-[9px] font-bold mt-1">Cal</span></button>
-                <button id="mobile-nav-perf" onClick={() => setPage('perf')} className={`p-2 flex flex-col items-center ${page === 'perf' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Chart /><span className="text-[9px] font-bold mt-1">Data</span></button>
+                <button id="mobile-nav-calendar" onClick={() => setPage('calendar')} className={`p-2 flex flex-col items-center ${page === 'calendar' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Calendar /><span className="text-[9px] font-bold mt-1">Calendar</span></button>
+                <button id="mobile-nav-perf" onClick={() => setPage('perf')} className={`p-2 flex flex-col items-center ${page === 'perf' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Chart /><span className="text-[9px] font-bold mt-1">Analytics</span></button>
             </div>
 
             {/* MAIN CONTENT AREA */}

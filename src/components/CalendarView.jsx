@@ -27,12 +27,14 @@ const CalendarView = ({ trades, currency = 'USD', currencySymbol = '$', exchange
     const days = [];
     for (let i = 0; i < firstDay; i++) days.push(null);
     for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    while (days.length % 7 !== 0) days.push(null);
+
     const prevMonth = () => setDate(new Date(year, month - 1, 1));
     const nextMonth = () => setDate(new Date(year, month + 1, 1));
 
     return (
-        <div className="flex flex-col h-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
-            <div className="bg-card-theme border border-theme rounded-2xl p-4 md:p-6 shadow-xl flex flex-col mb-8 min-h-[450px] md:min-h-[600px] text-main-theme">
+        <div className="flex flex-col h-full animate-pop overflow-y-auto custom-scroll p-4 md:p-8 pb-28 md:pb-8">
+            <div className="bg-card-theme border border-theme rounded-2xl p-4 md:p-6 shadow-xl flex flex-col mb-8 text-main-theme">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                     <h2 className="text-2xl font-bold text-main-theme tracking-wide flex items-center gap-3"><span className="text-jtg-green"><Icons.Calendar /></span> Performance Calendar</h2>
                     <div className="flex items-center gap-4 bg-input-theme rounded-lg p-1 border border-theme">
@@ -43,15 +45,15 @@ const CalendarView = ({ trades, currency = 'USD', currencySymbol = '$', exchange
                 </div>
                 <div>
                     <div className="grid grid-cols-7 gap-px bg-input-theme border border-theme rounded-t-xl overflow-hidden text-center text-[10px] md:text-xs font-bold text-muted-theme uppercase py-2"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
-                    <div className="grid grid-cols-7 gap-1 md:gap-2 mt-2 h-[320px] sm:h-[450px] md:h-[600px] auto-rows-fr">
+                    <div className="grid grid-cols-7 gap-1 md:gap-2.5 mt-2 min-h-[350px] sm:min-h-[420px] md:min-h-[500px] auto-rows-fr">
                         {days.map((day, idx) => {
-                            if (!day) return <div key={idx} className="bg-transparent"></div>;
+                            if (!day) return <div key={idx} className="bg-input-theme/20 border border-theme/20 rounded-lg opacity-30 min-h-[50px] sm:min-h-[64px]"></div>;
                             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                             const pnl = pnlMap[dateStr];
                             const hasTrade = pnl !== undefined;
                             const isWin = pnl > 0;
                             return (
-                                <div key={idx} className={`p-1.5 md:p-2 rounded-lg border transition flex flex-col justify-between overflow-hidden ${hasTrade ? (isWin ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30') : 'bg-input-theme border-theme opacity-80'}`}>
+                                <div key={idx} className={`p-1.5 md:p-2.5 min-h-[50px] sm:min-h-[64px] rounded-lg border transition flex flex-col justify-between overflow-hidden ${hasTrade ? (isWin ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30') : 'bg-input-theme border-theme opacity-80'}`}>
                                     <span className="text-[10px] md:text-xs font-bold text-muted-theme">{day}</span>
                                     {hasTrade && <span className={`text-[10px] md:text-xs font-mono font-bold truncate ${isWin ? 'text-jtg-green' : 'text-red-500'}`}>{isWin ? '+' : ''}{currencySymbol}{pnl.toFixed(currency === 'NGN' ? 0 : 2)}</span>}
                                 </div>
