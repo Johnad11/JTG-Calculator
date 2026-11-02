@@ -34,17 +34,33 @@ const CalendarView = ({ trades, currency = 'USD', currencySymbol = '$', exchange
 
     return (
         <div className="flex flex-col h-full animate-pop overflow-y-auto custom-scroll p-4 md:p-8 pb-28 md:pb-8">
-            <div className="bg-card-theme border border-theme rounded-2xl p-4 md:p-6 shadow-xl flex flex-col mb-8 text-main-theme">
+            <div className="bento-card p-6 md:p-8 rounded-3xl flex flex-col mb-8 text-main-theme">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                    <h2 className="text-2xl font-bold text-main-theme tracking-wide flex items-center gap-3"><span className="text-jtg-green"><Icons.Calendar /></span> Performance Calendar</h2>
-                    <div className="flex items-center gap-4 bg-input-theme rounded-lg p-1 border border-theme">
-                        <button onClick={prevMonth} className="p-2 hover:text-main-theme text-muted-theme"><Icons.ChevronLeft /></button>
-                        <span className="text-sm font-bold w-32 text-center text-main-theme">{monthNames[month]} {year}</span>
-                        <button onClick={nextMonth} className="p-2 hover:text-main-theme text-muted-theme"><Icons.ChevronRight /></button>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-jtg-green/15 flex items-center justify-center text-jtg-green">
+                            <Icons.Calendar />
+                        </div>
+                        <div>
+                            <h2 className="text-xl md:text-2xl font-black text-main-theme tracking-tight">Performance Calendar</h2>
+                            <p className="text-xs text-muted-theme">Daily aggregated net profit & loss tracking</p>
+                        </div>
+                    </div>
+                    
+                    {/* Month Selector Capsule Pill */}
+                    <div className="flex items-center gap-2 bg-input-theme rounded-full p-1.5 border border-theme">
+                        <button onClick={prevMonth} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-card-theme text-muted-theme hover:text-main-theme transition-all" aria-label="Previous Month">
+                            <Icons.ChevronLeft />
+                        </button>
+                        <span className="text-xs font-black uppercase tracking-wider w-36 text-center text-main-theme">
+                            {monthNames[month]} {year}
+                        </span>
+                        <button onClick={nextMonth} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-card-theme text-muted-theme hover:text-main-theme transition-all" aria-label="Next Month">
+                            <Icons.ChevronRight />
+                        </button>
                     </div>
                 </div>
                 <div>
-                    <div className="grid grid-cols-7 gap-px bg-input-theme border border-theme rounded-t-xl overflow-hidden text-center text-[10px] md:text-xs font-bold text-muted-theme uppercase py-2"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
+                    <div className="grid grid-cols-7 gap-px bg-input-theme border border-theme rounded-2xl overflow-hidden text-center text-[10px] md:text-xs font-extrabold text-muted-theme uppercase py-2.5"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
                     <div className="grid grid-cols-7 gap-1 md:gap-2.5 mt-2 min-h-[350px] sm:min-h-[420px] md:min-h-[500px] auto-rows-fr">
                         {days.map((day, idx) => {
                             if (!day) return <div key={idx} className="bg-input-theme/20 border border-theme/20 rounded-lg opacity-30 min-h-[50px] sm:min-h-[64px]"></div>;

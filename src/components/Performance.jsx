@@ -251,27 +251,51 @@ const Performance = ({ trades = [], withdrawals = [], deposits = [], globalBalan
                 </div>
 
                 {/* ACCOUNT HEALTH */}
-                <div className="bg-card-theme border border-theme rounded-2xl p-6 mb-8 shadow-xl relative overflow-hidden text-main-theme">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-main-theme flex items-center gap-2"><Icons.Briefcase /> Account Health</h2>
-                        {!isEditing && globalBalance && <button onClick={() => setIsEditing(true)} className="text-xs text-jtg-green hover:text-emerald-700 font-bold"><Icons.Edit /></button>}
+                <div className="bento-card p-6 md:p-8 mb-8 rounded-3xl relative overflow-hidden text-main-theme">
+                    <div className="flex justify-between items-center mb-5">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-jtg-blue/15 flex items-center justify-center text-jtg-blue">
+                                <Icons.Briefcase />
+                            </div>
+                            <h2 className="text-lg md:text-xl font-black text-main-theme">Account Health</h2>
+                        </div>
+                        {!isEditing && globalBalance && (
+                            <button onClick={() => setIsEditing(true)} className="px-3 py-1.5 rounded-full bg-input-theme border border-theme text-xs text-jtg-green hover:bg-jtg-green hover:text-white font-bold transition-all">
+                                Edit Balance
+                            </button>
+                        )}
                     </div>
 
                     {!globalBalance || isEditing ? (
-                        <div className="flex gap-2 items-end">
+                        <div className="flex gap-3 items-end">
                             <div className="flex-1">
                                 <label className="text-[10px] text-muted-theme uppercase font-bold block mb-1">Set Starting Balance</label>
-                                <input type="number" value={tempBalance} onChange={e => setTempBalance(e.target.value)} className="w-full bg-input-theme border border-theme rounded-lg p-2 text-main-theme outline-none" placeholder="e.g. 10000" />
+                                <input type="number" value={tempBalance} onChange={e => setTempBalance(e.target.value)} className="w-full bg-input-theme border border-theme rounded-2xl p-3 text-main-theme font-mono font-bold outline-none focus:ring-2 focus:ring-jtg-blue/40" placeholder="e.g. 10000" />
                             </div>
-                            <button onClick={saveBalance} className="bg-jtg-green text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-600 transition">SAVE</button>
+                            <button onClick={saveBalance} className="bg-jtg-green text-white px-6 py-3 rounded-full text-xs font-extrabold hover:bg-emerald-600 transition shadow-md">SAVE</button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                            <div><p className="text-[10px] text-muted-theme uppercase font-bold">Starting</p><p className="text-sm md:text-lg font-mono text-main-theme">{currencySymbol}{parseFloat(globalInitialBalance || globalBalance || 0).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-muted-theme uppercase font-bold">Deposits</p><p className="text-sm md:text-lg font-mono text-emerald-600">+{currencySymbol}{parseFloat(stats.totalDeposits).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-muted-theme uppercase font-bold">Withdrawals</p><p className="text-sm md:text-lg font-mono text-red-500">-{currencySymbol}{parseFloat(stats.totalWithdrawals).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-muted-theme uppercase font-bold">Current</p><p className="text-lg md:text-2xl font-mono text-main-theme font-bold">{currencySymbol}{parseFloat(stats.currentBalance).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p></div>
-                            <div><p className="text-[10px] text-muted-theme uppercase font-bold">Growth</p><p className={`text-sm md:text-lg font-mono font-bold ${parseFloat(stats.growthPct) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>{parseFloat(stats.growthPct) > 0 ? '+' : ''}{stats.growthPct}%</p></div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                            <div className="p-3 bg-input-theme/50 rounded-2xl border border-theme/60">
+                                <p className="text-[10px] text-muted-theme uppercase font-bold tracking-wider mb-1">Starting</p>
+                                <p className="text-sm md:text-base font-mono text-main-theme font-bold">{currencySymbol}{parseFloat(globalInitialBalance || globalBalance || 0).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p>
+                            </div>
+                            <div className="p-3 bg-input-theme/50 rounded-2xl border border-theme/60">
+                                <p className="text-[10px] text-muted-theme uppercase font-bold tracking-wider mb-1">Deposits</p>
+                                <p className="text-sm md:text-base font-mono text-emerald-600 font-bold">+{currencySymbol}{parseFloat(stats.totalDeposits).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p>
+                            </div>
+                            <div className="p-3 bg-input-theme/50 rounded-2xl border border-theme/60">
+                                <p className="text-[10px] text-muted-theme uppercase font-bold tracking-wider mb-1">Withdrawals</p>
+                                <p className="text-sm md:text-base font-mono text-red-500 font-bold">-{currencySymbol}{parseFloat(stats.totalWithdrawals).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p>
+                            </div>
+                            <div className="p-3 bg-input-theme/50 rounded-2xl border border-theme/60">
+                                <p className="text-[10px] text-muted-theme uppercase font-bold tracking-wider mb-1">Current Balance</p>
+                                <p className="text-base md:text-xl font-mono text-main-theme font-black">{currencySymbol}{parseFloat(stats.currentBalance).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 })}</p>
+                            </div>
+                            <div className="p-3 bg-input-theme/50 rounded-2xl border border-theme/60">
+                                <p className="text-[10px] text-muted-theme uppercase font-bold tracking-wider mb-1">Net Growth</p>
+                                <p className={`text-sm md:text-base font-mono font-black ${parseFloat(stats.growthPct) >= 0 ? 'text-jtg-green' : 'text-red-500'}`}>{parseFloat(stats.growthPct) > 0 ? '+' : ''}{stats.growthPct}%</p>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -279,17 +303,19 @@ const Performance = ({ trades = [], withdrawals = [], deposits = [], globalBalan
                 {/* MONTHLY PROFIT TARGET & STREAK BADGES */}
                 <div className="grid grid-cols-1 gap-6 mb-8">
                     {/* Monthly Profit Goal Progress Bar */}
-                    <div className="bg-card-theme border border-theme rounded-2xl p-5 shadow-xl">
-                        <div className="flex justify-between items-center mb-3">
-                            <div className="flex items-center gap-2">
-                                <span className="text-xl">🎯</span>
+                    <div className="bento-card p-6 md:p-7 rounded-3xl">
+                        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-500">
+                                    <Icons.Target className="w-5 h-5" />
+                                </div>
                                 <div>
                                     <h4 className="text-main-theme font-extrabold text-sm uppercase tracking-wider">Monthly Profit Goal</h4>
-                                    <p className="text-[11px] text-muted-theme">Monthly Target: {currencySymbol}{parseFloat(userSettings?.monthlyTarget || 1000).toLocaleString()}</p>
+                                    <p className="text-[11px] text-muted-theme">Target: {currencySymbol}{parseFloat(userSettings?.monthlyTarget || 1000).toLocaleString()}</p>
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <span className={`text-base font-black font-mono ${parseFloat(stats.netPnL || 0) >= parseFloat(userSettings?.monthlyTarget || 1000) ? 'text-jtg-green' : 'text-cyan-400'}`}>
+                            <div className="text-left sm:text-right">
+                                <span className={`text-base font-black font-mono ${parseFloat(stats.netPnL || 0) >= parseFloat(userSettings?.monthlyTarget || 1000) ? 'text-jtg-green' : 'text-jtg-blue'}`}>
                                     {currencySymbol}{parseFloat(stats.netPnL || 0).toLocaleString()} / {currencySymbol}{parseFloat(userSettings?.monthlyTarget || 1000).toLocaleString()}
                                 </span>
                                 <span className="text-[10px] font-mono font-extrabold text-muted-theme block uppercase">
@@ -298,24 +324,21 @@ const Performance = ({ trades = [], withdrawals = [], deposits = [], globalBalan
                             </div>
                         </div>
                         
-                        <div className="w-full bg-input-theme h-3.5 rounded-full overflow-hidden p-0.5 border border-theme">
+                        <div className="w-full bg-input-theme h-3 rounded-full overflow-hidden p-0.5 border border-theme">
                             <div 
-                                className="bg-gradient-to-r from-cyan-500 via-emerald-400 to-[#1BA657] h-full rounded-full transition-all duration-1000 shadow-[0_0_12px_rgba(27,166,87,0.5)]"
+                                className="bg-gradient-to-r from-jtg-blue via-emerald-400 to-jtg-green h-full rounded-full transition-all duration-1000 shadow-sm"
                                 style={{ width: `${Math.min(Math.max((parseFloat(stats.netPnL || 0) / parseFloat(userSettings?.monthlyTarget || 1000)) * 100, 0), 100)}%` }}
                             />
                         </div>
                     </div>
-
-                    {/* Streak Badges Milestone Widget */}
-                    <StreakBadgeWidget trades={trades} showDetails={true} />
                 </div>
 
                 {/* INSTITUTIONAL METRICS */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <StatCard title="Expectancy" value={`${currencySymbol}${stats.expectancy}`} color="white" />
                     <StatCard title="Sharpe Ratio" value={stats.sharpeRatio} color="white" />
-                    <StatCard title="Discipline Score" value={`${stats.disciplineScore}%`} color="emerald" />
-                    <StatCard title="Win Rate" value={`${stats.winRate}%`} color="white" />
+                    <StatCard title="Discipline Score" value={`${stats.disciplineScore}%`} color="emerald" trend={`+${stats.disciplineScore}%`} />
+                    <StatCard title="Win Rate" value={`${stats.winRate}%`} color="white" trend={`${stats.winRate}%`} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -327,16 +350,16 @@ const Performance = ({ trades = [], withdrawals = [], deposits = [], globalBalan
                 {/* CHARTS GRID */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     {/* EQUITY CURVE */}
-                    <div className="bg-card-theme border border-theme rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
-                        <h3 className="text-lg font-bold text-main-theme mb-4 flex items-center gap-2"><Icons.Chart /> Equity Curve</h3>
+                    <div className="bento-card p-6 md:p-7 rounded-3xl flex flex-col h-[400px]">
+                        <h3 className="text-base font-extrabold text-main-theme mb-4 flex items-center gap-2"><Icons.Chart /> Equity Curve</h3>
                         <div className="flex-1 w-full">
                             {trades.length > 0 ? <EquityChart data={chartData} currencySymbol={currencySymbol} /> : <NoData />}
                         </div>
                     </div>
 
                     {/* DAY OF WEEK HEATMAP */}
-                    <div className="bg-card-theme border border-theme rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
-                        <h3 className="text-lg font-bold text-main-theme mb-4 flex items-center gap-2"><Icons.Calendar /> Performance by Day</h3>
+                    <div className="bento-card p-6 md:p-7 rounded-3xl flex flex-col h-[400px]">
+                        <h3 className="text-base font-extrabold text-main-theme mb-4 flex items-center gap-2"><Icons.Calendar /> Performance by Day</h3>
                         <div className="flex-1 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={heatmapData.dayStats}>
@@ -400,8 +423,8 @@ const Performance = ({ trades = [], withdrawals = [], deposits = [], globalBalan
                     </div>
 
                     {/* ASSET LEAGUE TABLE */}
-                    <div className="bg-card-theme border border-theme rounded-2xl p-6 shadow-xl flex flex-col h-[400px] overflow-hidden">
-                        <h3 className="text-lg font-bold text-main-theme mb-4 flex items-center gap-2"><Icons.Trophy /> Asset League Table</h3>
+                    <div className="bento-card p-6 md:p-7 rounded-3xl flex flex-col h-[400px] overflow-hidden">
+                        <h3 className="text-base font-extrabold text-main-theme mb-4 flex items-center gap-2"><Icons.Trophy /> Asset League Table</h3>
                         <div className="flex-1 overflow-y-auto custom-scroll">
                             <table className="w-full text-left">
                                 <thead>
@@ -427,6 +450,11 @@ const Performance = ({ trades = [], withdrawals = [], deposits = [], globalBalan
                             </table>
                         </div>
                     </div>
+                </div>
+
+                {/* Trading Streak Milestones (Last Card on Analytics) */}
+                <div className="mb-8">
+                    <StreakBadgeWidget trades={trades} showDetails={true} />
                 </div>
             </div>
         </div>

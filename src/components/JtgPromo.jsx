@@ -2,20 +2,33 @@ import React from 'react';
 import { Icons } from './Icons';
 
 const JtgPromo = () => (
-    <div className="bg-gradient-to-r from-emerald-50 via-white to-slate-50 border border-slate-200 rounded-2xl p-6 lg:p-8 mt-8 mb-8 relative overflow-hidden group hover:border-jtg-green/40 transition-colors duration-500 w-full shrink-0 shadow-md">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-jtg-green/5 rounded-full blur-3xl -mr-10 -mt-10 transition-opacity group-hover:opacity-100 opacity-50"></div>
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center md:text-left">
-                <h3 className="text-xl font-bold text-slate-900 mb-2 tracking-wide">Scale Your Capital with JTG</h3>
-                <p className="text-slate-600 text-sm leading-relaxed font-light max-w-md">
-                    Stop gambling. Use our data-driven strategies to pass your Prop Firm challenges consistently.
+    <div className="card-mastery-dark p-6 lg:p-8 mt-6 mb-6 shadow-xl group transition-all duration-300 hover:shadow-2xl hover:border-white/20">
+        {/* Subtle decorative glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-jtg-blue/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+        <div className="absolute bottom-0 right-1/4 w-36 h-36 bg-jtg-green/15 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-xl">
+                <div className="inline-flex items-center gap-1.5 bg-jtg-green/20 border border-jtg-green/40 px-3 py-1 rounded-full text-jtg-green text-[10px] font-extrabold uppercase tracking-widest">
+                    <span>⚡</span>
+                    <span>15% Discount For Community Members</span>
+                </div>
+                <h3 className="text-xl md:text-2xl font-black text-white tracking-tight">
+                    Join Our Institutional Trading Mastery
+                </h3>
+                <p className="text-slate-300 text-xs md:text-sm leading-relaxed font-normal">
+                    Master risk management, eliminate impulsive overtrading, and pass prop firm challenges consistently with JTG ecosystem strategies.
                 </p>
             </div>
+
             <button
                 onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
-                className="text-sm font-bold text-jtg-green bg-emerald-100 hover:bg-jtg-green hover:text-white px-6 py-3 rounded-full flex items-center gap-2 transition-all uppercase tracking-wider whitespace-nowrap shadow-md border border-emerald-200"
+                className="bg-jtg-blue hover:bg-blue-600 text-white font-extrabold text-xs md:text-sm px-6 py-3.5 rounded-full flex items-center gap-2.5 transition-all shadow-lg hover:shadow-blue-500/25 active:scale-95 shrink-0 group/btn"
             >
-                Visit JTG Website <Icons.ArrowRight />
+                <span>Join Class</span>
+                <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform">
+                    ↗
+                </span>
             </button>
         </div>
     </div>

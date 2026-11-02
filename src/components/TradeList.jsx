@@ -9,7 +9,7 @@ const TradeRow = ({ trade, currencySymbol, currency, getEmotionColor, downloadCa
     const isWin = parseFloat(trade.pnl) >= 0;
 
     return (
-        <div className="bg-input-theme border border-theme rounded-xl p-4 shadow-sm hover:border-jtg-blue/40 transition duration-300">
+        <div className="bg-input-theme border border-theme rounded-2xl p-4.5 shadow-sm hover:border-jtg-blue/40 transition duration-300">
             {/* Clickable Header Bar */}
             <div 
                 onClick={() => setExpanded(!expanded)} 
@@ -37,8 +37,8 @@ const TradeRow = ({ trade, currencySymbol, currency, getEmotionColor, downloadCa
                     <span className={`text-xs md:text-sm font-mono font-black ${isWin ? 'text-jtg-green' : 'text-red-500'}`}>
                         {isWin ? '+' : ''}{currencySymbol}{trade.pnlNative ? parseFloat(trade.pnlNative).toLocaleString(undefined, { minimumFractionDigits: currency === 'NGN' ? 0 : 2, maximumFractionDigits: currency === 'NGN' ? 0 : 2 }) : parseFloat(trade.pnl).toLocaleString()}
                     </span>
-                    <span className="text-muted-theme transition-transform duration-200 text-xs" style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                        ▼
+                    <span className="text-muted-theme transition-transform duration-200" style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                        <Icons.ChevronDown className="w-3.5 h-3.5" />
                     </span>
                 </div>
             </div>
@@ -70,8 +70,18 @@ const TradeRow = ({ trade, currencySymbol, currency, getEmotionColor, downloadCa
                     </div>
                     <div>
                         <p className="text-[10px] font-bold text-muted-theme uppercase tracking-widest mb-1">Rule Adherence</p>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded inline-block mt-0.5 ${trade.ruleAdherence === 'Yes' ? 'bg-emerald-500/20 text-jtg-green border border-emerald-500/30' : 'bg-red-500/20 text-red-500 border border-red-500/30'}`}>
-                            {trade.ruleAdherence === 'Yes' ? '✅ Followed Rules' : '❌ Broke Rules'}
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded inline-flex items-center gap-1 mt-0.5 ${trade.ruleAdherence === 'Yes' ? 'bg-emerald-500/20 text-jtg-green border border-emerald-500/30' : 'bg-red-500/20 text-red-500 border border-red-500/30'}`}>
+                            {trade.ruleAdherence === 'Yes' ? (
+                                <>
+                                    <Icons.Check />
+                                    <span>Followed Rules</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Icons.X className="w-3 h-3" />
+                                    <span>Broke Rules</span>
+                                </>
+                            )}
                         </span>
                     </div>
                     <div>
@@ -371,33 +381,41 @@ const TradeList = ({ trades, deleteTrade, isPremium = false, exportCount = 0, in
 
     return (
         <div className="flex flex-col h-full animate-pop overflow-y-auto custom-scroll p-4 md:p-10 pb-24 md:pb-10">
-            <div className="bg-card-theme border border-theme rounded-2xl p-6 shadow-xl flex flex-col mb-8 min-h-[500px] text-main-theme">
-                <div className="flex justify-between items-center mb-6">
-                    <div className="flex items-center gap-6">
-                        <h2 className="text-2xl font-bold text-main-theme tracking-wide flex items-center gap-3">
-                            <span className="text-jtg-green"><Icons.List /></span> Trade History
-                        </h2>
+            <div className="bento-card p-6 md:p-8 rounded-3xl flex flex-col mb-8 min-h-[500px] text-main-theme">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-jtg-green/15 flex items-center justify-center text-jtg-green">
+                            <Icons.List />
+                        </div>
+                        <div>
+                            <h2 className="text-xl md:text-2xl font-black text-main-theme tracking-tight">Trade History</h2>
+                            <p className="text-xs text-muted-theme">Inspect, review, and export closed journal entries</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
                         <div className="flex flex-col items-center">
                             <button
                                 onClick={handleExportCSV}
-                                className="bg-emerald-50 hover:bg-emerald-100 text-jtg-green border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 group"
+                                className="bg-input-theme hover:bg-jtg-green hover:text-white text-main-theme border border-theme px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 group active:scale-95 shadow-sm"
                                 title="Export to CSV"
                             >
                                 <Icons.Download />
-                                <span className="hidden sm:inline">EXPORT CSV</span>
+                                <span>Export CSV</span>
                             </button>
                             {!isPremium && (
-                                <span className="text-[9px] text-slate-500 font-bold mt-1 uppercase tracking-tighter">
+                                <span className="text-[9px] text-muted-theme font-bold mt-1 uppercase tracking-tighter">
                                     {Math.max(0, 3 - exportCount)} FREE EXPORTS LEFT
                                 </span>
                             )}
                         </div>
-                    </div>
-                    <div className="bg-jtg-blue/10 px-4 py-2 rounded-full border border-jtg-blue/20">
-                        <span className="text-jtg-blue font-bold font-mono">{trades.length}</span> <span className="text-slate-500 text-xs uppercase font-semibold">Records</span>
+                        <div className="bg-jtg-blue/15 px-3.5 py-1.5 rounded-full border border-jtg-blue/30 flex items-center gap-1.5">
+                            <span className="text-jtg-blue font-black font-mono text-sm">{trades.length}</span>
+                            <span className="text-muted-theme text-[10px] uppercase font-bold">Trades</span>
+                        </div>
                     </div>
                 </div>
-                <div className="flex-1 space-y-4">
+                <div className="flex-1 space-y-3">
                     {trades.length === 0 ? (
                         <div className="p-12 text-center text-slate-400 italic">No trade history found. Go to Journal to add entries.</div>
                     ) : (

@@ -196,6 +196,23 @@ const App = () => {
 
     const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
+    // SIDEBAR STATE (Hideable like Antigravity)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+        try {
+            return localStorage.getItem('jtg_sidebar_open') !== 'false';
+        } catch (e) {
+            return true;
+        }
+    });
+
+    const toggleSidebar = () => {
+        setIsSidebarOpen(prev => {
+            const next = !prev;
+            try { localStorage.setItem('jtg_sidebar_open', String(next)); } catch (e) {}
+            return next;
+        });
+    };
+
     // EXCHANGE RATE STATE
     const [exchangeRates, setExchangeRates] = useState(null);
     const [ratesLoading, setRatesLoading] = useState(true);
@@ -1010,48 +1027,48 @@ const App = () => {
 
     if (isAuthLoading) {
         return (
-            <div className="flex flex-col items-center justify-center w-screen h-screen bg-slate-50">
+            <div className="flex flex-col items-center justify-center w-screen h-screen bg-app-theme text-main-theme">
                 <div className="relative w-20 h-20 flex items-center justify-center mb-6">
-                    <div className="absolute inset-0 border-4 border-[#1BA657]/20 rounded-full"></div>
-                    <div className="absolute inset-0 border-4 border-t-[#1BA657] rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 border-4 border-jtg-green/20 rounded-full"></div>
+                    <div className="absolute inset-0 border-4 border-t-jtg-green rounded-full animate-spin"></div>
                     <img src={LOGO_URL} className="w-10 h-10 object-contain animate-pulse" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 tracking-widest uppercase mb-1">JTG JOURNAL</h2>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Establishing secure connection...</p>
+                <h2 className="text-lg font-black text-main-theme tracking-widest uppercase mb-1">JTG JOURNAL</h2>
+                <p className="text-xs text-muted-theme font-bold uppercase tracking-wider">Establishing secure connection...</p>
             </div>
         );
     }
 
     if (!user) {
         return (
-            <div className="relative flex flex-col items-center justify-center w-screen h-screen bg-slate-100 overflow-hidden p-6">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#162C99]/10 rounded-full blur-[120px] pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#1BA657]/10 rounded-full blur-[100px] pointer-events-none"></div>
+            <div className="relative flex flex-col items-center justify-center w-screen h-screen bg-app-theme text-main-theme overflow-hidden p-6">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-jtg-blue/10 rounded-full blur-[140px] pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-jtg-green/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-                <div className="relative z-10 w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center animate-pop">
+                <div className="relative z-10 w-full max-w-md bento-card p-8 md:p-10 shadow-2xl flex flex-col items-center text-center animate-pop text-main-theme">
                     <button
                         onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
-                        className="absolute top-6 left-6 text-slate-500 hover:text-slate-900 transition flex items-center gap-1.5 text-xs font-bold"
+                        className="absolute top-6 left-6 text-muted-theme hover:text-main-theme transition flex items-center gap-1.5 text-xs font-bold"
                     >
                         <Icons.ArrowLeft className="w-3.5 h-3.5" />
                         <span>Go Back</span>
                     </button>
 
-                    <div className="w-20 h-20 mb-6 flex items-center justify-center bg-gradient-to-tr from-[#162C99] to-[#1BA657] p-3 rounded-2xl shadow-lg mt-4">
+                    <div className="w-20 h-20 mb-6 flex items-center justify-center bg-gradient-to-tr from-[#162C99] to-[#1BA657] p-3 rounded-3xl shadow-lg mt-4">
                         <img src={LOGO_URL} className="w-full h-full object-contain" />
                     </div>
 
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">JTG JOURNAL</h1>
+                    <h1 className="text-2xl font-black text-main-theme tracking-tight leading-none mb-1">JTG JOURNAL</h1>
                     <p className="text-[#1BA657] text-[10px] font-black uppercase tracking-[0.2em] mb-6">Stop Gambling. Start Journaling.</p>
                     
-                    <p className="text-slate-600 text-sm leading-relaxed mb-8">
+                    <p className="text-muted-theme text-sm leading-relaxed mb-8">
                         The ultimate position calculator and analytical trade journal for disciplined traders. Elevate your performance, manage your risk, and pass challenges consistently.
                     </p>
 
                     <button
                         onClick={login}
                         disabled={isLoggingIn}
-                        className="w-full py-4 bg-[#162C99] hover:bg-[#12227a] text-white font-black text-sm tracking-widest rounded-xl transition-all shadow-xl hover:shadow-jtg-blue/30 flex items-center justify-center gap-3 hover:scale-[1.02]"
+                        className="w-full py-4 bg-jtg-blue hover:bg-blue-700 text-white font-extrabold text-sm tracking-widest rounded-full transition-all shadow-xl hover:shadow-blue-500/25 flex items-center justify-center gap-3 active:scale-[0.98]"
                     >
                         {isLoggingIn ? (
                             <>
@@ -1066,7 +1083,7 @@ const App = () => {
                         )}
                     </button>
 
-                    <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider mt-8">
+                    <p className="text-[9px] text-muted-theme uppercase font-bold tracking-wider mt-8">
                         Authorized Access Only • Secured by Firebase
                     </p>
                 </div>
@@ -1075,115 +1092,153 @@ const App = () => {
     }
 
     return (
-        <div className="flex w-full h-full bg-app-theme text-main-theme">
-            {/* SIDEBAR */}
-            <div className="hidden md:flex w-24 bg-sidebar-theme border-r border-theme flex-col items-center py-6 z-20 shadow-md shrink-0 h-full overflow-y-auto custom-scroll justify-between">
-                <div className="w-full flex flex-col items-center">
-                    
-                    {/* BACK TO ECOSYSTEM LINK */}
-                    <button 
-                        onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
-                        className="mb-4 text-slate-500 hover:text-main-theme transition flex items-center gap-1 bg-input-theme border border-theme rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wider hover:opacity-80 active:scale-95"
-                        title="Back to Ecosystem"
-                    >
-                        <Icons.ArrowLeft className="w-2.5 h-2.5" />
-                        <span>WEB</span>
-                    </button>
+        <div className="flex w-full h-full bg-app-theme text-main-theme overflow-hidden">
+            {/* DESKTOP SIDEBAR (Hideable & Clean Fintech Design) */}
+            <div className={`hidden md:flex ${isSidebarOpen ? 'w-64 lg:w-72' : 'w-0 p-0 border-r-0 overflow-hidden opacity-0 pointer-events-none'} bg-sidebar-theme border-r border-theme flex-col py-6 px-4 z-20 shrink-0 h-full overflow-y-auto custom-scroll justify-between transition-all duration-300 ease-in-out`}>
+                <div>
+                    {/* Top Brand Bar */}
+                    <div className="flex items-center justify-between mb-6 px-1">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            {/* Back arrow to left of logo */}
+                            <button 
+                                onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
+                                className="text-muted-theme hover:text-main-theme transition p-1 hover:bg-input-theme rounded-lg active:scale-95 shrink-0"
+                                title="Back to Ecosystem"
+                            >
+                                <Icons.ArrowLeft className="w-3.5 h-3.5" />
+                            </button>
+                            {/* Logo with no background */}
+                            <img src={LOGO_URL} className="w-7 h-7 object-contain shrink-0" onError={(e) => e.target.style.display = 'none'} />
+                            <span className="text-sm font-black text-main-theme tracking-tight truncate">JTG JOURNAL</span>
+                        </div>
 
-                    <div className="w-12 h-12 mb-8 flex items-center justify-center mx-auto shrink-0 transition-transform hover:scale-105">
-                        <img src={LOGO_URL} className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
+                        <div className="flex items-center shrink-0">
+                            {/* Hide Sidebar Button (Antigravity Style) */}
+                            <button
+                                onClick={toggleSidebar}
+                                className="p-1.5 text-muted-theme hover:text-main-theme hover:bg-input-theme rounded-xl border border-transparent hover:border-theme transition active:scale-95"
+                                title="Collapse Sidebar"
+                                aria-label="Collapse Sidebar"
+                            >
+                                <Icons.Sidebar className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
                     </div>
 
-                    {/* ACCOUNT SWITCHER */}
+                    {/* Navigation Section */}
+                    <div className="space-y-1 mb-6">
+                        <p className="text-[10px] font-extrabold text-muted-theme uppercase tracking-widest px-2 mb-2">Core Tools</p>
+                        {[
+                            { id: 'calc', label: 'Position Calculator', icon: <Icons.Calculator /> },
+                            { id: 'journal', label: 'Trade Entry', icon: <Icons.Journal /> },
+                            { id: 'trades', label: 'Trade History Logs', icon: <Icons.List /> },
+                            { id: 'calendar', label: 'Performance Calendar', icon: <Icons.Calendar /> },
+                            { id: 'perf', label: 'Evolution Analytics', icon: <Icons.Chart /> }
+                        ].map(item => {
+                            const isActive = page === item.id;
+                            return (
+                                <button
+                                    key={item.id}
+                                    id={`sidebar-nav-${item.id}`}
+                                    onClick={() => setPage(item.id)}
+                                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ${
+                                        isActive 
+                                            ? 'bg-jtg-blue text-white shadow-md shadow-jtg-blue/20' 
+                                            : 'text-muted-theme hover:text-main-theme hover:bg-input-theme'
+                                    }`}
+                                >
+                                    <span className={isActive ? 'text-white' : 'text-muted-theme'}>{item.icon}</span>
+                                    <span className="truncate">{item.label}</span>
+                                    {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white shrink-0"></span>}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Account Switcher & MT5 Section */}
                     {user && (
-                        <div className="mb-6 w-full px-4 flex flex-col gap-2">
+                        <div className="space-y-2 mb-6">
+                            <p className="text-[10px] font-extrabold text-muted-theme uppercase tracking-widest px-2 mb-1">Trading Accounts</p>
                             <button
                                 id="account-switcher-button"
                                 onClick={() => setShowAccountManager(true)}
-                                className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 flex flex-col items-center gap-1 hover:bg-emerald-500/20 transition group"
+                                className="w-full bg-input-theme border border-theme rounded-2xl p-3 flex items-center justify-between hover:border-jtg-green/40 transition group active:scale-[0.98]"
                             >
-                                <div className="text-jtg-green"><Icons.User /></div>
-                                <span id="active-account-name" className="text-[10px] font-bold text-main-theme max-w-full truncate">
-                                    {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
-                                </span>
+                                <div className="flex items-center gap-2.5 overflow-hidden text-left">
+                                    <div className="w-7 h-7 rounded-full bg-jtg-green/15 text-jtg-green flex items-center justify-center shrink-0">
+                                        <Icons.User className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div className="overflow-hidden">
+                                        <p id="active-account-name" className="text-xs font-bold text-main-theme truncate">
+                                            {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
+                                        </p>
+                                        <p className="text-[10px] text-muted-theme font-mono font-medium">
+                                            {currency} • {accounts.find(a => a.id === activeAccountId)?.type || 'Personal'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <Icons.ChevronRight className="w-4 h-4 text-muted-theme group-hover:translate-x-0.5 transition-transform shrink-0" />
                             </button>
+
                             <button
                                 id="mt5-sync-button"
                                 onClick={() => setShowSyncModal(true)}
-                                className="w-full bg-jtg-blue/10 border border-jtg-blue/20 rounded-lg p-2 flex flex-col items-center gap-1 hover:bg-jtg-blue/20 transition group"
+                                className="w-full bg-jtg-blue/10 border border-jtg-blue/25 hover:bg-jtg-blue/20 rounded-2xl p-2.5 flex items-center justify-between transition group active:scale-[0.98]"
                             >
-                                <div className="text-jtg-blue"><Icons.Key /></div>
-                                <span className="text-[10px] font-bold text-main-theme max-w-full truncate">
-                                    MT5 Auto-Sync
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-jtg-blue text-white flex items-center justify-center text-xs shrink-0">
+                                        <Icons.Zap className="w-3.5 h-3.5" />
+                                    </div>
+                                    <span className="text-xs font-bold text-jtg-blue truncate">MT5 Auto-Sync</span>
+                                </div>
+                                <span className="text-[10px] font-extrabold text-jtg-blue bg-jtg-blue/15 px-2 py-0.5 rounded-full shrink-0">LIVE</span>
                             </button>
                         </div>
                     )}
-
-                    <div className="flex flex-col gap-2 w-full">
-                        <NavBtn id="calc" icon={<Icons.Calculator />} label="CALC" />
-                        <NavBtn id="journal" icon={<Icons.Journal />} label="ENTRY" />
-                        <NavBtn id="trades" icon={<Icons.List />} label="TRADES" />
-                        <NavBtn id="calendar" icon={<Icons.Calendar />} label="CALENDAR" />
-                        <NavBtn id="perf" icon={<Icons.Chart />} label="DATA" />
-                    </div>
                 </div>
 
-                <div className="w-full pb-4 mt-8 shrink-0 flex flex-col gap-4 items-center">
-                    
-                    {/* THEME TOGGLE BUTTON */}
-                    <button 
-                        id="theme-toggle-button"
-                        onClick={toggleTheme}
-                        className="flex flex-col items-center gap-1 text-slate-400 hover:text-main-theme transition"
-                        title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                    >
-                        {theme === 'dark' ? <Icons.Sun className="w-5 h-5 text-amber-400" /> : <Icons.Moon className="w-5 h-5 text-jtg-blue" />}
-                        <span className="text-[9px] font-bold tracking-wider">{theme === 'dark' ? 'LIGHT' : 'DARK'}</span>
-                    </button>
-
-                    {/* SETTINGS BUTTON */}
-                    <button 
-                        id="settings-button" 
-                        onClick={() => setShowSettingsModal(true)} 
-                        className="flex flex-col items-center gap-1 text-slate-400 hover:text-main-theme transition" 
-                        title="Platform Settings"
-                    >
-                        <Icons.Settings className="w-5 h-5 text-jtg-blue" />
-                        <span className="text-[9px] font-bold tracking-wider">SETTINGS</span>
-                    </button>
-
-                    {/* STREAK WIDGET & USER PROFILE */}
-                    <div className="flex flex-col items-center gap-2 mb-2 pt-4 border-t border-theme w-full">
-                        <div className="mb-1">
+                {/* Bottom Section: Streak Badge, Theme Toggle, Settings, Logout (Moved from Header) */}
+                <div className="pt-4 border-t border-theme space-y-3">
+                    {/* Streak Badge Widget in Left Panel */}
+                    <div className="bg-input-theme border border-theme rounded-2xl p-3 flex items-center justify-between shadow-sm">
+                        <div className="flex items-center gap-3">
                             <StreakBadgeWidget trades={displayTrades} />
+                            <div className="text-left">
+                                <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-theme">Daily Streak</p>
+                                <p className="text-xs font-black text-main-theme">Discipline Shield</p>
+                            </div>
                         </div>
+                    </div>
 
-                        {currentPlanTier === 'diamond' ? (
-                            <div className="bg-cyan-500/20 border border-cyan-400/60 rounded-full px-2.5 py-0.5 flex items-center gap-1 shadow-[0_0_15px_rgba(6,182,212,0.6)] animate-pulse mb-1">
-                                <PremiumStarIcon className="w-3 h-3 text-cyan-300" />
-                                <span className="text-[8px] font-black text-cyan-300 tracking-widest uppercase">DIAMOND</span>
-                            </div>
-                        ) : currentPlanTier === 'gold' ? (
-                            <div className="bg-amber-500/20 border border-amber-400/60 rounded-full px-2.5 py-0.5 flex items-center gap-1 shadow-[0_0_15px_rgba(234,179,8,0.6)] animate-pulse mb-1">
-                                <PremiumStarIcon className="w-3 h-3 text-amber-400" />
-                                <span className="text-[8px] font-black text-amber-400 tracking-widest uppercase">GOLD</span>
-                            </div>
-                        ) : null}
-                        <button onClick={logout} className="flex flex-col items-center gap-1 text-slate-400 hover:text-red-500 transition" title="Logout">
-                            <div className={`w-9 h-9 rounded-full bg-jtg-blue text-white flex items-center justify-center font-bold text-xs relative shadow-md ${
-                                currentPlanTier === 'diamond' ? 'ring-2 ring-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.8)]' : 
-                                currentPlanTier === 'gold' ? 'ring-2 ring-amber-400 shadow-[0_0_15px_rgba(234,179,8,0.8)]' : ''
-                            }`}>
-                                {user.email[0].toUpperCase()}
-                                {currentPlanTier === 'diamond' && (
-                                    <span className="absolute -top-1 -right-1 bg-cyan-400 text-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center border border-black font-black shadow-lg animate-pulse" title="Diamond Tier Active">💎</span>
-                                )}
-                                {currentPlanTier === 'gold' && (
-                                    <span className="absolute -top-1 -right-1 bg-amber-400 text-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center border border-black font-black shadow-lg animate-pulse" title="Gold Tier Active">★</span>
-                                )}
-                            </div>
-                            <span className="text-[9px] font-bold tracking-wider mt-0.5">LOGOUT</span>
+                    {/* Quick Utility Buttons: Light/Dark Mode, Settings, Logout */}
+                    <div className="grid grid-cols-3 gap-2">
+                        <button 
+                            id="theme-toggle-button"
+                            onClick={toggleTheme}
+                            className="flex flex-col items-center justify-center gap-1 bg-input-theme border border-theme hover:border-jtg-green/40 py-2.5 px-1 rounded-2xl text-muted-theme hover:text-main-theme transition active:scale-95 shadow-sm"
+                            title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                        >
+                            {theme === 'dark' ? <Icons.Sun className="w-4 h-4 text-amber-400" /> : <Icons.Moon className="w-4 h-4 text-jtg-blue" />}
+                            <span className="text-[9px] font-black uppercase tracking-wider">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+                        </button>
+
+                        <button 
+                            id="settings-button" 
+                            onClick={() => setShowSettingsModal(true)} 
+                            className="flex flex-col items-center justify-center gap-1 bg-input-theme border border-theme hover:border-jtg-blue/40 py-2.5 px-1 rounded-2xl text-muted-theme hover:text-main-theme transition active:scale-95 shadow-sm" 
+                            title="Platform Settings"
+                        >
+                            <Icons.Settings className="w-4 h-4 text-jtg-blue" />
+                            <span className="text-[9px] font-black uppercase tracking-wider">Settings</span>
+                        </button>
+
+                        <button 
+                            onClick={logout} 
+                            className="flex flex-col items-center justify-center gap-1 bg-input-theme border border-theme hover:border-red-500/40 py-2.5 px-1 rounded-2xl text-muted-theme hover:text-red-500 transition active:scale-95 shadow-sm" 
+                            title="Logout"
+                        >
+                            <Icons.X className="w-4 h-4" />
+                            <span className="text-[9px] font-black uppercase tracking-wider">Logout</span>
                         </button>
                     </div>
                 </div>
@@ -1194,7 +1249,7 @@ const App = () => {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => window.open('https://www.johnadtradersgroup.name.ng/', '_blank')}
-                        className="text-slate-400 hover:text-main-theme p-1 hover:bg-input-theme rounded-lg transition active:scale-90"
+                        className="text-muted-theme hover:text-main-theme p-1 hover:bg-input-theme rounded-lg transition active:scale-90"
                         title="Back to Ecosystem"
                         aria-label="Back to Ecosystem"
                     >
@@ -1209,28 +1264,18 @@ const App = () => {
                 <div className="flex items-center gap-2">
                     <StreakBadgeWidget trades={displayTrades} />
                     {isDemoMode && (
-                        <span className="text-[9px] bg-emerald-500/20 text-jtg-green px-2 py-0.5 rounded font-extrabold border border-emerald-500/30 animate-pulse uppercase tracking-wide">Demo</span>
-                    )}
-                    {currentPlanTier === 'diamond' && (
-                        <span className="bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 text-[9px] font-black px-2 py-0.5 rounded-full tracking-widest shadow-[0_0_12px_rgba(6,182,212,0.5)] flex items-center gap-1 animate-pulse">
-                            <span>💎</span> DIAMOND
-                        </span>
-                    )}
-                    {currentPlanTier === 'gold' && (
-                        <span className="bg-amber-500/20 border border-amber-400/50 text-amber-400 text-[9px] font-black px-2 py-0.5 rounded-full tracking-widest shadow-[0_0_12px_rgba(234,179,8,0.5)] flex items-center gap-1 animate-pulse">
-                            <span>★</span> GOLD
-                        </span>
+                        <span className="text-[9px] bg-emerald-500/20 text-jtg-green px-2 py-0.5 rounded-full font-extrabold border border-emerald-500/30 animate-pulse uppercase tracking-wide">Demo</span>
                     )}
                     <button
                         onClick={toggleTheme}
-                        className="p-2 text-main-theme transition-colors bg-input-theme border border-theme rounded-lg flex items-center justify-center active:scale-95"
+                        className="p-2 text-main-theme transition-colors bg-input-theme border border-theme rounded-full flex items-center justify-center active:scale-95"
                         title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
                     >
                         {theme === 'dark' ? <Icons.Sun className="w-4 h-4 text-amber-400" /> : <Icons.Moon className="w-4 h-4 text-jtg-blue" />}
                     </button>
                     <button
                         onClick={() => setShowMobileDrawer(true)}
-                        className="p-2 text-main-theme transition-colors bg-input-theme border border-theme rounded-lg flex items-center justify-center active:scale-95"
+                        className="p-2 text-main-theme transition-colors bg-input-theme border border-theme rounded-full flex items-center justify-center active:scale-95"
                         aria-label="Open Menu"
                     >
                         <Icons.Menu />
@@ -1240,49 +1285,158 @@ const App = () => {
 
             {/* MOBILE BOTTOM NAV */}
             <div className="md:hidden fixed bottom-0 w-full bg-sidebar-theme border-t border-theme z-30 flex justify-around pb-safe h-20 items-center shadow-lg">
-                <button id="mobile-nav-calc" onClick={() => setPage('calc')} className={`p-2 flex flex-col items-center ${page === 'calc' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Calculator /><span className="text-[9px] font-bold mt-1">Calc</span></button>
-                <button id="mobile-nav-journal" onClick={() => setPage('journal')} className={`p-2 flex flex-col items-center ${page === 'journal' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Journal /><span className="text-[9px] font-bold mt-1">Entry</span></button>
-                <button id="mobile-nav-trades" onClick={() => setPage('trades')} className={`p-2 flex flex-col items-center ${page === 'trades' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.List /><span className="text-[9px] font-bold mt-1">Trades</span></button>
-                <button id="mobile-nav-calendar" onClick={() => setPage('calendar')} className={`p-2 flex flex-col items-center ${page === 'calendar' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Calendar /><span className="text-[9px] font-bold mt-1">Calendar</span></button>
-                <button id="mobile-nav-perf" onClick={() => setPage('perf')} className={`p-2 flex flex-col items-center ${page === 'perf' ? 'text-jtg-green font-bold' : 'text-slate-400'}`}><Icons.Chart /><span className="text-[9px] font-bold mt-1">Analytics</span></button>
+                <button id="mobile-nav-calc" onClick={() => setPage('calc')} className={`p-2 flex flex-col items-center ${page === 'calc' ? 'text-jtg-green font-bold' : 'text-muted-theme'}`}><Icons.Calculator /><span className="text-[9px] font-bold mt-1">Calc</span></button>
+                <button id="mobile-nav-journal" onClick={() => setPage('journal')} className={`p-2 flex flex-col items-center ${page === 'journal' ? 'text-jtg-green font-bold' : 'text-muted-theme'}`}><Icons.Journal /><span className="text-[9px] font-bold mt-1">Entry</span></button>
+                <button id="mobile-nav-trades" onClick={() => setPage('trades')} className={`p-2 flex flex-col items-center ${page === 'trades' ? 'text-jtg-green font-bold' : 'text-muted-theme'}`}><Icons.List /><span className="text-[9px] font-bold mt-1">Trades</span></button>
+                <button id="mobile-nav-calendar" onClick={() => setPage('calendar')} className={`p-2 flex flex-col items-center ${page === 'calendar' ? 'text-jtg-green font-bold' : 'text-muted-theme'}`}><Icons.Calendar /><span className="text-[9px] font-bold mt-1">Calendar</span></button>
+                <button id="mobile-nav-perf" onClick={() => setPage('perf')} className={`p-2 flex flex-col items-center ${page === 'perf' ? 'text-jtg-green font-bold' : 'text-muted-theme'}`}><Icons.Chart /><span className="text-[9px] font-bold mt-1">Analytics</span></button>
             </div>
 
             {/* MAIN CONTENT AREA */}
-            <main className="flex-1 relative h-full w-full overflow-hidden">
-                <div className="absolute inset-0 bg-app-theme w-full h-full overflow-hidden">
-                    {/* Background Elements */}
-                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-jtg-blue/10 rounded-full blur-[120px] pointer-events-none"></div>
-                    <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-jtg-green/5 rounded-full blur-[100px] pointer-events-none"></div>
-
-                    {/* Scrollable Container */}
-                    <div className="w-full h-full overflow-hidden pt-20 pb-24 md:pt-0 md:pb-0">
-                        {isDemoMode && (
-                            <div className="bg-[#1BA657]/20 border-b border-[#1BA657]/30 py-3 px-4 text-center text-xs text-[#1BA657] font-bold tracking-wide animate-pulse flex items-center justify-center gap-2 z-10 relative">
-                                <span>📢 DEMO MODE ACTIVE: Viewing sample Forex trade logs. Click "EXIT DEMO" at the top to clear.</span>
+            <main className="flex-1 relative h-full w-full overflow-hidden flex flex-col">
+                {/* DESKTOP TOP CAPSULE NAVIGATION BAR */}
+                <div className="hidden md:flex items-center justify-between px-6 lg:px-8 py-3.5 border-b border-theme bg-app-theme shrink-0 z-20 gap-4">
+                    {/* Left: Brand (only visible when sidebar collapsed) */}
+                    <div className="flex items-center gap-3 shrink-0">
+                        {!isSidebarOpen && (
+                            <div className="flex items-center gap-2 animate-pop">
+                                <button
+                                    onClick={toggleSidebar}
+                                    className="p-1.5 rounded-xl bg-input-theme border border-theme text-muted-theme hover:text-main-theme hover:border-jtg-green/40 transition active:scale-95 flex items-center justify-center"
+                                    title="Show Left Panel"
+                                    aria-label="Show Left Panel"
+                                >
+                                    <Icons.Sidebar className="w-4 h-4" />
+                                </button>
+                                <img src={LOGO_URL} className="w-6 h-6 object-contain" />
+                                <span className="text-sm font-black text-main-theme tracking-tight whitespace-nowrap">JTG JOURNAL</span>
                             </div>
                         )}
-                        <div key={page} className="w-full h-full animate-page-enter">
-                            {page === 'calc' && <Calculator globalBalance={isDemoMode ? '11020' : globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} activeAccount={activeAccount} />}
-                            {page === 'journal' && <Journal addTrade={addTrade} accountType={activeAccount?.type} />}
-                            {page === 'trades' && (
-                                <TradeList
-                                    trades={displayTrades}
-                                    deleteTrade={deleteTrade}
-                                    isPremium={isPremium}
-                                    triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
-                                    exportCount={exportCount}
-                                    incrementExportCount={incrementExportCount}
-                                    currencySymbol={currencySymbol}
-                                    currency={currency}
-                                    exchangeRates={exchangeRates}
-                                    ratesLoading={ratesLoading}
-                                    activeAccount={activeAccount}
-                                    username={username}
-                                />
+                    </div>
+
+                    {/* Center: Centralized Capsule Navigation Pills */}
+                    <div className="flex-1 flex justify-center px-2">
+                        <div className="flex items-center gap-1.5 bg-input-theme p-1.5 rounded-full border border-theme shadow-sm">
+                            {[
+                                { id: 'calc', label: 'Calculator' },
+                                { id: 'journal', label: 'Trade Entry' },
+                                { id: 'trades', label: 'Trade Logs' },
+                                { id: 'calendar', label: 'Calendar' },
+                                { id: 'perf', label: 'Analytics' }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setPage(tab.id)}
+                                    className={`capsule-pill ${page === tab.id ? 'capsule-pill-active' : 'capsule-pill-inactive'}`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Right: Demo Mode & User Profile Pill */}
+                    <div className="flex items-center gap-3 shrink-0">
+                        {/* Demo Mode Toggle */}
+                        {(trades.length === 0 || isDemoMode) && (
+                            <button
+                                onClick={() => setIsDemoMode(!isDemoMode)}
+                                className={`px-3 py-1.5 rounded-full text-xs font-black transition-all border flex items-center gap-1.5 shadow-sm ${
+                                    isDemoMode 
+                                        ? 'bg-jtg-green/20 text-jtg-green border-jtg-green/40' 
+                                        : 'bg-input-theme text-muted-theme border-theme hover:text-main-theme'
+                                }`}
+                            >
+                                <Icons.Zap className="w-3.5 h-3.5 text-jtg-green" />
+                                <span>{isDemoMode ? 'Demo Active' : 'Sample Data'}</span>
+                            </button>
+                        )}
+
+                        {/* User Profile Pill */}
+                        <div className="flex items-center gap-2 pl-3 border-l border-theme">
+                            <div className={`w-9 h-9 rounded-full bg-jtg-blue text-white flex items-center justify-center font-black text-xs relative shadow-sm ${
+                                currentPlanTier === 'diamond' ? 'ring-2 ring-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.6)]' :
+                                currentPlanTier === 'gold' ? 'ring-2 ring-amber-400 shadow-[0_0_12px_rgba(234,179,8,0.6)]' : ''
+                            }`}>
+                                {username ? username[0].toUpperCase() : (user?.email ? user.email[0].toUpperCase() : 'U')}
+                            </div>
+                            <div className="hidden lg:block text-left">
+                                <p className="text-xs font-black text-main-theme leading-none truncate max-w-[120px]">
+                                    {username ? `@${username}` : (user?.email?.split('@')[0] || 'Trader')}
+                                </p>
+                                <p className="text-[10px] text-muted-theme font-medium leading-tight mt-0.5 truncate max-w-[120px]">
+                                    {user?.email || 'Active'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Scrollable Canvas */}
+                <div className="flex-1 relative w-full h-full overflow-hidden">
+                    <div className="absolute inset-0 bg-app-theme w-full h-full overflow-hidden">
+                        {/* Background Subtle Elements */}
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-jtg-blue/5 rounded-full blur-[140px] pointer-events-none"></div>
+                        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-jtg-green/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+                        {/* Scrollable Container */}
+                        <div className="w-full h-full overflow-y-auto custom-scroll pt-20 pb-24 md:pt-6 md:pb-8 px-4 md:px-8">
+                            {/* Dashboard Greeting & Quick Actions Header */}
+                            <div className="hidden md:flex justify-between items-center mb-6">
+                                <div>
+                                    <h1 className="text-2xl font-black text-main-theme tracking-tight">
+                                        {page === 'calc' && 'Financial & Risk Overview'}
+                                        {page === 'journal' && 'Trade Journal & Setup Logger'}
+                                        {page === 'trades' && 'Trade History & Performance Logs'}
+                                        {page === 'calendar' && 'Performance & Profit Calendar'}
+                                        {page === 'perf' && 'Evolution & Growth Analytics'}
+                                    </h1>
+                                    <p className="text-xs text-muted-theme mt-0.5">
+                                        Overview &gt; {page === 'calc' ? 'Position Size Calculator' : page === 'journal' ? 'New Trade Entry' : page === 'trades' ? 'Historical Records' : page === 'calendar' ? 'Aggregated Cadence' : 'Institutional Metrics'}
+                                    </p>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setPage(page === 'journal' ? 'calc' : 'journal')}
+                                        className="capsule-pill bg-jtg-green hover:bg-emerald-600 text-white shadow-md shadow-jtg-green/20 flex items-center gap-1.5 active:scale-95"
+                                    >
+                                        <Icons.Plus className="w-3.5 h-3.5" />
+                                        <span>{page === 'journal' ? 'Open Calculator' : 'Log Trade'}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {isDemoMode && (
+                                <div className="bg-[#1BA657]/15 border border-[#1BA657]/30 rounded-2xl py-3 px-4 text-center text-xs text-[#1BA657] font-bold tracking-wide animate-pulse flex items-center justify-center gap-2 mb-6">
+                                    <Icons.Zap className="w-4 h-4 text-[#1BA657] shrink-0" />
+                                    <span>DEMO MODE ACTIVE: Viewing sample Forex trade logs. Click &quot;Sample Data&quot; at the top to toggle.</span>
+                                </div>
                             )}
 
-                            {page === 'calendar' && <CalendarView trades={displayTrades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
-                            {page === 'perf' && <Performance key={activeAccountId || 'default'} trades={displayTrades} withdrawals={displayWithdrawals} deposits={displayDeposits} activeAccount={activeAccount} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : (activeAccount ? activeAccount.balance : globalBalance)} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} userSettings={userSettings} />}
+                            <div key={page} className="w-full animate-page-enter">
+                                {page === 'calc' && <Calculator globalBalance={isDemoMode ? '11020' : globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} activeAccount={activeAccount} username={username} user={user} />}
+                                {page === 'journal' && <Journal addTrade={addTrade} accountType={activeAccount?.type} />}
+                                {page === 'trades' && (
+                                    <TradeList
+                                        trades={displayTrades}
+                                        deleteTrade={deleteTrade}
+                                        isPremium={isPremium}
+                                        triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
+                                        exportCount={exportCount}
+                                        incrementExportCount={incrementExportCount}
+                                        currencySymbol={currencySymbol}
+                                        currency={currency}
+                                        exchangeRates={exchangeRates}
+                                        ratesLoading={ratesLoading}
+                                        activeAccount={activeAccount}
+                                        username={username}
+                                    />
+                                )}
+
+                                {page === 'calendar' && <CalendarView trades={displayTrades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
+                                {page === 'perf' && <Performance key={activeAccountId || 'default'} trades={displayTrades} withdrawals={displayWithdrawals} deposits={displayDeposits} activeAccount={activeAccount} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : (activeAccount ? activeAccount.balance : globalBalance)} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} userSettings={userSettings} />}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1495,7 +1649,7 @@ const App = () => {
                                         className={`w-full border rounded-xl p-3.5 flex items-center justify-between transition active:scale-[0.98] ${isDemoMode ? 'bg-[#1BA657]/10 border-[#1BA657] text-[#1BA657]' : 'bg-input-theme border border-theme text-main-theme'}`}
                                     >
                                         <span className="text-xs font-bold">{isDemoMode ? "Exit Demo Mode" : "View Demo Data"}</span>
-                                        <span className="text-xs">⚡</span>
+                                        <Icons.Zap className="w-3.5 h-3.5 text-jtg-green" />
                                     </button>
                                 )}
 
@@ -1506,9 +1660,10 @@ const App = () => {
                                             setShowMobileDrawer(false);
                                             setShowPremiumUpgradeModal(true);
                                         }} 
-                                        className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-extrabold text-xs uppercase tracking-wider p-3 rounded-xl shadow-lg transition hover:brightness-110 active:scale-95 mt-4"
+                                        className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-extrabold text-xs uppercase tracking-wider p-3 rounded-xl shadow-lg transition hover:brightness-110 active:scale-95 mt-4 flex items-center justify-center gap-1.5"
                                     >
-                                        ★ Upgrade to Pro
+                                        <Icons.Star className="w-3.5 h-3.5" />
+                                        <span>Upgrade to Pro</span>
                                     </button>
                                 )}
                             </div>

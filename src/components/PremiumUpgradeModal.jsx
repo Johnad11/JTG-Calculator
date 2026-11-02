@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { PAYSTACK_PUBLIC_KEY } from '../constants';
+import { Icons } from './Icons';
 
 // Custom Check Icon
 const CheckCircleIcon = ({ className }) => (
@@ -270,7 +271,7 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                     {((user?.email && user.email.toLowerCase() === 'nwabuezejohnad11@gmail.com') || userSettings?.planTier === 'diamond') && (
                         <div className="bg-cyan-500/15 border border-cyan-400/50 rounded-xl p-3.5 flex items-center justify-between text-cyan-300 text-xs font-bold shadow-[0_0_15px_rgba(6,182,212,0.2)]">
                             <span className="flex items-center gap-2">
-                                <span className="text-base">💎</span> 
+                                <Icons.Diamond className="w-4 h-4 text-cyan-400" /> 
                                 <span>Active Subscription: <strong>Diamond Plan (Lifetime Admin)</strong></span>
                             </span>
                             <span className="bg-cyan-400/20 text-cyan-300 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-extrabold border border-cyan-400/40">
@@ -346,8 +347,9 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                                     : 'bg-[#0f142b] border-[#162C99]/40 hover:border-[#1BA657]/50'
                             }`}
                         >
-                            <span className="absolute -top-3 right-4 bg-gradient-to-r from-[#1BA657] to-emerald-400 text-black font-extrabold text-[9px] px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
-                                ★ MOST POPULAR
+                            <span className="absolute -top-3 right-4 bg-gradient-to-r from-[#1BA657] to-emerald-400 text-black font-extrabold text-[9px] px-3 py-1 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
+                                <Icons.Star className="w-3 h-3" />
+                                <span>MOST POPULAR</span>
                             </span>
 
                             <div>

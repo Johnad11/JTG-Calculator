@@ -1,31 +1,50 @@
 @import "tailwindcss";
 
 @theme {
-    --font-sans: "News Cycle", sans-serif;
+    --font-sans: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
     --color-jtg-green: #1BA657;
     --color-jtg-blue: #162C99;
+    --color-jtg-blue-vibrant: #2563EB;
+}
+
+body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.012em;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
 }
 
 :root, html.theme-light, body.theme-light {
-    --color-jtg-dark: #F8FAFC;
+    --color-jtg-dark: #FFFFFF;
     --color-jtg-card: #FFFFFF;
-    --color-jtg-input: #F1F5F9;
-    --color-jtg-border: #E2E8F0;
-    --color-text-main: #0F172A;
-    --color-text-muted: #64748B;
+    --color-jtg-card-subtle: #F9FAFB;
+    --color-jtg-input: #F3F4F6;
+    --color-jtg-border: #E5E7EB;
+    --color-text-main: #0B0F19;
+    --color-text-muted: #6B7280;
     --color-sidebar: #FFFFFF;
-    --modal-overlay-bg: rgba(15, 23, 42, 0.5);
+    --modal-overlay-bg: rgba(0, 0, 0, 0.45);
+    --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+    --active-pill-bg: #162C99;
+    --active-pill-text: #FFFFFF;
 }
 
 html.theme-dark, body.theme-dark {
-    --color-jtg-dark: #0a0e29;
-    --color-jtg-card: #111633;
-    --color-jtg-input: #1a214d;
-    --color-jtg-border: rgba(22, 44, 153, 0.35);
-    --color-text-main: #F8FAFC;
-    --color-text-muted: #94A3B8;
-    --color-sidebar: #0a0e29;
-    --modal-overlay-bg: rgba(10, 14, 41, 0.85);
+    --color-jtg-dark: #000000;
+    --color-jtg-card: #0A0A0A;
+    --color-jtg-card-subtle: #121212;
+    --color-jtg-input: #141416;
+    --color-jtg-border: rgba(255, 255, 255, 0.09);
+    --color-text-main: #FFFFFF;
+    --color-text-muted: #9CA3AF;
+    --color-sidebar: #000000;
+    --modal-overlay-bg: rgba(0, 0, 0, 0.85);
+    --card-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.6);
+    --active-pill-bg: #162C99;
+    --active-pill-text: #FFFFFF;
 }
 
 /* Theme Helper Classes */
@@ -55,6 +74,69 @@ html.theme-dark, body.theme-dark {
 
 .border-theme {
     border-color: var(--color-jtg-border) !important;
+}
+
+/* Fingoals Modern Capsule & Bento Utilities */
+.capsule-pill {
+    border-radius: 9999px;
+    padding: 0.5rem 1.15rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.capsule-pill-active {
+    background-color: var(--color-jtg-blue);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(22, 44, 153, 0.25);
+}
+
+.capsule-pill-inactive {
+    background-color: var(--color-jtg-input);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-jtg-border);
+}
+
+.capsule-pill-inactive:hover {
+    color: var(--color-text-main);
+    border-color: rgba(22, 44, 153, 0.3);
+}
+
+.bento-card {
+    background-color: var(--color-jtg-card);
+    border: 1px solid var(--color-jtg-border);
+    border-radius: 1.5rem;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+}
+
+.bento-card:hover {
+    border-color: rgba(22, 44, 153, 0.25);
+}
+
+/* High-contrast dark mastery card matching reference image */
+.card-mastery-dark {
+    background: radial-gradient(120% 120% at 80% 20%, #1a1a24 0%, #0a0a0e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+    border-radius: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-mastery-dark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        -45deg,
+        rgba(255, 255, 255, 0.015),
+        rgba(255, 255, 255, 0.015) 10px,
+        transparent 10px,
+        transparent 20px
+    );
+    pointer-events: none;
 }
 
 /* Custom Styles from original HTML */

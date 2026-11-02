@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
+import { Icons } from './Icons';
 
 // ============================================================================
 // INLINE SVG ICONS
@@ -351,7 +352,9 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                     <div className="bg-gradient-to-r from-[#1BA657]/15 to-[#162C99]/20 p-6 border-b border-[#162C99]/25 flex flex-col items-center text-center gap-1.5">
                         <div className="relative p-3 bg-[#111633] border border-[#162C99]/40 text-[#1BA657] rounded-full shadow-[0_0_20px_rgba(27,166,87,0.2)]">
                             <LockIcon className="w-6 h-6 animate-pulse" />
-                            <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[8px] w-4 h-4 rounded-full flex items-center justify-center border border-jtg-dark font-extrabold shadow-md">★</span>
+                            <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[8px] w-4 h-4 rounded-full flex items-center justify-center border border-jtg-dark font-extrabold shadow-md">
+                                <Icons.Star className="w-2.5 h-2.5" />
+                            </span>
                         </div>
                         <h2 className="text-white font-extrabold text-xl tracking-wide mt-2 uppercase flex items-center gap-2">
                             MT4 / MT5 Auto-Sync
@@ -444,7 +447,10 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                     : 'text-slate-400 hover:text-white hover:bg-[#111633]'
                             }`}
                         >
-                            <span>☁️ 24/7 Cloud Sync</span>
+                            <span className="flex items-center gap-1.5">
+                                <Icons.Cloud className="w-3.5 h-3.5" />
+                                <span>24/7 Cloud Sync</span>
+                            </span>
                             <span className="bg-black/20 text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase">No PC Needed</span>
                         </button>
 
@@ -456,7 +462,10 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                     : 'text-slate-400 hover:text-white hover:bg-[#111633]'
                             }`}
                         >
-                            <span>🖥️ Desktop MT5 EA</span>
+                            <span className="flex items-center gap-1.5">
+                                <Icons.Laptop className="w-3.5 h-3.5" />
+                                <span>Desktop MT5 EA</span>
+                            </span>
                             <span className="bg-black/20 text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase">On-Chart HUD</span>
                         </button>
                     </div>
