@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import firebase, { auth, db } from './firebase';
 import { Icons } from './components/Icons';
 import Calculator from './components/Calculator';
@@ -25,122 +25,6 @@ const PremiumStarIcon = ({ className }) => (
     </svg>
 );
 
-const DEMO_TRADES = [
-    {
-        id: 'demo_1',
-        pair: 'EURUSD',
-        type: 'BUY',
-        lot: 1.0,
-        entry: 1.08500,
-        exit: 1.09200,
-        outcome: 'HIT TP',
-        strategy: 'Trend Continuation',
-        emotion: 'Neutral',
-        setupQuality: 'A+',
-        ruleAdherence: 'Yes',
-        pnl: 700.00,
-        pnlNative: 700.00,
-        openDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-        closeDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-        notes: "Perfect entry at key support level. Target hit on session change."
-    },
-    {
-        id: 'demo_2',
-        pair: 'GBPUSD',
-        type: 'SELL',
-        lot: 1.5,
-        entry: 1.27000,
-        exit: 1.27400,
-        outcome: 'HIT SL',
-        strategy: 'Range Reversal',
-        emotion: 'Anxious',
-        setupQuality: 'B',
-        ruleAdherence: 'Yes',
-        pnl: -600.00,
-        pnlNative: -600.00,
-        openDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        closeDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        notes: "Entered early before full breakout confirmation. Stop loss hit."
-    },
-    {
-        id: 'demo_3',
-        pair: 'USDJPY',
-        type: 'BUY',
-        lot: 2.0,
-        entry: 156.200,
-        exit: 156.800,
-        outcome: 'MANUAL WIN',
-        strategy: 'Breakout',
-        emotion: 'Confident',
-        setupQuality: 'A',
-        ruleAdherence: 'Yes',
-        pnl: 770.00,
-        pnlNative: 770.00,
-        openDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        closeDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        notes: "Rode the JPY momentum after inflation data release."
-    },
-    {
-        id: 'demo_4',
-        pair: 'AUDUSD',
-        type: 'SELL',
-        lot: 1.0,
-        entry: 0.66500,
-        exit: 0.66200,
-        outcome: 'MANUAL WIN',
-        strategy: 'Trend Continuation',
-        emotion: 'Neutral',
-        setupQuality: 'A+',
-        ruleAdherence: 'Yes',
-        pnl: 300.00,
-        pnlNative: 300.00,
-        openDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        closeDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        notes: "Standard pull-back entry. Closed manually ahead of high impact news."
-    },
-    {
-        id: 'demo_5',
-        pair: 'EURUSD',
-        type: 'SELL',
-        lot: 1.0,
-        entry: 1.08900,
-        exit: 1.09050,
-        outcome: 'HIT SL',
-        strategy: 'Breakout',
-        emotion: 'Greedy',
-        setupQuality: 'C',
-        ruleAdherence: 'No',
-        pnl: -150.00,
-        pnlNative: -150.00,
-        openDate: new Date().toISOString(),
-        closeDate: new Date().toISOString(),
-        notes: "Chased the price at resistance. Violated standard risk parameters."
-    }
-];
-
-const DEMO_WITHDRAWALS = [
-    {
-        id: 'demo_w1',
-        amount: 200,
-        displayAmount: 200,
-        currency: 'USD',
-        note: 'Demo Profit Withdrawal',
-        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        type: 'WITHDRAWAL'
-    }
-];
-
-const DEMO_DEPOSITS = [
-    {
-        id: 'demo_d1',
-        amount: 500,
-        displayAmount: 500,
-        currency: 'USD',
-        note: 'Demo Deposit',
-        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        type: 'DEPOSIT'
-    }
-];
 
 const App = () => {
     const [page, setPage] = useState('calc');
@@ -234,11 +118,6 @@ const App = () => {
             return saved ? JSON.parse(saved) : [];
         } catch (e) { return []; }
     });
-
-    const [isDemoMode, setIsDemoMode] = useState(false);
-    const displayTrades = isDemoMode ? DEMO_TRADES : trades;
-    const displayWithdrawals = isDemoMode ? DEMO_WITHDRAWALS : withdrawals;
-    const displayDeposits = isDemoMode ? DEMO_DEPOSITS : deposits;
 
     // Update Balance Handler
     const updateGlobalBalance = async (newBal) => {
@@ -1084,7 +963,7 @@ const App = () => {
                     </button>
 
                     <p className="text-[9px] text-muted-theme uppercase font-bold tracking-wider mt-8">
-                        Authorized Access Only • Secured by Firebase
+                        Authorized Access Only â€¢ Secured by Firebase
                     </p>
                 </div>
             </div>
@@ -1173,7 +1052,7 @@ const App = () => {
                                             {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
                                         </p>
                                         <p className="text-[10px] text-muted-theme font-mono font-medium">
-                                            {currency} • {accounts.find(a => a.id === activeAccountId)?.type || 'Personal'}
+                                            {currency} â€¢ {accounts.find(a => a.id === activeAccountId)?.type || 'Personal'}
                                         </p>
                                     </div>
                                 </div>
@@ -1202,7 +1081,7 @@ const App = () => {
                     {/* Streak Badge Widget in Left Panel */}
                     <div className="bg-input-theme border border-theme rounded-2xl p-3 flex items-center justify-between shadow-sm">
                         <div className="flex items-center gap-3">
-                            <StreakBadgeWidget trades={displayTrades} />
+                            <StreakBadgeWidget trades={trades} />
                             <div className="text-left">
                                 <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-theme">Daily Streak</p>
                                 <p className="text-xs font-black text-main-theme">Discipline Shield</p>
@@ -1262,10 +1141,7 @@ const App = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <StreakBadgeWidget trades={displayTrades} />
-                    {isDemoMode && (
-                        <span className="text-[9px] bg-emerald-500/20 text-jtg-green px-2 py-0.5 rounded-full font-extrabold border border-emerald-500/30 animate-pulse uppercase tracking-wide">Demo</span>
-                    )}
+                    <StreakBadgeWidget trades={trades} />
                     <button
                         onClick={toggleTheme}
                         className="p-2 text-main-theme transition-colors bg-input-theme border border-theme rounded-full flex items-center justify-center active:scale-95"
@@ -1335,23 +1211,8 @@ const App = () => {
                         </div>
                     </div>
 
-                    {/* Right: Demo Mode & User Profile Pill */}
+                    {/* Right: User Profile Pill */}
                     <div className="flex items-center gap-3 shrink-0">
-                        {/* Demo Mode Toggle */}
-                        {(trades.length === 0 || isDemoMode) && (
-                            <button
-                                onClick={() => setIsDemoMode(!isDemoMode)}
-                                className={`px-3 py-1.5 rounded-full text-xs font-black transition-all border flex items-center gap-1.5 shadow-sm ${
-                                    isDemoMode 
-                                        ? 'bg-jtg-green/20 text-jtg-green border-jtg-green/40' 
-                                        : 'bg-input-theme text-muted-theme border-theme hover:text-main-theme'
-                                }`}
-                            >
-                                <Icons.Zap className="w-3.5 h-3.5 text-jtg-green" />
-                                <span>{isDemoMode ? 'Demo Active' : 'Sample Data'}</span>
-                            </button>
-                        )}
-
                         {/* User Profile Pill */}
                         <div className="flex items-center gap-2 pl-3 border-l border-theme">
                             <div className={`w-9 h-9 rounded-full bg-jtg-blue text-white flex items-center justify-center font-black text-xs relative shadow-sm ${
@@ -1407,19 +1268,12 @@ const App = () => {
                                 </div>
                             </div>
 
-                            {isDemoMode && (
-                                <div className="bg-[#1BA657]/15 border border-[#1BA657]/30 rounded-2xl py-3 px-4 text-center text-xs text-[#1BA657] font-bold tracking-wide animate-pulse flex items-center justify-center gap-2 mb-6">
-                                    <Icons.Zap className="w-4 h-4 text-[#1BA657] shrink-0" />
-                                    <span>DEMO MODE ACTIVE: Viewing sample Forex trade logs. Click &quot;Sample Data&quot; at the top to toggle.</span>
-                                </div>
-                            )}
-
                             <div key={page} className="w-full animate-page-enter">
-                                {page === 'calc' && <Calculator globalBalance={isDemoMode ? '11020' : globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} activeAccount={activeAccount} username={username} user={user} />}
+                                {page === 'calc' && <Calculator globalBalance={globalBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} activeAccount={activeAccount} username={username} user={user} />}
                                 {page === 'journal' && <Journal addTrade={addTrade} accountType={activeAccount?.type} />}
                                 {page === 'trades' && (
                                     <TradeList
-                                        trades={displayTrades}
+                                        trades={trades}
                                         deleteTrade={deleteTrade}
                                         isPremium={isPremium}
                                         triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
@@ -1434,8 +1288,8 @@ const App = () => {
                                     />
                                 )}
 
-                                {page === 'calendar' && <CalendarView trades={displayTrades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
-                                {page === 'perf' && <Performance key={activeAccountId || 'default'} trades={displayTrades} withdrawals={displayWithdrawals} deposits={displayDeposits} activeAccount={activeAccount} globalInitialBalance={isDemoMode ? '10000' : activeAccount?.initialBalance} globalBalance={isDemoMode ? '11020' : (activeAccount ? activeAccount.balance : globalBalance)} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} userSettings={userSettings} />}
+                                {page === 'calendar' && <CalendarView trades={trades} currency={currency} currencySymbol={currencySymbol} exchangeRates={exchangeRates} />}
+                                {page === 'perf' && <Performance key={activeAccountId || 'default'} trades={trades} withdrawals={withdrawals} deposits={deposits} activeAccount={activeAccount} globalInitialBalance={activeAccount?.initialBalance} globalBalance={activeAccount ? activeAccount.balance : globalBalance} updateGlobalBalance={updateGlobalBalance} updateInitialBalance={updateInitialBalance} currencySymbol={currencySymbol} currency={currency} exchangeRates={exchangeRates} ratesLoading={ratesLoading} userSettings={userSettings} />}
                             </div>
                         </div>
                     </div>
@@ -1464,8 +1318,8 @@ const App = () => {
                     exchangeRates={exchangeRates}
                     withdrawFunds={withdrawFunds}
                     depositFunds={depositFunds}
-                    withdrawals={displayWithdrawals}
-                    deposits={displayDeposits}
+                    withdrawals={withdrawals}
+                    deposits={deposits}
                     updateAccount={updateAccount}
                     userId={user?.uid}
                 />
@@ -1582,9 +1436,6 @@ const App = () => {
                                         ) : (
                                             <span className="bg-slate-800 text-slate-400 text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">FREE</span>
                                         )}
-                                        {isDemoMode && (
-                                            <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">DEMO DATA</span>
-                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1638,20 +1489,6 @@ const App = () => {
                                     </div>
                                     <Icons.ChevronRight />
                                 </button>
-
-                                {/* Demo Mode Toggle */}
-                                {(trades.length === 0 || isDemoMode) && (
-                                    <button 
-                                        onClick={() => {
-                                            setIsDemoMode(!isDemoMode);
-                                            setShowMobileDrawer(false);
-                                        }} 
-                                        className={`w-full border rounded-xl p-3.5 flex items-center justify-between transition active:scale-[0.98] ${isDemoMode ? 'bg-[#1BA657]/10 border-[#1BA657] text-[#1BA657]' : 'bg-input-theme border border-theme text-main-theme'}`}
-                                    >
-                                        <span className="text-xs font-bold">{isDemoMode ? "Exit Demo Mode" : "View Demo Data"}</span>
-                                        <Icons.Zap className="w-3.5 h-3.5 text-jtg-green" />
-                                    </button>
-                                )}
 
                                 {/* Go Premium Upgrade Button */}
                                 {!isPremium && (
