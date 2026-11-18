@@ -98,12 +98,6 @@ const ChevronUpIcon = ({ className }) => (
     </svg>
 );
 
-const CloudIcon = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17.5 19x-9 0a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
-    </svg>
-);
-
 // ============================================================================
 // MAIN COMPONENT DEFINITION
 // ============================================================================
@@ -112,8 +106,6 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
     const isEmailAdmin = (user?.email && user.email.toLowerCase() === "nwabuezejohnad11@gmail.com") || (userSettings?.username && userSettings.username.toLowerCase() === "nwabuezejohnad11");
     const initialTier = isEmailAdmin ? 'diamond' : (userSettings?.planTier || (isPremium ? 'gold' : 'free'));
 
-    const [activeTab, setActiveTab] = useState('cloud');
-    
     // EA State
     const [syncKey, setSyncKey] = useState('');
     const [isRevealed, setIsRevealed] = useState(false);
@@ -121,19 +113,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
     const [isGenerating, setIsGenerating] = useState(false);
     const [copied, setCopied] = useState(false);
     const [openAccordion, setOpenAccordion] = useState('steps');
-
-    // Cloud 24/7 State
-    const [cloudPlatform, setCloudPlatform] = useState('mt5');
-    const [cloudServer, setCloudServer] = useState('');
-    const [cloudLogin, setCloudLogin] = useState('');
-    const [cloudPassword, setCloudPassword] = useState('');
-    const [cloudName, setCloudName] = useState('');
-    const [cloudStatus, setCloudStatus] = useState(null);
-    const [isConnectingCloud, setIsConnectingCloud] = useState(false);
-    const [isSyncingCloud, setIsSyncingCloud] = useState(false);
     const [userPlanTier, setUserPlanTier] = useState(initialTier);
-    const [cloudFeedback, setCloudFeedback] = useState(null);
-    const [showCloudPassword, setShowCloudPassword] = useState(false);
 
     useEffect(() => {
         if (!user || !isPremium) {
@@ -150,19 +130,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                     const isAdmin = isEmailAdmin || (data.email && data.email.toLowerCase() === "nwabuezejohnad11@gmail.com") || (data.username && data.username.toLowerCase() === "nwabuezejohnad11");
                     const tier = isAdmin ? 'diamond' : (data.planTier || 'gold');
                     setUserPlanTier(tier);
-
                     setSyncKey(data.mt5SyncKey || '');
-                    if (data.metaAccountId) {
-                        setCloudStatus({
-                            connected: true,
-                            accountId: data.metaAccountId,
-                            login: data.metaAccountLogin || 'Connected',
-                            server: data.metaAccountServer || 'MT Cloud',
-                            platform: data.metaAccountPlatform || 'mt5',
-                            state: data.metaAccountState || 'CONNECTED',
-                            lastSync: data.lastSyncTimeStr || 'Pending'
-                        });
-                    }
                 }
             } catch (err) {
                 console.error("Error fetching integration settings:", err);
@@ -173,126 +141,6 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
 
         fetchUserData();
     }, [user, isPremium]);
-
-    // Safe API Response Parser Helper
-    const parseJsonResponse = async (res) => {
-        try {
-            const text = await res.text();
-            if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-                return JSON.parse(text);
-            }
-            return { error: `Server Error (${res.status}): ${text.slice(0, 120) || res.statusText}` };
-        } catch (e) {
-            return { error: `Network error (${res.status}): ${res.statusText || 'Unable to parse server response.'}` };
-        }
-    };
-
-    // Handle Cloud 24/7 Account Connect
-    const handleConnectCloud = async (e) => {
-        e.preventDefault();
-        if (!cloudServer || !cloudLogin || !cloudPassword) {
-            setCloudFeedback({ type: 'error', message: 'Please fill in Broker Server, Account Number, and Investor Password.' });
-            return;
-        }
-
-        setIsConnectingCloud(true);
-        setCloudFeedback({ type: 'info', message: 'Provisioning MetaApi Cloud Instance... (this may take ~10-15 seconds)' });
-
-        try {
-            const res = await fetch('/api/metaapi-connect', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: user.uid,
-                    login: cloudLogin,
-                    password: cloudPassword,
-                    server: cloudServer,
-                    platform: cloudPlatform,
-                    accountName: cloudName || `JTG-${cloudLogin}`
-                })
-            });
-
-            const data = await parseJsonResponse(res);
-            if (!res.ok || data.error) {
-                throw new Error(data.error || 'Failed to connect MetaApi cloud account.');
-            }
-
-            setCloudFeedback({ type: 'success', message: 'ðŸŽ‰ Account connected! Deploying 24/7 cloud sync instance...' });
-            setCloudStatus({
-                connected: true,
-                accountId: data.accountId,
-                login: cloudLogin,
-                server: cloudServer,
-                platform: cloudPlatform,
-                state: data.state || 'DEPLOYING'
-            });
-
-            // Trigger an initial sync shortly after
-            setTimeout(() => {
-                handleSyncCloudNow();
-            }, 3000);
-
-        } catch (err) {
-            console.error('Cloud Connect Error:', err);
-            setCloudFeedback({ type: 'error', message: err.message });
-        } finally {
-            setIsConnectingCloud(false);
-        }
-    };
-
-    // Handle Manual Trigger Sync Now for Cloud Account
-    const handleSyncCloudNow = async () => {
-        setIsSyncingCloud(true);
-        setCloudFeedback({ type: 'info', message: 'Fetching latest trades from MT4/MT5 Cloud...' });
-
-        try {
-            const res = await fetch('/api/metaapi-sync', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.uid })
-            });
-
-            const data = await parseJsonResponse(res);
-            if (!res.ok || data.error) {
-                throw new Error(data.error || 'Sync failed.');
-            }
-
-            setCloudFeedback({ 
-                type: 'success', 
-                message: `✅ Successfully synced ${data.syncedCount || 0} trades! Balance: $${data.balance || 0}` 
-            });
-
-            if (cloudStatus) {
-                setCloudStatus(prev => ({ ...prev, lastSync: data.lastSyncTime || 'Just now', state: 'CONNECTED' }));
-            }
-
-        } catch (err) {
-            console.error('Cloud Sync Error:', err);
-            setCloudFeedback({ type: 'error', message: err.message });
-        } finally {
-            setIsSyncingCloud(false);
-        }
-    };
-
-    // Handle Disconnect Cloud Account
-    const handleDisconnectCloud = async () => {
-        if (!window.confirm('Are you sure you want to disconnect your 24/7 cloud sync account?')) return;
-        setIsConnectingCloud(true);
-        try {
-            const res = await fetch(`/api/metaapi-status?userId=${user.uid}`, { method: 'DELETE' });
-            const data = await parseJsonResponse(res);
-            if (data.success) {
-                setCloudStatus(null);
-                setCloudFeedback({ type: 'success', message: 'Cloud account disconnected successfully.' });
-            } else if (data.error) {
-                throw new Error(data.error);
-            }
-        } catch (err) {
-            setCloudFeedback({ type: 'error', message: err.message });
-        } finally {
-            setIsConnectingCloud(false);
-        }
-    };
 
     const handleGenerateKey = async () => {
         if (!user) return;
@@ -357,35 +205,41 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                             </span>
                         </div>
                         <h2 className="text-white font-extrabold text-xl tracking-wide mt-2 uppercase flex items-center gap-2">
-                            MT4 / MT5 Auto-Sync
+                            MT5 Desktop Auto-Sync
                         </h2>
                         <span className="bg-[#1BA657]/10 border border-[#1BA657]/30 text-[#1BA657] text-[9px] font-bold tracking-widest uppercase px-2.5 py-0.5 rounded-full">
-                            GOLD & DIAMOND TIER EXCLUSIVE
+                            GOLD TIER EXCLUSIVE
                         </span>
                     </div>
 
                     <div className="p-6 flex flex-col gap-4">
                         <p className="text-slate-300 text-xs text-center leading-relaxed max-w-sm mx-auto mb-1">
-                            Unlock automated real-time trade journaling. Choose Gold Tier (₦1,999/mo) for Desktop MT5 EA sync or Diamond Tier (₦2,999/mo) for AI Account Analysis and Daily Market News.
+                            Unlock automated real-time trade journaling with the Desktop MT5 EA sync. Gold Tier (₦1,999/mo) includes EA auto-sync, on-chart HUD, and up to 5 accounts.
                         </p>
 
                         <div className="flex flex-col gap-3">
-                            <div className="bg-[#111633]/60 border border-[#162C99]/20 rounded-xl p-3 flex gap-3 items-start">
+                            <div className="bg-[#111633]/60 border border-[#1BA657]/40 rounded-xl p-3 flex gap-3 items-start shadow-md">
                                 <div className="p-2 bg-amber-500/10 rounded-lg text-amber-400 shrink-0">
                                     <Icons.Star className="w-4 h-4" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <h4 className="text-white font-bold text-xs uppercase tracking-wide">Gold Tier (₦1,999/mo • Save 5% First Time)</h4>
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-white font-bold text-xs uppercase tracking-wide">Gold Tier (₦1,999/mo • Save 5% First Time)</h4>
+                                        <span className="bg-[#1BA657]/20 text-[#1BA657] text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Available</span>
+                                    </div>
                                     <span className="text-slate-400 text-[11px] leading-relaxed mt-0.5">Desktop MT5 EA Real-Time Sync, on-chart HUD risk calculator, 31-day heatmaps, and up to 5 accounts.</span>
                                 </div>
                             </div>
 
-                            <div className="bg-[#111633]/60 border border-[#162C99]/20 rounded-xl p-3 flex gap-3 items-start">
+                            <div className="bg-[#111633]/40 border border-[#162C99]/20 rounded-xl p-3 flex gap-3 items-start opacity-75">
                                 <div className="p-2 bg-cyan-500/10 rounded-lg text-cyan-300 shrink-0">
                                     <Icons.Diamond className="w-4 h-4" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <h4 className="text-white font-bold text-xs uppercase tracking-wide">Diamond Tier (₦2,999/mo • Save 10% First Time)</h4>
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-white font-bold text-xs uppercase tracking-wide">Diamond Tier (₦2,999/mo)</h4>
+                                        <span className="bg-cyan-950 text-cyan-300 border border-cyan-800 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Coming Soon</span>
+                                    </div>
                                     <span className="text-slate-400 text-[11px] leading-relaxed mt-0.5">In-Depth AI Account Analysis sent to your email, Daily Market News on top pairs, up to 10 accounts, plus all Gold features.</span>
                                 </div>
                             </div>
@@ -397,7 +251,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                 className="w-full py-3.5 bg-gradient-to-r from-[#1BA657] to-emerald-400 hover:from-[#158C47] hover:to-emerald-500 active:scale-[0.98] text-black font-extrabold text-xs tracking-wider rounded-xl transition-all duration-200 shadow-lg shadow-[#1BA657]/10 flex items-center justify-center gap-2 uppercase"
                             >
                                 <LockIcon className="w-4 h-4" />
-                                Unlock Gold or Diamond Tier
+                                Unlock Gold Tier Now
                             </button>
                         </div>
                     </div>
@@ -407,7 +261,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
     }
 
     // ========================================================================
-    // RENDER: UNLOCKED DEV DASHBOARD (2 TABS: CLOUD 24/7 vs EA DESKTOP)
+    // RENDER: UNLOCKED DESKTOP MT5 EA DASHBOARD
     // ========================================================================
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
@@ -423,388 +277,199 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                 </button>
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-[#1BA657]/10 to-[#162C99]/10 p-6 border-b border-[#162C99]/20 flex flex-col gap-3 pr-14">
+                <div className="bg-gradient-to-r from-[#1BA657]/10 to-[#162C99]/10 p-6 border-b border-[#162C99]/20 flex flex-col gap-2 pr-14">
                     <div className="flex items-center gap-2.5">
                         <div className="p-2 bg-[#1BA657]/15 rounded-xl border border-[#1BA657]/30 text-[#1BA657] shadow-[0_0_15px_rgba(27,166,87,0.15)] animate-pulse">
                             <PremiumStarIcon className="w-5 h-5" />
                         </div>
                         <div>
-                            <h2 className="text-white font-extrabold text-xl">MetaTrader Auto-Sync Center</h2>
+                            <h2 className="text-white font-extrabold text-xl">Desktop MT5 EA Integration</h2>
                             <span className="text-[10px] text-[#1BA657] font-bold tracking-widest uppercase flex items-center gap-1.5 mt-0.5">
                                 <span className="h-1.5 w-1.5 rounded-full bg-[#1BA657] animate-ping"></span>
-                                {userPlanTier === 'diamond' ? 'Diamond Tier Active' : 'Gold Tier Active'}
+                                {userPlanTier === 'diamond' ? 'Diamond Tier Active' : 'Gold Tier Active'} &bull; Real-Time Terminal Sync
                             </span>
                         </div>
-                    </div>
-
-                    {/* TWO-TAB NAVIGATOR */}
-                    <div className="flex bg-[#0a0e29] p-1 rounded-xl border border-[#162C99]/30 mt-1">
-                        <button
-                            onClick={() => setActiveTab('cloud')}
-                            className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                                activeTab === 'cloud' 
-                                    ? 'bg-[#1BA657] text-black shadow-md font-extrabold' 
-                                    : 'text-slate-400 hover:text-white hover:bg-[#111633]'
-                            }`}
-                        >
-                            <span className="flex items-center gap-1.5">
-                                <Icons.Cloud className="w-3.5 h-3.5" />
-                                <span>24/7 Cloud Sync</span>
-                            </span>
-                            <span className="bg-black/20 text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase">No PC Needed</span>
-                        </button>
-
-                        <button
-                            onClick={() => setActiveTab('ea')}
-                            className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                                activeTab === 'ea' 
-                                    ? 'bg-[#1BA657] text-black shadow-md font-extrabold' 
-                                    : 'text-slate-400 hover:text-white hover:bg-[#111633]'
-                            }`}
-                        >
-                            <span className="flex items-center gap-1.5">
-                                <Icons.Laptop className="w-3.5 h-3.5" />
-                                <span>Desktop MT5 EA</span>
-                            </span>
-                            <span className="bg-black/20 text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase">On-Chart HUD</span>
-                        </button>
                     </div>
                 </div>
 
                 {/* Body Content */}
-                <div className="p-6 flex flex-col gap-6 overflow-y-auto max-h-[70vh] custom-scroll">
+                <div className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[70vh] custom-scroll">
                     
-                    {/* ==================================================================== */}
-                    {/* TAB 1: 24/7 CLOUD SYNC (NO PC REQUIRED)                             */}
-                    {/* ==================================================================== */}
-                    {activeTab === 'cloud' && (
-                        <div className="flex flex-col gap-5">
-                            {/* Diamond Tier Upgrade Lock Banner */}
-                            {userPlanTier !== 'diamond' && (
-                                <div className="bg-gradient-to-r from-cyan-950/60 to-blue-950/60 border border-cyan-500/40 p-5 rounded-2xl flex flex-col gap-3 shadow-lg">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2.5 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-xl shrink-0">
-                                            <LockIcon className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-white font-extrabold text-sm uppercase">Diamond Tier Feature Suite</h4>
-                                            <p className="text-slate-300 text-xs mt-0.5 leading-relaxed">
-                                                You are currently on the Gold Plan (Desktop MT5 EA). Upgrade to Diamond (₦2,999/mo — save 10% on first purchase) to unlock In-Depth AI Account Analysis sent to your email, Daily Major News on your top traded pairs, and up to 10 trading accounts!
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => { close(); triggerUpgrade(); }}
-                                        className="w-full py-3 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-2"
-                                    >
-                                        <span>Upgrade to Diamond Tier (₦2,999/mo - Save 10% First Time)</span>
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Feedback Banner */}
-                            {cloudFeedback && (
-                                <div className={`p-4 rounded-xl border text-xs font-medium flex items-center justify-between gap-3 ${
-                                    cloudFeedback.type === 'error' ? 'bg-red-950/40 border-red-900/50 text-red-300' :
-                                    cloudFeedback.type === 'success' ? 'bg-emerald-950/40 border-emerald-900/50 text-emerald-300' :
-                                    'bg-blue-950/40 border-blue-900/50 text-blue-300 animate-pulse'
-                                }`}>
-                                    <span>{cloudFeedback.message}</span>
-                                    <button onClick={() => setCloudFeedback(null)} className="text-slate-400 hover:text-white">✕</button>
-                                </div>
-                            )}
-
-                            {/* Connected Account Status Card */}
-                            {cloudStatus && cloudStatus.connected ? (
-                                <div className="bg-[#111633]/70 border border-[#1BA657]/40 rounded-xl p-5 flex flex-col gap-4 shadow-lg shadow-[#1BA657]/5">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-3 w-3 rounded-full bg-[#1BA657] animate-ping relative">
-                                                <span className="h-3 w-3 rounded-full bg-[#1BA657] absolute inset-0"></span>
-                                            </div>
-                                            <div>
-                                                <h4 className="text-white font-extrabold text-sm uppercase tracking-wide">
-                                                    Connected ({cloudStatus.platform.toUpperCase()}) - {cloudStatus.login}
-                                                </h4>
-                                                <p className="text-[11px] text-slate-400">Server: <strong className="text-slate-200">{cloudStatus.server}</strong></p>
-                                            </div>
-                                        </div>
-                                        <span className="bg-[#1BA657]/15 border border-[#1BA657]/30 text-[#1BA657] text-[10px] font-extrabold px-3 py-1 rounded-full uppercase">
-                                            24/7 ACTIVE
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center justify-between text-xs text-slate-400 bg-[#0a0e29] p-3 rounded-lg border border-[#162C99]/20 font-mono">
-                                        <span>Last Auto-Sync: <strong className="text-white">{cloudStatus.lastSync || 'Active'}</strong></span>
-                                        <span>Status: <strong className="text-[#1BA657]">{cloudStatus.state}</strong></span>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-3 mt-1">
-                                        <button
-                                            onClick={handleSyncCloudNow}
-                                            disabled={isSyncingCloud}
-                                            className="py-3 bg-[#1BA657] hover:bg-[#158C47] text-black font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-2 uppercase shadow-md"
-                                        >
-                                            <RefreshCwIcon className={`w-4 h-4 ${isSyncingCloud ? 'animate-spin' : ''}`} />
-                                            {isSyncingCloud ? 'Syncing...' : 'Sync Trades Now'}
-                                        </button>
-
-                                        <button
-                                            onClick={handleDisconnectCloud}
-                                            disabled={isConnectingCloud}
-                                            className="py-3 border border-red-500/40 text-red-400 hover:bg-red-500/10 font-bold text-xs rounded-xl transition-all uppercase"
-                                        >
-                                            Disconnect Account
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                /* Cloud Account Setup Form */
-                                <form onSubmit={handleConnectCloud} className="bg-[#111633]/45 border border-[#162C99]/25 rounded-xl p-5 flex flex-col gap-4">
-                                    <div>
-                                        <h3 className="text-white text-sm font-extrabold uppercase tracking-wider flex items-center gap-2">
-                                            <span>Connect MT4/MT5 Cloud Account</span>
-                                        </h3>
-                                        <p className="text-slate-400 text-xs mt-1 leading-relaxed">
-                                            Enter your trading account details with your <strong>Investor (Read-Only) Password</strong>. Your trades will auto-sync 24/7 without needing a PC!
-                                        </p>
-                                    </div>
-
-                                    {/* Platform selector */}
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-[11px] font-bold text-slate-300 uppercase">Trading Platform</label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => setCloudPlatform('mt5')}
-                                                className={`py-2.5 rounded-lg text-xs font-bold border transition-all ${
-                                                    cloudPlatform === 'mt5' 
-                                                        ? 'bg-[#162C99] border-[#1BA657] text-white' 
-                                                        : 'bg-[#0a0e29] border-[#162C99]/30 text-slate-400 hover:text-white'
-                                                }`}
-                                            >
-                                                MetaTrader 5 (MT5)
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => setCloudPlatform('mt4')}
-                                                className={`py-2.5 rounded-lg text-xs font-bold border transition-all ${
-                                                    cloudPlatform === 'mt4' 
-                                                        ? 'bg-[#162C99] border-[#1BA657] text-white' 
-                                                        : 'bg-[#0a0e29] border-[#162C99]/30 text-slate-400 hover:text-white'
-                                                }`}
-                                            >
-                                                MetaTrader 4 (MT4)
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Broker Server */}
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-[11px] font-bold text-slate-300 uppercase">
-                                            Broker Server Name <span className="text-red-400">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="e.g. ICMarketsSC-Live01 or Deriv-Server"
-                                            value={cloudServer}
-                                            onChange={(e) => setCloudServer(e.target.value)}
-                                            className="bg-[#0a0e29] border border-[#162C99]/40 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#1BA657] transition"
-                                        />
-                                        <span className="text-[10px] text-slate-500">Must match the exact server name shown on your MT4/MT5 login window.</span>
-                                    </div>
-
-                                    {/* Account Login Number & Investor Password */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-bold text-slate-300 uppercase">
-                                                Account Login # <span className="text-red-400">*</span>
-                                            </label>
-                                            <input
-                                                type="number"
-                                                required
-                                                placeholder="e.g. 1234567"
-                                                value={cloudLogin}
-                                                onChange={(e) => setCloudLogin(e.target.value)}
-                                                className="bg-[#0a0e29] border border-[#162C99]/40 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#1BA657] transition font-mono"
-                                            />
-                                        </div>
-
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-bold text-slate-300 uppercase">
-                                                Investor Password <span className="text-red-400">*</span>
-                                            </label>
-                                            <div className="relative flex items-center">
-                                                <input
-                                                    type={showCloudPassword ? 'text' : 'password'}
-                                                    required
-                                                    placeholder="Read-Only Password"
-                                                    value={cloudPassword}
-                                                    onChange={(e) => setCloudPassword(e.target.value)}
-                                                    className="w-full bg-[#0a0e29] border border-[#162C99]/40 rounded-xl p-3 pr-10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#1BA657] transition font-mono"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowCloudPassword(!showCloudPassword)}
-                                                    className="absolute right-3 text-slate-400 hover:text-white"
-                                                >
-                                                    {showCloudPassword ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Security Notice */}
-                                    <div className="flex gap-2.5 text-slate-400 bg-[#0a0e29] border border-[#162C99]/20 p-3 rounded-xl text-[11px] leading-relaxed">
-                                        <LockIcon className="w-4 h-4 text-[#1BA657] shrink-0 mt-0.5" />
-                                        <span>
-                                            <strong>Safe & Read-Only:</strong> Investor passwords only grant permission to <em>read</em> trade history. It is impossible to execute trades or withdraw funds with an investor password.
-                                        </span>
-                                    </div>
-
-                                    {/* Submit Button */}
-                                    <button
-                                        type="submit"
-                                        disabled={isConnectingCloud}
-                                        className="w-full py-3.5 bg-gradient-to-r from-[#1BA657] to-emerald-400 hover:from-[#158C47] hover:to-emerald-500 text-black font-extrabold text-xs tracking-wider rounded-xl transition-all duration-200 shadow-lg shadow-[#1BA657]/10 flex items-center justify-center gap-2 uppercase mt-2 disabled:opacity-50"
-                                    >
-                                        <RefreshCwIcon className={`w-4 h-4 ${isConnectingCloud ? 'animate-spin' : ''}`} />
-                                        {isConnectingCloud ? 'Connecting to MetaApi Cloud...' : 'Connect 24/7 Cloud Sync'}
-                                    </button>
-                                </form>
-                            )}
-                        </div>
-                    )}
-
-                    {/* ==================================================================== */}
-                    {/* TAB 2: DESKTOP MT5 EA INTEGRATION                                    */}
-                    {/* ==================================================================== */}
-                    {activeTab === 'ea' && (
-                        <div className="flex flex-col gap-6">
-                            {/* Sync Status & Key Handler */}
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
-                                <div className="md:col-span-5 bg-[#111633]/70 border border-[#162C99]/30 rounded-xl p-4 flex flex-col justify-between shadow-inner">
-                                    <div>
-                                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Terminal Connection</span>
-                                        <div className="flex items-center gap-2.5 mt-2">
-                                            <span className="h-3 w-3 rounded-full relative flex shrink-0">
-                                                {hasKey && (
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1BA657] opacity-75"></span>
-                                                )}
-                                                <span className={`relative inline-flex rounded-full h-3 w-3 ${hasKey ? 'bg-[#1BA657]' : 'bg-slate-600'}`}></span>
-                                            </span>
-                                            <span className="text-sm font-extrabold text-slate-200 tracking-wide uppercase">
-                                                {hasKey ? 'Sync Ready' : 'Sync Disconnected'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="mt-4 pt-3 border-t border-[#162C99]/20 flex justify-between items-center text-[10px] text-slate-400 font-mono">
-                                        <span>TYPE: MT5 EA CONNECT</span>
-                                        <span className="bg-slate-950/60 px-2 py-0.5 rounded border border-slate-900 text-[#1BA657]">
-                                            {hasKey ? `${userPlanTier.toUpperCase()} LIVE` : 'NO LINK'}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="md:col-span-7 flex flex-col gap-2 bg-[#111633]/30 border border-[#162C99]/15 rounded-xl p-4 shadow-inner">
-                                    <div className="flex justify-between items-center">
-                                        <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
-                                            Your Private Sync Key
-                                        </label>
+                    {/* Sync Status & Key Handler */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
+                        <div className="md:col-span-5 bg-[#111633]/70 border border-[#162C99]/30 rounded-xl p-4 flex flex-col justify-between shadow-inner">
+                            <div>
+                                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Terminal Connection</span>
+                                <div className="flex items-center gap-2.5 mt-2">
+                                    <span className="h-3 w-3 rounded-full relative flex shrink-0">
                                         {hasKey && (
-                                            <span className="text-[9px] font-semibold text-slate-500 font-mono">
-                                                {isRevealed ? 'REVEALED' : 'HIDDEN'}
-                                            </span>
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1BA657] opacity-75"></span>
                                         )}
-                                    </div>
-                                    
-                                    <div className="flex items-center justify-between bg-[#0a0e29] border border-[#162C99]/30 rounded-xl p-3">
-                                        {loading ? (
-                                            <div className="text-slate-500 font-mono text-xs w-full text-center py-1 flex items-center justify-center gap-2">
-                                                <RefreshCwIcon className="w-3.5 h-3.5 animate-spin text-[#1BA657]" />
-                                                <span>Loading key...</span>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <span className="font-mono text-xs tracking-widest flex-1 overflow-x-auto text-white font-bold select-all">
-                                                    {getMaskedKey()}
-                                                </span>
-                                                {hasKey && (
-                                                    <button 
-                                                        onClick={() => setIsRevealed(!isRevealed)}
-                                                        className="text-slate-400 hover:text-white transition p-1.5 ml-1.5"
-                                                    >
-                                                        {isRevealed ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
-                                                    </button>
-                                                )}
-                                            </>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-2 mt-1">
-                                        <button
-                                            onClick={handleGenerateKey}
-                                            disabled={isGenerating || loading}
-                                            className="py-2.5 bg-[#1BA657] hover:bg-[#158C47] text-black font-extrabold text-[11px] rounded-lg transition-all flex items-center justify-center gap-1.5 uppercase"
-                                        >
-                                            <RefreshCwIcon className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
-                                            {hasKey ? 'Regenerate' : 'Generate Key'}
-                                        </button>
-
-                                        <button
-                                            onClick={handleCopyKey}
-                                            disabled={!hasKey}
-                                            className="py-2.5 border border-[#1BA657] text-[#1BA657] hover:bg-[#1BA657]/10 font-extrabold text-[11px] rounded-lg transition-all flex items-center justify-center gap-1.5 uppercase"
-                                        >
-                                            <CopyIcon className="w-3.5 h-3.5" />
-                                            {copied ? 'Copied! ✅' : 'Copy Key'}
-                                        </button>
-                                    </div>
+                                        <span className={`relative inline-flex rounded-full h-3 w-3 ${hasKey ? 'bg-[#1BA657]' : 'bg-slate-600'}`}></span>
+                                    </span>
+                                    <span className="text-sm font-extrabold text-slate-200 tracking-wide uppercase">
+                                        {hasKey ? 'Sync Ready' : 'Sync Disconnected'}
+                                    </span>
                                 </div>
                             </div>
-
-                            {/* Download Package */}
-                            <div className="bg-[#111633]/45 border border-[#162C99]/25 rounded-xl p-5 flex flex-col gap-4">
-                                <h3 className="text-white text-xs font-bold uppercase tracking-wider">EA Download Package</h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <a 
-                                        href="/JTG_Journal_EA.ex5" 
-                                        download="JTG_Journal_EA.ex5"
-                                        className="group flex flex-col justify-between bg-[#0f142b] border border-[#162C99]/30 hover:border-[#1BA657]/60 rounded-xl p-4 transition-all"
-                                    >
-                                        <div>
-                                            <span className="bg-[#1BA657]/15 text-[#1BA657] text-[9px] font-bold px-2 py-0.5 rounded-full">EX5 BINARY</span>
-                                            <h4 className="text-white font-extrabold text-sm mt-2">JTG_Journal_EA.ex5</h4>
-                                            <p className="text-[11px] text-slate-400 mt-1">Compiled Expert Advisor with on-chart HUD.</p>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 text-xs font-bold text-[#1BA657] mt-4 pt-2 border-t border-[#162C99]/15">
-                                            <DownloadIcon className="w-3.5 h-3.5" />
-                                            <span>Download EA File</span>
-                                        </div>
-                                    </a>
-
-                                    <a 
-                                        href="/JTG_EA_Readme.txt" 
-                                        download="JTG_EA_Readme.txt"
-                                        className="group flex flex-col justify-between bg-[#0f142b] border border-[#162C99]/30 hover:border-[#1BA657]/60 rounded-xl p-4 transition-all"
-                                    >
-                                        <div>
-                                            <span className="bg-slate-800 text-slate-300 text-[9px] font-bold px-2 py-0.5 rounded-full">ASCII TXT</span>
-                                            <h4 className="text-white font-extrabold text-sm mt-2">JTG_EA_Readme.txt</h4>
-                                            <p className="text-[11px] text-slate-400 mt-1">Whitelisting setup manual.</p>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 text-xs font-bold text-[#1BA657] mt-4 pt-2 border-t border-[#162C99]/15">
-                                            <DownloadIcon className="w-3.5 h-3.5" />
-                                            <span>Download Manual</span>
-                                        </div>
-                                    </a>
-                                </div>
+                            
+                            <div className="mt-4 pt-3 border-t border-[#162C99]/20 flex justify-between items-center text-[10px] text-slate-400 font-mono">
+                                <span>TYPE: MT5 EA CONNECT</span>
+                                <span className="bg-slate-950/60 px-2 py-0.5 rounded border border-slate-900 text-[#1BA657]">
+                                    {hasKey ? `${userPlanTier.toUpperCase()} LIVE` : 'NO LINK'}
+                                </span>
                             </div>
                         </div>
-                    )}
+
+                        <div className="md:col-span-7 flex flex-col gap-2 bg-[#111633]/30 border border-[#162C99]/15 rounded-xl p-4 shadow-inner">
+                            <div className="flex justify-between items-center">
+                                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
+                                    Your Private Sync Key
+                                </label>
+                                {hasKey && (
+                                    <span className="text-[9px] font-semibold text-slate-500 font-mono">
+                                        {isRevealed ? 'REVEALED' : 'HIDDEN'}
+                                    </span>
+                                )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between bg-[#0a0e29] border border-[#162C99]/30 rounded-xl p-3">
+                                {loading ? (
+                                    <div className="text-slate-500 font-mono text-xs w-full text-center py-1 flex items-center justify-center gap-2">
+                                        <RefreshCwIcon className="w-3.5 h-3.5 animate-spin text-[#1BA657]" />
+                                        <span>Loading key...</span>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <span className="font-mono text-xs tracking-widest flex-1 overflow-x-auto text-white font-bold select-all">
+                                            {getMaskedKey()}
+                                        </span>
+                                        {hasKey && (
+                                            <button 
+                                                onClick={() => setIsRevealed(!isRevealed)}
+                                                className="text-slate-400 hover:text-white transition p-1.5 ml-1.5"
+                                            >
+                                                {isRevealed ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                                            </button>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                <button
+                                    onClick={handleGenerateKey}
+                                    disabled={isGenerating || loading}
+                                    className="py-2.5 bg-[#1BA657] hover:bg-[#158C47] text-black font-extrabold text-[11px] rounded-lg transition-all flex items-center justify-center gap-1.5 uppercase"
+                                >
+                                    <RefreshCwIcon className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+                                    {hasKey ? 'Regenerate' : 'Generate Key'}
+                                </button>
+
+                                <button
+                                    onClick={handleCopyKey}
+                                    disabled={!hasKey}
+                                    className="py-2.5 border border-[#1BA657] text-[#1BA657] hover:bg-[#1BA657]/10 font-extrabold text-[11px] rounded-lg transition-all flex items-center justify-center gap-1.5 uppercase"
+                                >
+                                    <CopyIcon className="w-3.5 h-3.5" />
+                                    {copied ? 'Copied! ✅' : 'Copy Key'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Setup Guide Accordion */}
+                    <div className="bg-[#111633]/45 border border-[#162C99]/25 rounded-xl overflow-hidden transition-all">
+                        <button
+                            onClick={() => setOpenAccordion(openAccordion === 'steps' ? null : 'steps')}
+                            className="w-full p-4 flex items-center justify-between text-left hover:bg-[#162C99]/15 transition"
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <span className="bg-[#1BA657]/15 text-[#1BA657] p-1.5 rounded-lg border border-[#1BA657]/30 text-xs font-bold">
+                                    SETUP
+                                </span>
+                                <div>
+                                    <h3 className="text-white text-xs font-bold uppercase tracking-wider">Quick MT5 Linking Guide</h3>
+                                    <p className="text-[11px] text-slate-400">4 easy steps to connect your MetaTrader 5 terminal</p>
+                                </div>
+                            </div>
+                            {openAccordion === 'steps' ? <ChevronUpIcon className="w-4 h-4 text-slate-400" /> : <ChevronDownIcon className="w-4 h-4 text-slate-400" />}
+                        </button>
+
+                        {openAccordion === 'steps' && (
+                            <div className="p-4 pt-0 border-t border-[#162C99]/15 flex flex-col gap-3 text-xs text-slate-300">
+                                <div className="flex items-start gap-3 mt-3">
+                                    <span className="w-5 h-5 rounded-full bg-[#1BA657]/20 text-[#1BA657] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-[#1BA657]/30">1</span>
+                                    <div>
+                                        <strong className="text-white block font-semibold">Copy your Private Sync Key</strong>
+                                        <span className="text-slate-400 text-[11px]">Generate and copy your unique sync key from the box above.</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <span className="w-5 h-5 rounded-full bg-[#1BA657]/20 text-[#1BA657] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-[#1BA657]/30">2</span>
+                                    <div>
+                                        <strong className="text-white block font-semibold">Install EA in MetaTrader 5</strong>
+                                        <span className="text-slate-400 text-[11px]">Download <code className="text-[#1BA657] bg-black/40 px-1 py-0.5 rounded font-mono">JTG_Journal_EA.ex5</code> below and place it in your MT5 folder: <code className="text-slate-300 bg-black/40 px-1 py-0.5 rounded font-mono">MQL5\Experts</code>.</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <span className="w-5 h-5 rounded-full bg-[#1BA657]/20 text-[#1BA657] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-[#1BA657]/30">3</span>
+                                    <div>
+                                        <strong className="text-white block font-semibold">Whitelist URL in MT5 Options</strong>
+                                        <span className="text-slate-400 text-[11px]">In MT5, go to <strong>Tools → Options → Expert Advisors</strong>. Check <em>"Allow WebRequest for listed URL"</em> and add:</span>
+                                        <div className="bg-[#0a0e29] border border-[#162C99]/30 rounded-lg p-2 font-mono text-[11px] text-[#1BA657] mt-1 select-all">
+                                            https://jtgjournal.johnadtradersgroup.name.ng
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <span className="w-5 h-5 rounded-full bg-[#1BA657]/20 text-[#1BA657] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-[#1BA657]/30">4</span>
+                                    <div>
+                                        <strong className="text-white block font-semibold">Attach EA to Any Chart &amp; Paste Key</strong>
+                                        <span className="text-slate-400 text-[11px]">Drag the EA from the Navigator onto any active chart. In the <strong>Inputs</strong> tab, paste your Sync Key into <code className="text-[#1BA657] bg-black/40 px-1 py-0.5 rounded font-mono">InpTerminalKey</code> and click OK.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Download Package */}
+                    <div className="bg-[#111633]/45 border border-[#162C99]/25 rounded-xl p-5 flex flex-col gap-4">
+                        <h3 className="text-white text-xs font-bold uppercase tracking-wider">EA Download Package</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <a 
+                                href="/JTG_Journal_EA.ex5" 
+                                download="JTG_Journal_EA.ex5"
+                                className="group flex flex-col justify-between bg-[#0f142b] border border-[#162C99]/30 hover:border-[#1BA657]/60 rounded-xl p-4 transition-all"
+                            >
+                                <div>
+                                    <span className="bg-[#1BA657]/15 text-[#1BA657] text-[9px] font-bold px-2 py-0.5 rounded-full">EX5 BINARY</span>
+                                    <h4 className="text-white font-extrabold text-sm mt-2">JTG_Journal_EA.ex5</h4>
+                                    <p className="text-[11px] text-slate-400 mt-1">Compiled Expert Advisor with electric-green on-chart HUD &amp; auto-sync.</p>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-[#1BA657] mt-4 pt-2 border-t border-[#162C99]/15">
+                                    <DownloadIcon className="w-3.5 h-3.5" />
+                                    <span>Download EA File</span>
+                                </div>
+                            </a>
+
+                            <a 
+                                href="/JTG_EA_Readme.txt" 
+                                download="JTG_EA_Readme.txt"
+                                className="group flex flex-col justify-between bg-[#0f142b] border border-[#162C99]/30 hover:border-[#1BA657]/60 rounded-xl p-4 transition-all"
+                            >
+                                <div>
+                                    <span className="bg-slate-800 text-slate-300 text-[9px] font-bold px-2 py-0.5 rounded-full">ASCII TXT</span>
+                                    <h4 className="text-white font-extrabold text-sm mt-2">JTG_EA_Readme.txt</h4>
+                                    <p className="text-[11px] text-slate-400 mt-1">Full documentation &amp; broker whitelisting setup manual.</p>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-[#1BA657] mt-4 pt-2 border-t border-[#162C99]/15">
+                                    <DownloadIcon className="w-3.5 h-3.5" />
+                                    <span>Download Manual</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
 
                     {/* Discord Support */}
                     <div className="bg-[#111633]/30 border border-[#162C99]/20 rounded-xl p-4 flex flex-col gap-2">

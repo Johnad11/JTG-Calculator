@@ -1277,41 +1277,10 @@ const App = () => {
                         </div>
                     </div>
 
-                    {/* Right: User Profile Pill & Plan Tier Badge */}
+                    {/* Right: User Profile Pill */}
                     <div className="flex items-center gap-3 shrink-0">
-                        {/* Plan Tier Badge / Upgrade Button */}
-                        <button
-                            onClick={() => setShowPremiumUpgradeModal(true)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border transition-all active:scale-95 shadow-sm ${
-                                currentPlanTier === 'diamond'
-                                    ? 'bg-gradient-to-r from-cyan-500/15 to-blue-500/15 border-cyan-400/50 text-cyan-300 hover:border-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
-                                    : currentPlanTier === 'gold'
-                                    ? 'bg-amber-500/15 border-amber-500/40 text-amber-400 hover:bg-amber-500/25'
-                                    : 'bg-gradient-to-r from-[#1BA657] to-emerald-400 text-black border-transparent hover:brightness-110 shadow-md shadow-[#1BA657]/20 animate-pulse'
-                            }`}
-                            title="Click to view Gold and Diamond plans"
-                        >
-                            {currentPlanTier === 'diamond' ? (
-                                <>
-                                    <Icons.Diamond className="w-3.5 h-3.5 text-cyan-400" />
-                                    <span>DIAMOND TIER</span>
-                                </>
-                            ) : currentPlanTier === 'gold' ? (
-                                <>
-                                    <Icons.Star className="w-3.5 h-3.5 text-amber-400" />
-                                    <span>GOLD TIER</span>
-                                    <span className="bg-amber-400/20 text-amber-300 text-[9px] px-1.5 py-0.5 rounded font-black ml-0.5">UPGRADE</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Icons.Zap className="w-3.5 h-3.5" />
-                                    <span>GOLD & DIAMOND TIERS</span>
-                                </>
-                            )}
-                        </button>
-
                         {/* User Profile Pill */}
-                        <div className="flex items-center gap-2 pl-3 border-l border-theme">
+                        <div className="flex items-center gap-2">
                             <div className={`w-9 h-9 rounded-full bg-jtg-blue text-white flex items-center justify-center font-black text-xs relative shadow-sm ${
                                 currentPlanTier === 'diamond' ? 'ring-2 ring-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.6)]' :
                                 currentPlanTier === 'gold' ? 'ring-2 ring-amber-400 shadow-[0_0_12px_rgba(234,179,8,0.6)]' : ''

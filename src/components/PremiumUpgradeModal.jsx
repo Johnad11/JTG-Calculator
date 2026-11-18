@@ -28,7 +28,7 @@ const CloseIcon = ({ className }) => (
 
 const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
-    const [selectedPlan, setSelectedPlan] = useState('diamond'); // 'gold' | 'diamond' | 'trial'
+    const [selectedPlan, setSelectedPlan] = useState('gold'); // 'gold' | 'trial'
 
     // Determine if user is a first-time subscriber
     const isFirstTimeBuyer = !userSettings?.subscribedAt && !userSettings?.paystackPaymentReference && !userSettings?.hasSubscribedBefore;
@@ -78,6 +78,12 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
     const handleSubscribe = async () => {
         if (!user) {
             alert("You must be logged in to upgrade.");
+            return;
+        }
+
+        if (selectedPlan === 'diamond') {
+            alert("Diamond Tier (AI Intelligence Suite) is launching soon! Please subscribe to Gold Tier to get started.");
+            setSelectedPlan('gold');
             return;
         }
 
@@ -283,7 +289,7 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                         Choose Your Journaling Power Tier
                     </h2>
                     <p className="text-slate-300 text-xs max-w-md leading-relaxed">
-                        Supercharge your trading journey. Choose between PC EA Auto-Sync (Gold) or the AI-Powered Intelligence Suite (Diamond).
+                        Supercharge your trading journey with Gold Tier Desktop MT5 EA Auto-Sync. (Diamond AI Suite launching soon!)
                     </p>
                 </div>
 
@@ -306,15 +312,20 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                     {/* Subscription Cards Selection (Gold vs Diamond) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         
-                        {/* Gold Plan Card */}
+                        {/* Gold Plan Card (ACTIVE & SELECTABLE) */}
                         <div 
                             onClick={() => setSelectedPlan('gold')}
                             className={`cursor-pointer rounded-2xl p-5 border transition-all duration-300 flex flex-col justify-between relative group ${
                                 selectedPlan === 'gold' 
-                                    ? 'bg-[#1BA657]/10 border-[#1BA657] shadow-[0_0_15px_rgba(27,166,87,0.15)]' 
+                                    ? 'bg-[#1BA657]/10 border-[#1BA657] shadow-[0_0_20px_rgba(27,166,87,0.2)] ring-2 ring-[#1BA657]/50' 
                                     : 'bg-[#0f142b] border-[#162C99]/30 hover:border-[#162C99]/60'
                             }`}
                         >
+                            <span className="absolute -top-3 right-4 bg-gradient-to-r from-amber-400 to-[#1BA657] text-black font-extrabold text-[9px] px-3 py-1 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
+                                <Icons.Star className="w-3 h-3" />
+                                <span>AVAILABLE NOW • RECOMMENDED</span>
+                            </span>
+
                             <div>
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
@@ -374,18 +385,14 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                             </div>
                         </div>
 
-                        {/* Diamond Plan Card (POPULAR) */}
+                        {/* Diamond Plan Card (COMING SOON) */}
                         <div 
-                            onClick={() => setSelectedPlan('diamond')}
-                            className={`cursor-pointer rounded-2xl p-5 border transition-all duration-300 flex flex-col justify-between relative group ${
-                                selectedPlan === 'diamond' 
-                                    ? 'bg-gradient-to-b from-[#162C99]/40 to-[#1BA657]/15 border-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.25)] ring-2 ring-cyan-400/50' 
-                                    : 'bg-[#0f142b] border-[#162C99]/40 hover:border-cyan-500/50'
-                            }`}
+                            onClick={() => alert("Diamond Tier (AI Intelligence Suite & Daily Market News) is launching soon! Please subscribe to Gold Tier to get started today.")}
+                            className="cursor-pointer rounded-2xl p-5 border transition-all duration-300 flex flex-col justify-between relative group bg-[#0a0d20] border-cyan-500/30 hover:border-cyan-400/60 opacity-90 shadow-inner"
                         >
-                            <span className="absolute -top-3 right-4 bg-gradient-to-r from-cyan-400 to-[#1BA657] text-black font-extrabold text-[9px] px-3 py-1 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
-                                <Icons.Star className="w-3 h-3" />
-                                <span>MOST POPULAR • ELITE</span>
+                            <span className="absolute -top-3 right-4 bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-extrabold text-[9px] px-3 py-1 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
+                                <Icons.Clock className="w-3 h-3" />
+                                <span>COMING SOON</span>
                             </span>
 
                             <div>
@@ -394,7 +401,9 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                                         <Icons.Diamond className="w-3 h-3 text-cyan-300" />
                                         <span>DIAMOND TIER</span>
                                     </span>
-                                    {selectedPlan === 'diamond' && <span className="text-cyan-400 font-bold text-xs">SELECTED ✓</span>}
+                                    <span className="bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                        LAUNCHING SOON
+                                    </span>
                                 </div>
                                 
                                 <h4 className="text-white font-extrabold text-lg flex items-center gap-2">
@@ -431,21 +440,14 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
 
                             <div className="mt-6 pt-3 border-t border-[#162C99]/25 flex items-baseline justify-between">
                                 <div>
-                                    {isFirstTimeBuyer ? (
-                                        <div className="flex flex-col">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-white font-extrabold text-2xl text-cyan-300">₦2,699</span>
-                                                <span className="text-xs text-slate-400 line-through">₦2,999</span>
-                                                <span className="text-xs text-slate-400 font-medium">/ mo</span>
-                                            </div>
-                                            <span className="text-[10px] text-cyan-400 font-bold mt-0.5">🔥 Save 10% on 1st purchase!</span>
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-white font-extrabold text-2xl text-cyan-300">₦2,699</span>
+                                            <span className="text-xs text-slate-400 line-through">₦2,999</span>
+                                            <span className="text-xs text-slate-400 font-medium">/ mo</span>
                                         </div>
-                                    ) : (
-                                        <div>
-                                            <span className="text-white font-extrabold text-2xl text-cyan-300">₦2,999</span>
-                                            <span className="text-xs text-slate-400 font-medium"> / month</span>
-                                        </div>
-                                    )}
+                                        <span className="text-[10px] text-cyan-400 font-bold mt-0.5">🔥 10% Off on Launch Day</span>
+                                    </div>
                                 </div>
                                 <span className="text-[10px] text-cyan-400 font-mono font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800">10 ACCOUNTS</span>
                             </div>
@@ -488,16 +490,26 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
 
                     {/* Checkout Button */}
                     {(() => {
-                        const activePrice = selectedPlan === 'diamond' 
-                            ? (isFirstTimeBuyer ? '₦2,699' : '₦2,999') 
-                            : (isFirstTimeBuyer ? '₦1,899' : '₦1,999');
+                        if (selectedPlan === 'diamond') {
+                            return (
+                                <button
+                                    disabled
+                                    className="w-full py-4 bg-slate-800 text-slate-400 font-extrabold text-sm tracking-wider rounded-xl cursor-not-allowed flex items-center justify-center gap-2 uppercase opacity-70"
+                                >
+                                    <Icons.Clock className="w-4 h-4" />
+                                    <span>Diamond Tier Launching Soon</span>
+                                </button>
+                            );
+                        }
+
+                        const activePrice = isFirstTimeBuyer ? '₦1,899' : '₦1,999';
                         return (
                             <button
                                 onClick={handleSubscribe}
                                 disabled={submitting}
-                                className="w-full py-4 bg-gradient-to-r from-[#1BA657] to-emerald-400 hover:from-[#158C47] hover:to-emerald-500 text-black font-extrabold text-sm tracking-wider rounded-xl transition-all duration-200 shadow-xl shadow-[#1BA657]/10 flex items-center justify-center gap-2 uppercase disabled:opacity-50"
+                                className="w-full py-4 bg-gradient-to-r from-[#1BA657] to-emerald-400 hover:from-[#158C47] hover:to-emerald-500 text-black font-extrabold text-sm tracking-wider rounded-xl transition-all duration-200 shadow-xl shadow-[#1BA657]/10 flex items-center justify-center gap-2 uppercase disabled:opacity-50 active:scale-[0.99]"
                             >
-                                {submitting ? 'Processing Payment...' : `Subscribe to ${selectedPlan.toUpperCase()} Plan (${activePrice})`}
+                                {submitting ? 'Processing Payment...' : `Subscribe to Gold Plan (${activePrice}/month)`}
                             </button>
                         );
                     })()}
