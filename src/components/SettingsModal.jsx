@@ -49,7 +49,7 @@ const SettingsModal = ({
             await db.collection('user_settings').doc(user.uid).set({
                 monthlyTarget: parseFloat(monthlyTarget) || 1000
             }, { merge: true });
-            setTargetSavedMsg('✅ Monthly profit goal updated successfully!');
+            setTargetSavedMsg('âœ… Monthly profit goal updated successfully!');
         } catch (err) {
             console.error("Error saving monthly target:", err);
         } finally {
@@ -188,7 +188,7 @@ const SettingsModal = ({
         } else if (lowercaseQuery.includes('download') || lowercaseQuery.includes('manual') || lowercaseQuery.includes('readme')) {
             localReply = "You can download the Expert Advisor (`JTG_Journal_EA.ex5`) and setup manual directly from the **MT5 Auto-Sync** integration modal once you upgrade to Premium. For downloads, click the MT5 Auto-Sync button on the dashboard. You can also get it on our Discord: https://discord.gg/TkP8dR74";
         } else if (lowercaseQuery.includes('premium') || lowercaseQuery.includes('price') || lowercaseQuery.includes('cost') || lowercaseQuery.includes('paystack') || lowercaseQuery.includes('subscription') || lowercaseQuery.includes('pro')) {
-            localReply = "JTG Premium PRO is priced at **₦800/month**, **₦2,100/quarter**, or **₦8,000/year** (new accounts get a 14-day free trial). Premium unlocks real-time MT5 auto-sync, growth charts, advanced statistics, and performance calendar ledgers. You can upgrade inside the app dashboard.";
+            localReply = "JTG Journal Subscription Tiers:\n\n• **Gold Tier**: ₦1,999/month (Save 5% on 1st purchase: **₦1,899**). Includes Desktop MT5 EA auto-sync, up to 5 trading accounts, HUD chart overlay, and 31-day heatmaps.\n• **Diamond Tier**: ₦2,999/month (Save 10% on 1st purchase: **₦2,699**). Includes In-Depth AI Account Analysis sent to your email, Daily Major Market News on your top pairs, up to 10 trading accounts, and all Gold features.\n\nNew users can also start a 14-day free trial on the upgrade popup!";
         } else if (lowercaseQuery.includes('username') || lowercaseQuery.includes('profile') || lowercaseQuery.includes('name')) {
             localReply = "You can change your trader username under the **Profile** tab in this Settings menu. Enter your desired name, ensure availability checks pass, and click 'Update Username'.";
         } else if (lowercaseQuery.includes('reminder') || lowercaseQuery.includes('notification') || lowercaseQuery.includes('alert') || lowercaseQuery.includes('push')) {
@@ -526,7 +526,7 @@ const SettingsModal = ({
 
                                     {permissionStatus === 'denied' && (
                                         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-500 text-xs font-bold uppercase tracking-wider">
-                                            ⚠️ Notifications are blocked in this browser. Please enable permissions in your site settings to receive reminders.
+                                            âš ï¸ Notifications are blocked in this browser. Please enable permissions in your site settings to receive reminders.
                                         </div>
                                     )}
 
@@ -634,7 +634,7 @@ const SettingsModal = ({
                                         <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 flex justify-between items-center">
                                             <div>
                                                 <span className="text-sm font-bold text-white block">Bronze Discount Coupon</span>
-                                                <span className="text-xs text-slate-400">Save ₦100 on any Premium Plan</span>
+                                                <span className="text-xs text-slate-400">Save â‚¦100 on any Premium Plan</span>
                                             </div>
                                             <button
                                                 onClick={() => handleConvertPoints('bronze')}
@@ -653,7 +653,7 @@ const SettingsModal = ({
                                         <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 flex justify-between items-center">
                                             <div>
                                                 <span className="text-sm font-bold text-white block">Silver Discount Coupon</span>
-                                                <span className="text-xs text-slate-400">Save ₦200 on any Premium Plan</span>
+                                                <span className="text-xs text-slate-400">Save â‚¦200 on any Premium Plan</span>
                                             </div>
                                             <button
                                                 onClick={() => handleConvertPoints('silver')}
@@ -672,7 +672,7 @@ const SettingsModal = ({
                                         <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 flex justify-between items-center">
                                             <div>
                                                 <span className="text-sm font-bold text-white block">Gold Coupon (1 Month Free)</span>
-                                                <span className="text-xs text-slate-400">Get 1 Full Month of Premium free (₦800 value)</span>
+                                                <span className="text-xs text-slate-400">Get 1 Full Month of Premium free (â‚¦800 value)</span>
                                             </div>
                                             <button
                                                 onClick={() => handleConvertPoints('gold')}

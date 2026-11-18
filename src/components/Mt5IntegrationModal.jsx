@@ -217,7 +217,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                 throw new Error(data.error || 'Failed to connect MetaApi cloud account.');
             }
 
-            setCloudFeedback({ type: 'success', message: '🎉 Account connected! Deploying 24/7 cloud sync instance...' });
+            setCloudFeedback({ type: 'success', message: 'ðŸŽ‰ Account connected! Deploying 24/7 cloud sync instance...' });
             setCloudStatus({
                 connected: true,
                 accountId: data.accountId,
@@ -259,7 +259,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
 
             setCloudFeedback({ 
                 type: 'success', 
-                message: `✅ Successfully synced ${data.syncedCount || 0} trades! Balance: $${data.balance || 0}` 
+                message: `âœ… Successfully synced ${data.syncedCount || 0} trades! Balance: $${data.balance || 0}` 
             });
 
             if (cloudStatus) {
@@ -328,8 +328,8 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
         if (!syncKey) return "No key generated";
         if (isRevealed) return syncKey;
         const parts = syncKey.split('-');
-        if (parts.length >= 3) return `${parts[0]}-••••••••-••••`;
-        return "JTG-••••-••••";
+        if (parts.length >= 3) return `${parts[0]}-â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢-â€¢â€¢â€¢â€¢`;
+        return "JTG-â€¢â€¢â€¢â€¢-â€¢â€¢â€¢â€¢";
     };
 
     const hasKey = !!syncKey;
@@ -397,7 +397,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                 className="w-full py-3.5 bg-gradient-to-r from-[#1BA657] to-emerald-400 hover:from-[#158C47] hover:to-emerald-500 active:scale-[0.98] text-black font-extrabold text-xs tracking-wider rounded-xl transition-all duration-200 shadow-lg shadow-[#1BA657]/10 flex items-center justify-center gap-2 uppercase"
                             >
                                 <LockIcon className="w-4 h-4" />
-                                Unlock Auto-Sync (₦800/mo)
+                                Unlock Auto-Sync (₦1,999/mo)
                             </button>
                         </div>
                     </div>
@@ -487,9 +487,9 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                             <LockIcon className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <h4 className="text-white font-extrabold text-sm uppercase">Diamond Tier Feature</h4>
+                                            <h4 className="text-white font-extrabold text-sm uppercase">Diamond Tier Feature Suite</h4>
                                             <p className="text-slate-300 text-xs mt-0.5 leading-relaxed">
-                                                You are currently on the Gold Plan (Desktop MT5 EA). Upgrade to Diamond ($1.50 / ₦2,450 per month) to enable 24/7 Cloud Sync without keeping a PC running!
+                                                You are currently on the Gold Plan (Desktop MT5 EA). Upgrade to Diamond (₦2,999/mo — save 10% on first purchase) to unlock In-Depth AI Account Analysis sent to your email, Daily Major News on your top traded pairs, and up to 10 trading accounts!
                                             </p>
                                         </div>
                                     </div>
@@ -497,7 +497,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                         onClick={() => { close(); triggerUpgrade(); }}
                                         className="w-full py-3 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-2"
                                     >
-                                        <span>Upgrade to Diamond Tier ($1.50 / ₦2,450/mo)</span>
+                                        <span>Upgrade to Diamond Tier (₦2,999/mo - Save 10% First Time)</span>
                                     </button>
                                 </div>
                             )}
@@ -510,7 +510,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                     'bg-blue-950/40 border-blue-900/50 text-blue-300 animate-pulse'
                                 }`}>
                                     <span>{cloudFeedback.message}</span>
-                                    <button onClick={() => setCloudFeedback(null)} className="text-slate-400 hover:text-white">✕</button>
+                                    <button onClick={() => setCloudFeedback(null)} className="text-slate-400 hover:text-white">âœ•</button>
                                 </div>
                             )}
 
@@ -760,7 +760,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                             className="py-2.5 border border-[#1BA657] text-[#1BA657] hover:bg-[#1BA657]/10 font-extrabold text-[11px] rounded-lg transition-all flex items-center justify-center gap-1.5 uppercase"
                                         >
                                             <CopyIcon className="w-3.5 h-3.5" />
-                                            {copied ? 'Copied! ✅' : 'Copy Key'}
+                                            {copied ? 'Copied! âœ…' : 'Copy Key'}
                                         </button>
                                     </div>
                                 </div>

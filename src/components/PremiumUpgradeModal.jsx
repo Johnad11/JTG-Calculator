@@ -30,6 +30,9 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState('diamond'); // 'gold' | 'diamond' | 'trial'
 
+    // Determine if user is a first-time subscriber
+    const isFirstTimeBuyer = !userSettings?.subscribedAt && !userSettings?.paystackPaymentReference && !userSettings?.hasSubscribedBefore;
+
     // Coupon system states
     const [couponInput, setCouponInput] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -126,19 +129,22 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                 return;
             } else if (selectedPlan === 'gold') {
                 premiumUntil.setMonth(now.getMonth() + 1);
-                planName = "Gold Plan (₦800/mo - PC MT5 Sync)";
+                const regularPrice = 1999;
+                const finalPrice = isFirstTimeBuyer ? 1899 : 1999; // 5% discount for first time purchase
+                planName = isFirstTimeBuyer 
+                    ? "Gold Plan (₦1,899/mo - 5% First-Time Offer)" 
+                    : "Gold Plan (₦1,999/mo - PC MT5 Sync)";
                 planTier = "gold";
-                amountInKobo = 80000; // 800 Naira
+                amountInKobo = finalPrice * 100;
             } else if (selectedPlan === 'diamond') {
                 premiumUntil.setMonth(now.getMonth() + 1);
-                planName = "Diamond Plan ($1.50 / ₦2,450/mo - 24/7 Cloud Sync)";
+                const regularPrice = 2999;
+                const finalPrice = isFirstTimeBuyer ? 2699 : 2999; // 10% discount for first time purchase
+                planName = isFirstTimeBuyer 
+                    ? "Diamond Plan (₦2,699/mo - 10% First-Time Offer)" 
+                    : "Diamond Plan (₦2,999/mo - AI Analysis & News Suite)";
                 planTier = "diamond";
-                amountInKobo = 245000; // 2,450 Naira (~$1.50 USD)
-            } else if (selectedPlan === 'diamond_annual') {
-                premiumUntil.setFullYear(now.getFullYear() + 1);
-                planName = "Diamond Annual Plan ($15 / ₦24,500/yr)";
-                planTier = "diamond";
-                amountInKobo = 2450000; // 24,500 Naira
+                amountInKobo = finalPrice * 100;
             }
 
             let finalAmountInKobo = amountInKobo;
@@ -191,6 +197,22 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
             const handleSuccessfulPayment = async (response) => {
                 try {
                     setSubmitting(true);
+                    
+                    // Update user settings in Firestore
+                    try {
+                        await db.collection('user_settings').doc(user.uid).set({
+                            isPremium: true,
+                            planTier: planTier,
+                            premiumPlan: planName,
+                            premiumUntil: premiumUntil.toISOString(),
+                            subscribedAt: new Date().toISOString(),
+                            paystackPaymentReference: response.reference,
+                            hasSubscribedBefore: true
+                        }, { merge: true });
+                    } catch (fsErr) {
+                        console.warn("Firestore local write warning:", fsErr);
+                    }
+
                     alert(`🎉 Thank you! Your payment of ₦${finalAmountInKobo / 100} was successful (Ref: ${response.reference}). Your ${planTier.toUpperCase()} Plan is now active!`);
                     
                     if (onSuccess) {
@@ -220,7 +242,8 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                     planTier: planTier,
                     planName: planName + (appliedCoupon ? ` (Discounted via ${appliedCoupon.code})` : ''),
                     premiumUntil: premiumUntil.toISOString(),
-                    couponCode: appliedCoupon ? appliedCoupon.code : null
+                    couponCode: appliedCoupon ? appliedCoupon.code : null,
+                    isFirstTimeDiscount: isFirstTimeBuyer
                 },
                 callback: function(response) {
                     handleSuccessfulPayment(response);
@@ -260,7 +283,7 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                         Choose Your Journaling Power Tier
                     </h2>
                     <p className="text-slate-300 text-xs max-w-md leading-relaxed">
-                        Automate your trade logging. Choose between PC EA Desktop Sync or 24/7 Server-Side Cloud Sync.
+                        Supercharge your trading journey. Choose between PC EA Auto-Sync (Gold) or the AI-Powered Intelligence Suite (Diamond).
                     </p>
                 </div>
 
@@ -302,17 +325,17 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                                 
                                 <h4 className="text-white font-extrabold text-lg">PC EA Auto-Sync</h4>
                                 <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                                    Ideal for traders running MT5 on PC. Syncs trades instantly when MT5 terminal is open.
+                                    Ideal for PC traders. Real-time automatic trade logging with the JTG Expert Advisor.
                                 </p>
 
                                 <ul className="flex flex-col gap-2 mt-4 text-xs text-slate-300 border-t border-[#162C99]/20 pt-3">
                                     <li className="flex items-center gap-2">
                                         <CheckCircleIcon className="w-3.5 h-3.5 text-[#1BA657] shrink-0" />
-                                        <span>Desktop MT5 EA Auto-Sync</span>
+                                        <span className="font-semibold text-white">Up to 5 Total Trading Accounts</span>
                                     </li>
                                     <li className="flex items-center gap-2">
                                         <CheckCircleIcon className="w-3.5 h-3.5 text-[#1BA657] shrink-0" />
-                                        <span>Up to 5 Total Trading Accounts</span>
+                                        <span>Desktop MT5 EA Real-Time Auto-Sync</span>
                                     </li>
                                     <li className="flex items-center gap-2">
                                         <CheckCircleIcon className="w-3.5 h-3.5 text-[#1BA657] shrink-0" />
@@ -331,10 +354,23 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
 
                             <div className="mt-6 pt-3 border-t border-[#162C99]/25 flex items-baseline justify-between">
                                 <div>
-                                    <span className="text-white font-extrabold text-2xl">₦800</span>
-                                    <span className="text-xs text-slate-400 font-medium"> / month</span>
+                                    {isFirstTimeBuyer ? (
+                                        <div className="flex flex-col">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-white font-extrabold text-2xl">₦1,899</span>
+                                                <span className="text-xs text-slate-400 line-through">₦1,999</span>
+                                                <span className="text-xs text-slate-400 font-medium">/ mo</span>
+                                            </div>
+                                            <span className="text-[10px] text-amber-400 font-bold mt-0.5">🎉 Save 5% on 1st purchase!</span>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <span className="text-white font-extrabold text-2xl">₦1,999</span>
+                                            <span className="text-xs text-slate-400 font-medium"> / month</span>
+                                        </div>
+                                    )}
                                 </div>
-                                <span className="text-[10px] text-slate-500 font-mono">~$0.50/mo</span>
+                                <span className="text-[10px] text-amber-400 font-mono font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">5 ACCOUNTS</span>
                             </div>
                         </div>
 
@@ -343,39 +379,44 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                             onClick={() => setSelectedPlan('diamond')}
                             className={`cursor-pointer rounded-2xl p-5 border transition-all duration-300 flex flex-col justify-between relative group ${
                                 selectedPlan === 'diamond' 
-                                    ? 'bg-gradient-to-b from-[#162C99]/40 to-[#1BA657]/15 border-[#1BA657] shadow-[0_0_25px_rgba(27,166,87,0.25)] ring-2 ring-[#1BA657]/40' 
-                                    : 'bg-[#0f142b] border-[#162C99]/40 hover:border-[#1BA657]/50'
+                                    ? 'bg-gradient-to-b from-[#162C99]/40 to-[#1BA657]/15 border-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.25)] ring-2 ring-cyan-400/50' 
+                                    : 'bg-[#0f142b] border-[#162C99]/40 hover:border-cyan-500/50'
                             }`}
                         >
-                            <span className="absolute -top-3 right-4 bg-gradient-to-r from-[#1BA657] to-emerald-400 text-black font-extrabold text-[9px] px-3 py-1 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
+                            <span className="absolute -top-3 right-4 bg-gradient-to-r from-cyan-400 to-[#1BA657] text-black font-extrabold text-[9px] px-3 py-1 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
                                 <Icons.Star className="w-3 h-3" />
-                                <span>MOST POPULAR</span>
+                                <span>MOST POPULAR • ELITE</span>
                             </span>
 
                             <div>
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                                        DIAMOND TIER
+                                    <span className="bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                                        <Icons.Diamond className="w-3 h-3 text-cyan-300" />
+                                        <span>DIAMOND TIER</span>
                                     </span>
-                                    {selectedPlan === 'diamond' && <span className="text-[#1BA657] font-bold text-xs">SELECTED ✓</span>}
+                                    {selectedPlan === 'diamond' && <span className="text-cyan-400 font-bold text-xs">SELECTED ✓</span>}
                                 </div>
                                 
                                 <h4 className="text-white font-extrabold text-lg flex items-center gap-2">
-                                    <span>24/7 Cloud Sync</span>
-                                    <span className="text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-800 px-1.5 py-0.5 rounded font-mono">NO PC NEEDED</span>
+                                    <span>AI Analytics & News</span>
+                                    <span className="text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-800 px-1.5 py-0.5 rounded font-mono font-bold">VIP SUITE</span>
                                 </h4>
                                 <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
-                                    Connect via Read-Only Investor Key. Trades sync 24/7 in the cloud even when your phone & PC are turned off!
+                                    Personalized AI trade breakdowns & daily macro news delivered straight to your email inbox.
                                 </p>
 
                                 <ul className="flex flex-col gap-2 mt-4 text-xs text-slate-200 border-t border-[#162C99]/20 pt-3">
-                                    <li className="flex items-center gap-2 font-bold text-white">
-                                        <CheckCircleIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                                        <span>24/7 Server-Side Cloud Sync (MetaApi)</span>
+                                    <li className="flex items-start gap-2 text-cyan-200 font-semibold">
+                                        <CheckCircleIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                                        <span><strong>In-Depth AI Account Analysis:</strong> Detailed performance, risk & psychology breakdown emailed for each account</span>
                                     </li>
-                                    <li className="flex items-center gap-2">
+                                    <li className="flex items-start gap-2 text-cyan-200 font-semibold">
+                                        <CheckCircleIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                                        <span><strong>Daily Major News Digest:</strong> Daily high-impact news email showing exact effect on your top traded pairs</span>
+                                    </li>
+                                    <li className="flex items-center gap-2 text-white font-bold">
                                         <CheckCircleIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                                        <span>Multi-Account Sync (Up to 3 Accounts)</span>
+                                        <span>Up to 10 Total Trading Accounts</span>
                                     </li>
                                     <li className="flex items-center gap-2">
                                         <CheckCircleIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
@@ -383,17 +424,30 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                                     </li>
                                     <li className="flex items-center gap-2">
                                         <CheckCircleIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                                        <span>Priority Cloud Server & Drawdown Alerts</span>
+                                        <span>Priority VIP Support & Early Feature Drops</span>
                                     </li>
                                 </ul>
                             </div>
 
                             <div className="mt-6 pt-3 border-t border-[#162C99]/25 flex items-baseline justify-between">
                                 <div>
-                                    <span className="text-white font-extrabold text-2xl">₦2,450</span>
-                                    <span className="text-xs text-slate-400 font-medium"> / month</span>
+                                    {isFirstTimeBuyer ? (
+                                        <div className="flex flex-col">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-white font-extrabold text-2xl text-cyan-300">₦2,699</span>
+                                                <span className="text-xs text-slate-400 line-through">₦2,999</span>
+                                                <span className="text-xs text-slate-400 font-medium">/ mo</span>
+                                            </div>
+                                            <span className="text-[10px] text-cyan-400 font-bold mt-0.5">🔥 Save 10% on 1st purchase!</span>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <span className="text-white font-extrabold text-2xl text-cyan-300">₦2,999</span>
+                                            <span className="text-xs text-slate-400 font-medium"> / month</span>
+                                        </div>
+                                    )}
                                 </div>
-                                <span className="text-[10px] text-cyan-400 font-bold font-mono">~$1.50 / mo</span>
+                                <span className="text-[10px] text-cyan-400 font-mono font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800">10 ACCOUNTS</span>
                             </div>
                         </div>
 
@@ -433,13 +487,20 @@ const PremiumUpgradeModal = ({ user, userSettings, close, onSuccess }) => {
                     {couponSuccess && <p className="text-[#1BA657] text-xs font-bold">{couponSuccess}</p>}
 
                     {/* Checkout Button */}
-                    <button
-                        onClick={handleSubscribe}
-                        disabled={submitting}
-                        className="w-full py-4 bg-gradient-to-r from-[#1BA657] to-emerald-400 hover:from-[#158C47] hover:to-emerald-500 text-black font-extrabold text-sm tracking-wider rounded-xl transition-all duration-200 shadow-xl shadow-[#1BA657]/10 flex items-center justify-center gap-2 uppercase disabled:opacity-50"
-                    >
-                        {submitting ? 'Processing Payment...' : `Subscribe to ${selectedPlan.toUpperCase()} Plan`}
-                    </button>
+                    {(() => {
+                        const activePrice = selectedPlan === 'diamond' 
+                            ? (isFirstTimeBuyer ? '₦2,699' : '₦2,999') 
+                            : (isFirstTimeBuyer ? '₦1,899' : '₦1,999');
+                        return (
+                            <button
+                                onClick={handleSubscribe}
+                                disabled={submitting}
+                                className="w-full py-4 bg-gradient-to-r from-[#1BA657] to-emerald-400 hover:from-[#158C47] hover:to-emerald-500 text-black font-extrabold text-sm tracking-wider rounded-xl transition-all duration-200 shadow-xl shadow-[#1BA657]/10 flex items-center justify-center gap-2 uppercase disabled:opacity-50"
+                            >
+                                {submitting ? 'Processing Payment...' : `Subscribe to ${selectedPlan.toUpperCase()} Plan (${activePrice})`}
+                            </button>
+                        );
+                    })()}
 
                 </div>
             </div>

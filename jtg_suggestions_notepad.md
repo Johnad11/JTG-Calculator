@@ -123,3 +123,47 @@ SECTION 3: LOW SEVERITY & NICE-TO-HAVE SUGGESTIONS (Fix Within 90 Days)
 4. [ACCESSIBILITY] Add Semantic Aria Labels
    - Component: Interactive elements
    - Solution: Add descriptive `aria-label` tags to icon-only buttons (e.g. sidebar navigation, delete keys, edit modes).
+
+================================================================================
+SECTION 4: DIAMOND TIER ROADMAP & PRICING STRATEGY
+================================================================================
+
+1. [FEATURE] Automated Prop Firm Rule & Drawdown Breach Shield
+   - Description: Prop firm traders (FTMO, FundedNext, MFF, etc.) live under strict 4-5% daily and 8-10% max drawdown rules.
+   - Capability: When MT5 EA logs a trade nearing daily drawdown limit (e.g. 3.5%), send an instant push / Telegram / WhatsApp emergency alert: "⚠️ Caution: Account [FTMO 100k] is at 3.6% daily drawdown. 1.4% cushion left before breach!"
+
+2. [FEATURE] Weekly PDF Executive Performance Report
+   - Description: Automated, institutional-grade PDF summary generated every Sunday night.
+   - Capability: Sent to the user's email covering:
+     * Best and worst trading session (London vs New York vs Asian)
+     * Average R:R achieved vs planned R:R
+     * Tilt / Revenge trading detector (identifies cluster losses within 30 minutes of each other)
+     * Printable / shareable format for investors or personal review.
+
+3. [FEATURE] Telegram / WhatsApp Instant Trade & Risk Bot Integration
+   - Description: Traders aren't always looking at email or desktop.
+   - Capability: Connect a private Telegram bot where Diamond members get:
+     * Real-time trade open/close notifications with profit/loss & R:R.
+     * Morning briefing: Today's top red-folder news (CPI, NFP, FOMC) affecting their top 3 traded pairs.
+
+4. [FEATURE] Multi-Account Equity Heatmap & Portfolio Correlation Matrix
+   - Description: Since Diamond users manage up to 10 accounts, portfolio risk multiplies.
+   - Capability: A dedicated dashboard view showing cross-account exposure (e.g., "You currently have 3 open buy positions on USD pairs across 4 different accounts. USD risk exposure: $850").
+
+5. [FEATURE] AI Trade Journaling Voice Notes (Audio to Log)
+   - Description: Traders hate typing out notes right after a stressful trade.
+   - Capability: Allow traders to record a quick 20-second voice note inside the app after closing a trade; Gemini AI automatically transcribes and summarizes the emotional state and execution reasons into the trade log.
+
+--------------------------------------------------------------------------------
+PRICING TIERS & PACKAGING RECOMMENDATIONS:
+--------------------------------------------------------------------------------
+- Gold Tier:
+  * Monthly: ₦1,999/mo (1st time buyer: ₦1,899 / 5% OFF)
+  * Quarterly (Save 15%): ₦5,099 / quarter (~₦1,700/mo)
+  * Annual (Save 30%): ₦16,799 / year (~₦1,400/mo)
+
+- Diamond Tier (Elite AI & Multi-Account):
+  * Monthly: ₦2,999/mo (1st time buyer: ₦2,699 / 10% OFF)
+  * Quarterly (Save 15%): ₦7,649 / quarter (~₦2,550/mo)
+  * Annual (Save 33% - Best Value): ₦23,999 / year (~₦2,000/mo)
+  * Free Trial: 14-day full Gold tier access (no credit card required) to maximize conversion from trial -> Gold/Diamond.

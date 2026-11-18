@@ -33,7 +33,7 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
     // Determine user plan tier & max account limit
     const isEmailAdmin = userSettings?.email === 'nwabuezejohnad11@gmail.com' || userSettings?.username === 'nwabuezejohnad11';
     const planTier = isEmailAdmin ? 'diamond' : (userSettings?.planTier || (isPremium ? 'gold' : 'free'));
-    const maxAccounts = planTier === 'diamond' ? 7 : (planTier === 'gold' ? 5 : 2);
+    const maxAccounts = planTier === 'diamond' ? 10 : (planTier === 'gold' ? 5 : 2);
     const cloudSyncCount = accounts.filter(a => a.source === 'METAAPI_CLOUD_SYNC' || a.isCloudSync).length;
 
     useEffect(() => {
@@ -112,14 +112,14 @@ const AccountManager = ({ accounts = [], activeAccountId, switchAccount, addAcco
         // Limit check
         if (accounts.length >= maxAccounts) {
             if (planTier === 'free') {
-                alert(`Account limit reached: Free tier is limited to 2 accounts.\n\nUpgrade to Gold (5 accounts) or Diamond (7 accounts) to add more!`);
+                alert(`Account limit reached: Free tier is limited to 2 accounts.\n\nUpgrade to Gold (5 accounts) or Diamond (10 accounts) to add more!`);
                 triggerUpgrade();
                 close();
             } else if (planTier === 'gold') {
-                alert(`Account limit reached: Gold Plan allows up to 5 accounts in total.\n\nUpgrade to Diamond Plan ($1.50/mo / ₦2,450/mo) for up to 7 accounts!`);
+                alert(`Account limit reached: Gold Plan allows up to 5 accounts in total.\n\nUpgrade to Diamond Plan (₦2,999/mo) for up to 10 accounts and AI Account Analysis!`);
                 triggerUpgrade();
             } else {
-                alert(`Account limit reached: Diamond Plan allows a maximum of 7 total accounts.`);
+                alert(`Account limit reached: Diamond Plan allows a maximum of 10 total accounts.`);
             }
             return;
         }

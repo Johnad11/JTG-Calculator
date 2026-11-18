@@ -99,6 +99,7 @@ export default async function handler(req, res) {
                 transaction.set(settingsRef, {
                     isPremium: true,
                     planTier: planTier,
+                    hasSubscribedBefore: true,
                     premiumPlan: planName || `${planTier === 'diamond' ? 'Diamond' : 'Gold'} Plan`,
                     premiumUntil: premiumUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                     subscribedAt: new Date().toISOString(),

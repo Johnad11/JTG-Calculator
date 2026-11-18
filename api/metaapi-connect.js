@@ -63,7 +63,7 @@ export default async function handler(req, res) {
                 
                 if (!isPremium || (planTier !== 'diamond' && !isEmailAdmin)) {
                     return res.status(403).json({
-                        error: '24/7 Cloud Sync requires a Diamond Plan subscription ($1.50 / ₦2,450 per month). Please upgrade your subscription to Diamond tier.',
+                        error: '24/7 Cloud Sync is currently undergoing server infrastructure upgrades. Please use the Desktop MT5 EA or upgrade to Diamond Tier (₦2,999/month) for AI Account Analysis and Daily Market News.',
                         code: 'DIAMOND_TIER_REQUIRED'
                     });
                 }

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import firebase, { auth, db } from './firebase';
 import { Icons } from './components/Icons';
 import Calculator from './components/Calculator';
@@ -519,26 +519,51 @@ const App = () => {
         const personalAccounts = accounts.filter(a => a.type === 'Personal');
         const propAccounts = accounts.filter(a => a.type === 'Prop Firm');
 
-        const MAX_PERSONAL = isPremium ? 3 : 2;
-        const MAX_PROP = isPremium ? 5 : 3;
+        const isDiamond = currentPlanTier === 'diamond';
+        const MAX_TOTAL = isDiamond ? 10 : (isPremium ? 5 : 2);
+        const MAX_PERSONAL = isDiamond ? 5 : (isPremium ? 3 : 2);
+        const MAX_PROP = isDiamond ? 10 : (isPremium ? 5 : 3);
 
-        if (accountData.type === 'Personal' && personalAccounts.length >= MAX_PERSONAL) {
+        if (accounts.length >= MAX_TOTAL) {
             if (!isPremium) {
-                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PERSONAL} Personal accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal and 5 Prop Firm accounts?`)) {
+                if (window.confirm(`Limit reached: Free tier is limited to 2 accounts.\n\nUpgrade to Gold (5 accounts) or Diamond (10 accounts)?`)) {
+                    setShowPremiumUpgradeModal(true);
+                }
+            } else if (!isDiamond) {
+                if (window.confirm(`Limit reached: Gold tier allows up to 5 accounts in total.\n\nUpgrade to Diamond Plan (₦2,999/mo) for up to 10 accounts and AI Account Analysis?`)) {
                     setShowPremiumUpgradeModal(true);
                 }
             } else {
-                alert(`Limit reached: Premium accounts are limited to ${MAX_PERSONAL} Personal accounts.`);
+                alert(`Limit reached: Diamond Plan allows a maximum of 10 total accounts.`);
+            }
+            return false;
+        }
+
+        if (accountData.type === 'Personal' && personalAccounts.length >= MAX_PERSONAL) {
+            if (!isPremium) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PERSONAL} Personal accounts.\n\nUpgrade to JTG Premium to add up to 5 Personal accounts?`)) {
+                    setShowPremiumUpgradeModal(true);
+                }
+            } else if (!isDiamond) {
+                if (window.confirm(`Limit reached: Gold tier allows up to ${MAX_PERSONAL} Personal accounts.\n\nUpgrade to Diamond Plan for up to 5 Personal accounts?`)) {
+                    setShowPremiumUpgradeModal(true);
+                }
+            } else {
+                alert(`Limit reached: Diamond accounts are limited to ${MAX_PERSONAL} Personal accounts.`);
             }
             return false;
         }
         if (accountData.type === 'Prop Firm' && propAccounts.length >= MAX_PROP) {
             if (!isPremium) {
-                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PROP} Prop Firm accounts.\n\nUpgrade to JTG Premium to add up to 3 Personal and 5 Prop Firm accounts?`)) {
+                if (window.confirm(`Limit reached: Free accounts are limited to ${MAX_PROP} Prop Firm accounts.\n\nUpgrade to JTG Premium to add up to 5 Prop Firm accounts?`)) {
+                    setShowPremiumUpgradeModal(true);
+                }
+            } else if (!isDiamond) {
+                if (window.confirm(`Limit reached: Gold tier allows up to ${MAX_PROP} Prop Firm accounts.\n\nUpgrade to Diamond Plan for up to 10 Prop Firm accounts?`)) {
                     setShowPremiumUpgradeModal(true);
                 }
             } else {
-                alert(`Limit reached: Premium accounts are limited to ${MAX_PROP} Prop Firm accounts.`);
+                alert(`Limit reached: Diamond accounts are limited to ${MAX_PROP} Prop Firm accounts.`);
             }
             return false;
         }
