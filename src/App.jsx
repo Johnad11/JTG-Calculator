@@ -987,7 +987,7 @@ const App = () => {
                     </button>
 
                     <p className="text-[9px] text-muted-theme uppercase font-bold tracking-wider mt-8">
-                        Authorized Access Only â€¢ Secured by Firebase
+                        Authorized Access Only &bull; Secured by Firebase
                     </p>
                 </div>
             </div>
@@ -1076,7 +1076,7 @@ const App = () => {
                                             {accounts.find(a => a.id === activeAccountId)?.name || 'Account'}
                                         </p>
                                         <p className="text-[10px] text-muted-theme font-mono font-medium">
-                                            {currency} â€¢ {accounts.find(a => a.id === activeAccountId)?.type || 'Personal'}
+                                            {currency} &bull; {accounts.find(a => a.id === activeAccountId)?.type || 'Personal'}
                                         </p>
                                     </div>
                                 </div>

@@ -51,7 +51,7 @@ const SettingsModal = ({
             await db.collection('user_settings').doc(user.uid).set({
                 monthlyTarget: parseFloat(monthlyTarget) || 1000
             }, { merge: true });
-            setTargetSavedMsg('âœ… Monthly profit goal updated successfully!');
+            setTargetSavedMsg('✅ Monthly profit goal updated successfully!');
         } catch (err) {
             console.error("Error saving monthly target:", err);
         } finally {
@@ -553,7 +553,7 @@ const SettingsModal = ({
 
                                     {permissionStatus === 'denied' && (
                                         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-500 text-xs font-bold uppercase tracking-wider">
-                                            âš ï¸ Notifications are blocked in this browser. Please enable permissions in your site settings to receive reminders.
+                                            ⚠️ Notifications are blocked in this browser. Please enable permissions in your site settings to receive reminders.
                                         </div>
                                     )}
 
@@ -661,7 +661,7 @@ const SettingsModal = ({
                                         <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 flex justify-between items-center">
                                             <div>
                                                 <span className="text-sm font-bold text-white block">Bronze Discount Coupon</span>
-                                                <span className="text-xs text-slate-400">Save â‚¦100 on any Premium Plan</span>
+                                                <span className="text-xs text-slate-400">Save ₦100 on any Premium Plan</span>
                                             </div>
                                             <button
                                                 onClick={() => handleConvertPoints('bronze')}
@@ -680,7 +680,7 @@ const SettingsModal = ({
                                         <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 flex justify-between items-center">
                                             <div>
                                                 <span className="text-sm font-bold text-white block">Silver Discount Coupon</span>
-                                                <span className="text-xs text-slate-400">Save â‚¦200 on any Premium Plan</span>
+                                                <span className="text-xs text-slate-400">Save ₦200 on any Premium Plan</span>
                                             </div>
                                             <button
                                                 onClick={() => handleConvertPoints('silver')}
@@ -699,7 +699,7 @@ const SettingsModal = ({
                                         <div className="bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4 flex justify-between items-center">
                                             <div>
                                                 <span className="text-sm font-bold text-white block">Gold Coupon (1 Month Free)</span>
-                                                <span className="text-xs text-slate-400">Get 1 Full Month of Premium free (â‚¦800 value)</span>
+                                                <span className="text-xs text-slate-400">Get 1 Full Month of Premium free (₦800 value)</span>
                                             </div>
                                             <button
                                                 onClick={() => handleConvertPoints('gold')}

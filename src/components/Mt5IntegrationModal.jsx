@@ -259,7 +259,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
 
             setCloudFeedback({ 
                 type: 'success', 
-                message: `âœ… Successfully synced ${data.syncedCount || 0} trades! Balance: $${data.balance || 0}` 
+                message: `✅ Successfully synced ${data.syncedCount || 0} trades! Balance: $${data.balance || 0}` 
             });
 
             if (cloudStatus) {
@@ -328,8 +328,8 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
         if (!syncKey) return "No key generated";
         if (isRevealed) return syncKey;
         const parts = syncKey.split('-');
-        if (parts.length >= 3) return `${parts[0]}-â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢-â€¢â€¢â€¢â€¢`;
-        return "JTG-â€¢â€¢â€¢â€¢-â€¢â€¢â€¢â€¢";
+        if (parts.length >= 3) return `${parts[0]}-\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF-\u25CF\u25CF\u25CF\u25CF`;
+        return "JTG-\u25CF\u25CF\u25CF\u25CF-\u25CF\u25CF\u25CF\u25CF";
     };
 
     const hasKey = !!syncKey;
@@ -510,7 +510,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                     'bg-blue-950/40 border-blue-900/50 text-blue-300 animate-pulse'
                                 }`}>
                                     <span>{cloudFeedback.message}</span>
-                                    <button onClick={() => setCloudFeedback(null)} className="text-slate-400 hover:text-white">âœ•</button>
+                                    <button onClick={() => setCloudFeedback(null)} className="text-slate-400 hover:text-white">✕</button>
                                 </div>
                             )}
 
@@ -760,7 +760,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                             className="py-2.5 border border-[#1BA657] text-[#1BA657] hover:bg-[#1BA657]/10 font-extrabold text-[11px] rounded-lg transition-all flex items-center justify-center gap-1.5 uppercase"
                                         >
                                             <CopyIcon className="w-3.5 h-3.5" />
-                                            {copied ? 'Copied! âœ…' : 'Copy Key'}
+                                            {copied ? 'Copied! ✅' : 'Copy Key'}
                                         </button>
                                     </div>
                                 </div>
