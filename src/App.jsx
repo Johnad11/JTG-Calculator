@@ -12,7 +12,6 @@ import Mt5IntegrationModal from './components/Mt5IntegrationModal';
 import PremiumUpgradeModal from './components/PremiumUpgradeModal';
 import SettingsModal from './components/SettingsModal';
 import OnboardingTourPopup from './components/OnboardingTourPopup';
-import StreakBadgeWidget from './components/StreakBadgeWidget';
 import { LOGO_URL, CURRENCIES, ASSETS, PREMIUM_EMAILS } from './constants';
 
 import { fetchExchangeRates } from './utils/exchangeRate';
@@ -1101,17 +1100,46 @@ const App = () => {
                     )}
                 </div>
 
-                {/* Bottom Section: Streak Badge, Theme Toggle, Settings, Logout (Moved from Header) */}
+                {/* Bottom Section: Plan Tier Status, Theme Toggle, Settings, Logout */}
                 <div className="pt-4 border-t border-theme space-y-3">
-                    {/* Streak Badge Widget in Left Panel */}
-                    <div className="bg-input-theme border border-theme rounded-2xl p-3 flex items-center justify-between shadow-sm">
+                    {/* Active Plan Tier Card in Left Panel */}
+                    <div 
+                        onClick={() => setShowPremiumUpgradeModal(true)}
+                        className={`cursor-pointer rounded-2xl p-3 flex items-center justify-between border transition-all active:scale-95 shadow-sm ${
+                            currentPlanTier === 'diamond'
+                                ? 'bg-gradient-to-r from-cyan-950/40 to-blue-950/40 border-cyan-400/40 hover:border-cyan-400'
+                                : currentPlanTier === 'gold'
+                                ? 'bg-amber-500/10 border-amber-500/30 hover:border-amber-500/60'
+                                : 'bg-input-theme border-theme hover:border-jtg-green/40'
+                        }`}
+                        title="Click to view Gold and Diamond plans"
+                    >
                         <div className="flex items-center gap-3">
-                            <StreakBadgeWidget trades={trades} />
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                                currentPlanTier === 'diamond' ? 'bg-cyan-500/20 text-cyan-300' :
+                                currentPlanTier === 'gold' ? 'bg-amber-500/20 text-amber-400' :
+                                'bg-slate-800 text-slate-400'
+                            }`}>
+                                {currentPlanTier === 'diamond' ? <Icons.Diamond className="w-4 h-4 text-cyan-400" /> :
+                                 currentPlanTier === 'gold' ? <Icons.Star className="w-4 h-4 text-amber-400" /> :
+                                 <Icons.Zap className="w-4 h-4 text-jtg-green" />}
+                            </div>
                             <div className="text-left">
-                                <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-theme">Daily Streak</p>
-                                <p className="text-xs font-black text-main-theme">Discipline Shield</p>
+                                <p className="text-[9px] font-extrabold uppercase tracking-widest text-muted-theme">Current Plan</p>
+                                <p className={`text-xs font-black ${
+                                    currentPlanTier === 'diamond' ? 'text-cyan-300' :
+                                    currentPlanTier === 'gold' ? 'text-amber-400' :
+                                    'text-main-theme'
+                                }`}>
+                                    {currentPlanTier === 'diamond' ? 'Diamond Tier' :
+                                     currentPlanTier === 'gold' ? 'Gold Tier' :
+                                     'Free Basic Tier'}
+                                </p>
                             </div>
                         </div>
+                        <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md border bg-input-theme border-theme text-muted-theme">
+                            {currentPlanTier === 'free' ? 'UPGRADE' : 'TIERS'}
+                        </span>
                     </div>
 
                     {/* Quick Utility Buttons: Light/Dark Mode, Settings, Logout */}
@@ -1166,7 +1194,20 @@ const App = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <StreakBadgeWidget trades={trades} />
+                    <button
+                        onClick={() => setShowPremiumUpgradeModal(true)}
+                        className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1 border transition active:scale-95 ${
+                            currentPlanTier === 'diamond' ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/40' :
+                            currentPlanTier === 'gold' ? 'bg-amber-500/15 text-amber-400 border-amber-500/40' :
+                            'bg-[#1BA657]/15 text-[#1BA657] border-[#1BA657]/40 animate-pulse'
+                        }`}
+                        title="View Gold & Diamond Plans"
+                    >
+                        {currentPlanTier === 'diamond' ? <Icons.Diamond className="w-3 h-3 text-cyan-400" /> :
+                         currentPlanTier === 'gold' ? <Icons.Star className="w-3 h-3 text-amber-400" /> :
+                         <Icons.Zap className="w-3 h-3 text-jtg-green" />}
+                        <span>{currentPlanTier === 'diamond' ? 'DIAMOND' : (currentPlanTier === 'gold' ? 'GOLD' : 'TIERS')}</span>
+                    </button>
                     <button
                         onClick={toggleTheme}
                         className="p-2 text-main-theme transition-colors bg-input-theme border border-theme rounded-full flex items-center justify-center active:scale-95"
@@ -1236,8 +1277,39 @@ const App = () => {
                         </div>
                     </div>
 
-                    {/* Right: User Profile Pill */}
+                    {/* Right: User Profile Pill & Plan Tier Badge */}
                     <div className="flex items-center gap-3 shrink-0">
+                        {/* Plan Tier Badge / Upgrade Button */}
+                        <button
+                            onClick={() => setShowPremiumUpgradeModal(true)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border transition-all active:scale-95 shadow-sm ${
+                                currentPlanTier === 'diamond'
+                                    ? 'bg-gradient-to-r from-cyan-500/15 to-blue-500/15 border-cyan-400/50 text-cyan-300 hover:border-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
+                                    : currentPlanTier === 'gold'
+                                    ? 'bg-amber-500/15 border-amber-500/40 text-amber-400 hover:bg-amber-500/25'
+                                    : 'bg-gradient-to-r from-[#1BA657] to-emerald-400 text-black border-transparent hover:brightness-110 shadow-md shadow-[#1BA657]/20 animate-pulse'
+                            }`}
+                            title="Click to view Gold and Diamond plans"
+                        >
+                            {currentPlanTier === 'diamond' ? (
+                                <>
+                                    <Icons.Diamond className="w-3.5 h-3.5 text-cyan-400" />
+                                    <span>DIAMOND TIER</span>
+                                </>
+                            ) : currentPlanTier === 'gold' ? (
+                                <>
+                                    <Icons.Star className="w-3.5 h-3.5 text-amber-400" />
+                                    <span>GOLD TIER</span>
+                                    <span className="bg-amber-400/20 text-amber-300 text-[9px] px-1.5 py-0.5 rounded font-black ml-0.5">UPGRADE</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Icons.Zap className="w-3.5 h-3.5" />
+                                    <span>GOLD & DIAMOND TIERS</span>
+                                </>
+                            )}
+                        </button>
+
                         {/* User Profile Pill */}
                         <div className="flex items-center gap-2 pl-3 border-l border-theme">
                             <div className={`w-9 h-9 rounded-full bg-jtg-blue text-white flex items-center justify-center font-black text-xs relative shadow-sm ${
@@ -1402,6 +1474,8 @@ const App = () => {
                     username={username}
                     setUsername={setUsername}
                     isPremium={isPremium}
+                    planTier={currentPlanTier}
+                    triggerUpgrade={() => setShowPremiumUpgradeModal(true)}
                     close={() => setShowSettingsModal(false)}
                     logout={logout}
                     remindersEnabled={remindersEnabled}
@@ -1456,10 +1530,18 @@ const App = () => {
                                     {username && <p className="text-sm font-black text-jtg-green truncate">@{username}</p>}
                                     <p className="text-xs font-bold text-muted-theme truncate">{user ? user.email : ''}</p>
                                     <div className="flex gap-1.5 items-center mt-1.5">
-                                        {isPremium ? (
-                                            <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">PRO</span>
+                                        {currentPlanTier === 'diamond' ? (
+                                            <span className="bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 text-[8px] font-extrabold px-2 py-0.5 rounded tracking-wider uppercase flex items-center gap-1">
+                                                <Icons.Diamond className="w-2.5 h-2.5 text-cyan-400" />
+                                                DIAMOND TIER
+                                            </span>
+                                        ) : currentPlanTier === 'gold' ? (
+                                            <span className="bg-amber-500/20 border border-amber-500/50 text-amber-400 text-[8px] font-extrabold px-2 py-0.5 rounded tracking-wider uppercase flex items-center gap-1">
+                                                <Icons.Star className="w-2.5 h-2.5 text-amber-400" />
+                                                GOLD TIER
+                                            </span>
                                         ) : (
-                                            <span className="bg-slate-800 text-slate-400 text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">FREE</span>
+                                            <span className="bg-slate-800 text-slate-400 text-[8px] font-extrabold px-2 py-0.5 rounded tracking-wider uppercase">FREE TIER</span>
                                         )}
                                     </div>
                                 </div>
@@ -1522,10 +1604,10 @@ const App = () => {
                                             setShowMobileDrawer(false);
                                             setShowPremiumUpgradeModal(true);
                                         }} 
-                                        className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-extrabold text-xs uppercase tracking-wider p-3 rounded-xl shadow-lg transition hover:brightness-110 active:scale-95 mt-4 flex items-center justify-center gap-1.5"
+                                        className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-extrabold text-xs uppercase tracking-wider p-3 rounded-xl shadow-lg transition hover:brightness-110 active:scale-95 mt-4 flex items-center justify-center gap-1.5"
                                     >
                                         <Icons.Star className="w-3.5 h-3.5" />
-                                        <span>Upgrade to Pro</span>
+                                        <span>Upgrade: Gold & Diamond Tiers</span>
                                     </button>
                                 )}
                             </div>

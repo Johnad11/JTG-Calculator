@@ -19,6 +19,8 @@ const SettingsModal = ({
     username,
     setUsername,
     isPremium,
+    planTier = 'free',
+    triggerUpgrade,
     close,
     logout,
     remindersEnabled,
@@ -439,16 +441,41 @@ const SettingsModal = ({
                                     </form>
 
                                     {/* Account Level */}
-                                    <div className="flex justify-between items-center bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4">
+                                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-jtg-input/40 border border-jtg-blue/20 rounded-xl p-4">
                                         <div>
-                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Subscription status</span>
-                                            <span className="text-sm text-white font-bold">{isPremium ? 'JTG Premium PRO' : 'Free Trial/Basic'}</span>
+                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Subscription Status</span>
+                                            <span className="text-sm text-white font-bold">
+                                                {planTier === 'diamond' ? 'Diamond Tier (AI Analysis & 10 Accounts)' :
+                                                 (isPremium || planTier === 'gold') ? 'Gold Tier (MT5 EA Sync & 5 Accounts)' :
+                                                 'Free Basic Tier'}
+                                            </span>
                                         </div>
-                                        {isPremium ? (
-                                            <span className="bg-[#1BA657]/20 border border-[#1BA657]/50 text-[#1BA657] text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">PRO MEMBER</span>
-                                        ) : (
-                                            <span className="bg-slate-800 text-slate-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">FREE TIER</span>
-                                        )}
+                                        <div className="flex items-center gap-2">
+                                            {planTier === 'diamond' ? (
+                                                <span className="bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                                                    <Icons.Diamond className="w-3 h-3 text-cyan-400" />
+                                                    DIAMOND TIER
+                                                </span>
+                                            ) : (isPremium || planTier === 'gold') ? (
+                                                <span className="bg-amber-500/20 border border-amber-500/50 text-amber-400 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                                                    <Icons.Star className="w-3 h-3 text-amber-400" />
+                                                    GOLD TIER
+                                                </span>
+                                            ) : (
+                                                <span className="bg-slate-800 text-slate-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                                                    FREE TIER
+                                                </span>
+                                            )}
+                                            {triggerUpgrade && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { close(); triggerUpgrade(); }}
+                                                    className="px-3 py-1 bg-jtg-green/20 hover:bg-jtg-green/30 text-jtg-green border border-jtg-green/40 text-[10px] font-extrabold uppercase rounded-lg transition active:scale-95"
+                                                >
+                                                    {planTier === 'diamond' ? 'Manage' : 'Upgrade'}
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Monthly Target Goal Form */}

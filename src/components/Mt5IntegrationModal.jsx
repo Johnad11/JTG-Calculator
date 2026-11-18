@@ -360,33 +360,33 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                             MT4 / MT5 Auto-Sync
                         </h2>
                         <span className="bg-[#1BA657]/10 border border-[#1BA657]/30 text-[#1BA657] text-[9px] font-bold tracking-widest uppercase px-2.5 py-0.5 rounded-full">
-                            PRO TIER EXCLUSIVE
+                            GOLD & DIAMOND TIER EXCLUSIVE
                         </span>
                     </div>
 
                     <div className="p-6 flex flex-col gap-4">
                         <p className="text-slate-300 text-xs text-center leading-relaxed max-w-sm mx-auto mb-1">
-                            Unlock automated real-time trade journaling. Connect your account via 24/7 Cloud Sync (No PC needed) or via desktop MT5 EA.
+                            Unlock automated real-time trade journaling. Choose Gold Tier (₦1,999/mo) for Desktop MT5 EA sync or Diamond Tier (₦2,999/mo) for AI Account Analysis and Daily Market News.
                         </p>
 
                         <div className="flex flex-col gap-3">
                             <div className="bg-[#111633]/60 border border-[#162C99]/20 rounded-xl p-3 flex gap-3 items-start">
-                                <div className="p-2 bg-[#1BA657]/10 rounded-lg text-[#1BA657] shrink-0">
-                                    <PremiumStarIcon className="w-4 h-4" />
+                                <div className="p-2 bg-amber-500/10 rounded-lg text-amber-400 shrink-0">
+                                    <Icons.Star className="w-4 h-4" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <h4 className="text-white font-bold text-xs uppercase tracking-wide">24/7 Cloud Sync (No PC Needed)</h4>
-                                    <span className="text-slate-400 text-[11px] leading-relaxed mt-0.5">Connect via Read-Only Investor Password. Your trades sync 24/7 even when your laptop and phone are turned off.</span>
+                                    <h4 className="text-white font-bold text-xs uppercase tracking-wide">Gold Tier (₦1,999/mo • Save 5% First Time)</h4>
+                                    <span className="text-slate-400 text-[11px] leading-relaxed mt-0.5">Desktop MT5 EA Real-Time Sync, on-chart HUD risk calculator, 31-day heatmaps, and up to 5 accounts.</span>
                                 </div>
                             </div>
 
                             <div className="bg-[#111633]/60 border border-[#162C99]/20 rounded-xl p-3 flex gap-3 items-start">
-                                <div className="p-2 bg-[#1BA657]/10 rounded-lg text-[#1BA657] shrink-0">
-                                    <KeyIcon className="w-4 h-4" />
+                                <div className="p-2 bg-cyan-500/10 rounded-lg text-cyan-300 shrink-0">
+                                    <Icons.Diamond className="w-4 h-4" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <h4 className="text-white font-bold text-xs uppercase tracking-wide">Desktop MT5 Expert Advisor</h4>
-                                    <span className="text-slate-400 text-[11px] leading-relaxed mt-0.5">Custom electric green chart HUD dashboard with on-chart risk calculators and session heatmaps.</span>
+                                    <h4 className="text-white font-bold text-xs uppercase tracking-wide">Diamond Tier (₦2,999/mo • Save 10% First Time)</h4>
+                                    <span className="text-slate-400 text-[11px] leading-relaxed mt-0.5">In-Depth AI Account Analysis sent to your email, Daily Market News on top pairs, up to 10 accounts, plus all Gold features.</span>
                                 </div>
                             </div>
                         </div>
@@ -397,7 +397,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                 className="w-full py-3.5 bg-gradient-to-r from-[#1BA657] to-emerald-400 hover:from-[#158C47] hover:to-emerald-500 active:scale-[0.98] text-black font-extrabold text-xs tracking-wider rounded-xl transition-all duration-200 shadow-lg shadow-[#1BA657]/10 flex items-center justify-center gap-2 uppercase"
                             >
                                 <LockIcon className="w-4 h-4" />
-                                Unlock Auto-Sync (₦1,999/mo)
+                                Unlock Gold or Diamond Tier
                             </button>
                         </div>
                     </div>
@@ -432,7 +432,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                             <h2 className="text-white font-extrabold text-xl">MetaTrader Auto-Sync Center</h2>
                             <span className="text-[10px] text-[#1BA657] font-bold tracking-widest uppercase flex items-center gap-1.5 mt-0.5">
                                 <span className="h-1.5 w-1.5 rounded-full bg-[#1BA657] animate-ping"></span>
-                                PRO Tier Active
+                                {userPlanTier === 'diamond' ? 'Diamond Tier Active' : 'Gold Tier Active'}
                             </span>
                         </div>
                     </div>
@@ -704,7 +704,7 @@ const Mt5IntegrationModal = ({ user, isPremium = false, userSettings, triggerUpg
                                     <div className="mt-4 pt-3 border-t border-[#162C99]/20 flex justify-between items-center text-[10px] text-slate-400 font-mono">
                                         <span>TYPE: MT5 EA CONNECT</span>
                                         <span className="bg-slate-950/60 px-2 py-0.5 rounded border border-slate-900 text-[#1BA657]">
-                                            {hasKey ? 'PRO LIVE' : 'NO LINK'}
+                                            {hasKey ? `${userPlanTier.toUpperCase()} LIVE` : 'NO LINK'}
                                         </span>
                                     </div>
                                 </div>

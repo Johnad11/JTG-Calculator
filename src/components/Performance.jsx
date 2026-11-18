@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Icons } from './Icons';
 import StatCard from './StatCard';
 import EquityChart from './EquityChart';
-import StreakBadgeWidget from './StreakBadgeWidget';
 import { convertForDisplay } from '../utils/currencyConverter';
 import { 
     BarChart, 
@@ -300,7 +299,7 @@ const Performance = ({ trades = [], withdrawals = [], deposits = [], globalBalan
                     )}
                 </div>
 
-                {/* MONTHLY PROFIT TARGET & STREAK BADGES */}
+                {/* MONTHLY PROFIT TARGET */}
                 <div className="grid grid-cols-1 gap-6 mb-8">
                     {/* Monthly Profit Goal Progress Bar */}
                     <div className="bento-card p-6 md:p-7 rounded-3xl">
@@ -450,11 +449,6 @@ const Performance = ({ trades = [], withdrawals = [], deposits = [], globalBalan
                             </table>
                         </div>
                     </div>
-                </div>
-
-                {/* Trading Streak Milestones (Last Card on Analytics) */}
-                <div className="mb-8">
-                    <StreakBadgeWidget trades={trades} showDetails={true} />
                 </div>
             </div>
         </div>

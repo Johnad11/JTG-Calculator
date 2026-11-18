@@ -54,7 +54,7 @@ const InAppReminderBanner = ({ trades = [], setPage, remindersEnabled }) => {
                 </div>
                 
                 <p className="text-[11px] text-slate-300 leading-relaxed">
-                    You haven't logged any trades today. Keep your trading streak active and build your discipline by logging today's results!
+                    You haven't logged any trades today. Stay disciplined and keep your trading journal up to date by logging today's results!
                 </p>
                 
                 <button
